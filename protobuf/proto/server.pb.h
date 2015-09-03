@@ -150,10 +150,22 @@ class ServerStatus : public ::google::protobuf::Message {
 
   // accessors -------------------------------------------------------
 
-  // required string host_name = 1;
+  // required string proc_name = 1;
+  bool has_proc_name() const;
+  void clear_proc_name();
+  static const int kProcNameFieldNumber = 1;
+  const ::std::string& proc_name() const;
+  void set_proc_name(const ::std::string& value);
+  void set_proc_name(const char* value);
+  void set_proc_name(const char* value, size_t size);
+  ::std::string* mutable_proc_name();
+  ::std::string* release_proc_name();
+  void set_allocated_proc_name(::std::string* proc_name);
+
+  // required string host_name = 2;
   bool has_host_name() const;
   void clear_host_name();
-  static const int kHostNameFieldNumber = 1;
+  static const int kHostNameFieldNumber = 2;
   const ::std::string& host_name() const;
   void set_host_name(const ::std::string& value);
   void set_host_name(const char* value);
@@ -162,10 +174,10 @@ class ServerStatus : public ::google::protobuf::Message {
   ::std::string* release_host_name();
   void set_allocated_host_name(::std::string* host_name);
 
-  // required string ip_address = 2;
+  // required string ip_address = 3;
   bool has_ip_address() const;
   void clear_ip_address();
-  static const int kIpAddressFieldNumber = 2;
+  static const int kIpAddressFieldNumber = 3;
   const ::std::string& ip_address() const;
   void set_ip_address(const ::std::string& value);
   void set_ip_address(const char* value);
@@ -174,15 +186,17 @@ class ServerStatus : public ::google::protobuf::Message {
   ::std::string* release_ip_address();
   void set_allocated_ip_address(::std::string* ip_address);
 
-  // required .ClioServerStatus.ServerStatus.E_STATUS status = 3;
+  // required .ClioServerStatus.ServerStatus.E_STATUS status = 4;
   bool has_status() const;
   void clear_status();
-  static const int kStatusFieldNumber = 3;
+  static const int kStatusFieldNumber = 4;
   ::ClioServerStatus::ServerStatus_E_STATUS status() const;
   void set_status(::ClioServerStatus::ServerStatus_E_STATUS value);
 
   // @@protoc_insertion_point(class_scope:ClioServerStatus.ServerStatus)
  private:
+  inline void set_has_proc_name();
+  inline void clear_has_proc_name();
   inline void set_has_host_name();
   inline void clear_has_host_name();
   inline void set_has_ip_address();
@@ -196,6 +210,7 @@ class ServerStatus : public ::google::protobuf::Message {
   ::google::protobuf::internal::InternalMetadataWithArena _internal_metadata_;
   ::google::protobuf::uint32 _has_bits_[1];
   mutable int _cached_size_;
+  ::google::protobuf::internal::ArenaStringPtr proc_name_;
   ::google::protobuf::internal::ArenaStringPtr host_name_;
   ::google::protobuf::internal::ArenaStringPtr ip_address_;
   int status_;
@@ -214,15 +229,68 @@ class ServerStatus : public ::google::protobuf::Message {
 #if !PROTOBUF_INLINE_NOT_IN_HEADERS
 // ServerStatus
 
-// required string host_name = 1;
-inline bool ServerStatus::has_host_name() const {
+// required string proc_name = 1;
+inline bool ServerStatus::has_proc_name() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-inline void ServerStatus::set_has_host_name() {
+inline void ServerStatus::set_has_proc_name() {
   _has_bits_[0] |= 0x00000001u;
 }
-inline void ServerStatus::clear_has_host_name() {
+inline void ServerStatus::clear_has_proc_name() {
   _has_bits_[0] &= ~0x00000001u;
+}
+inline void ServerStatus::clear_proc_name() {
+  proc_name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  clear_has_proc_name();
+}
+inline const ::std::string& ServerStatus::proc_name() const {
+  // @@protoc_insertion_point(field_get:ClioServerStatus.ServerStatus.proc_name)
+  return proc_name_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void ServerStatus::set_proc_name(const ::std::string& value) {
+  set_has_proc_name();
+  proc_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:ClioServerStatus.ServerStatus.proc_name)
+}
+inline void ServerStatus::set_proc_name(const char* value) {
+  set_has_proc_name();
+  proc_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:ClioServerStatus.ServerStatus.proc_name)
+}
+inline void ServerStatus::set_proc_name(const char* value, size_t size) {
+  set_has_proc_name();
+  proc_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:ClioServerStatus.ServerStatus.proc_name)
+}
+inline ::std::string* ServerStatus::mutable_proc_name() {
+  set_has_proc_name();
+  // @@protoc_insertion_point(field_mutable:ClioServerStatus.ServerStatus.proc_name)
+  return proc_name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline ::std::string* ServerStatus::release_proc_name() {
+  clear_has_proc_name();
+  return proc_name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+inline void ServerStatus::set_allocated_proc_name(::std::string* proc_name) {
+  if (proc_name != NULL) {
+    set_has_proc_name();
+  } else {
+    clear_has_proc_name();
+  }
+  proc_name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), proc_name);
+  // @@protoc_insertion_point(field_set_allocated:ClioServerStatus.ServerStatus.proc_name)
+}
+
+// required string host_name = 2;
+inline bool ServerStatus::has_host_name() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+inline void ServerStatus::set_has_host_name() {
+  _has_bits_[0] |= 0x00000002u;
+}
+inline void ServerStatus::clear_has_host_name() {
+  _has_bits_[0] &= ~0x00000002u;
 }
 inline void ServerStatus::clear_host_name() {
   host_name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -267,15 +335,15 @@ inline void ServerStatus::set_allocated_host_name(::std::string* host_name) {
   // @@protoc_insertion_point(field_set_allocated:ClioServerStatus.ServerStatus.host_name)
 }
 
-// required string ip_address = 2;
+// required string ip_address = 3;
 inline bool ServerStatus::has_ip_address() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
+  return (_has_bits_[0] & 0x00000004u) != 0;
 }
 inline void ServerStatus::set_has_ip_address() {
-  _has_bits_[0] |= 0x00000002u;
+  _has_bits_[0] |= 0x00000004u;
 }
 inline void ServerStatus::clear_has_ip_address() {
-  _has_bits_[0] &= ~0x00000002u;
+  _has_bits_[0] &= ~0x00000004u;
 }
 inline void ServerStatus::clear_ip_address() {
   ip_address_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -320,15 +388,15 @@ inline void ServerStatus::set_allocated_ip_address(::std::string* ip_address) {
   // @@protoc_insertion_point(field_set_allocated:ClioServerStatus.ServerStatus.ip_address)
 }
 
-// required .ClioServerStatus.ServerStatus.E_STATUS status = 3;
+// required .ClioServerStatus.ServerStatus.E_STATUS status = 4;
 inline bool ServerStatus::has_status() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
+  return (_has_bits_[0] & 0x00000008u) != 0;
 }
 inline void ServerStatus::set_has_status() {
-  _has_bits_[0] |= 0x00000004u;
+  _has_bits_[0] |= 0x00000008u;
 }
 inline void ServerStatus::clear_has_status() {
-  _has_bits_[0] &= ~0x00000004u;
+  _has_bits_[0] &= ~0x00000008u;
 }
 inline void ServerStatus::clear_status() {
   status_ = 0;

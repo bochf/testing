@@ -35,7 +35,8 @@ void protobuf_AssignDesc_server_2eproto() {
       "server.proto");
   GOOGLE_CHECK(file != NULL);
   ServerStatus_descriptor_ = file->message_type(0);
-  static const int ServerStatus_offsets_[3] = {
+  static const int ServerStatus_offsets_[4] = {
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ServerStatus, proc_name_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ServerStatus, host_name_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ServerStatus, ip_address_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ServerStatus, status_),
@@ -82,11 +83,12 @@ void protobuf_AddDesc_server_2eproto() {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\014server.proto\022\020ClioServerStatus\"\231\001\n\014Ser"
-    "verStatus\022\021\n\thost_name\030\001 \002(\t\022\022\n\nip_addre"
-    "ss\030\002 \002(\t\0227\n\006status\030\003 \002(\0162\'.ClioServerSta"
-    "tus.ServerStatus.E_STATUS\")\n\010E_STATUS\022\006\n"
-    "\002UP\020\000\022\010\n\004DOWN\020\001\022\013\n\007SUSPEND\020\002", 188);
+    "\n\014server.proto\022\020ClioServerStatus\"\254\001\n\014Ser"
+    "verStatus\022\021\n\tproc_name\030\001 \002(\t\022\021\n\thost_nam"
+    "e\030\002 \002(\t\022\022\n\nip_address\030\003 \002(\t\0227\n\006status\030\004 "
+    "\002(\0162\'.ClioServerStatus.ServerStatus.E_ST"
+    "ATUS\")\n\010E_STATUS\022\006\n\002UP\020\000\022\010\n\004DOWN\020\001\022\013\n\007SU"
+    "SPEND\020\002", 207);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "server.proto", &protobuf_RegisterTypes);
   ServerStatus::default_instance_ = new ServerStatus();
@@ -137,6 +139,7 @@ const ServerStatus_E_STATUS ServerStatus::E_STATUS_MAX;
 const int ServerStatus::E_STATUS_ARRAYSIZE;
 #endif  // _MSC_VER
 #ifndef _MSC_VER
+const int ServerStatus::kProcNameFieldNumber;
 const int ServerStatus::kHostNameFieldNumber;
 const int ServerStatus::kIpAddressFieldNumber;
 const int ServerStatus::kStatusFieldNumber;
@@ -162,6 +165,7 @@ ServerStatus::ServerStatus(const ServerStatus& from)
 void ServerStatus::SharedCtor() {
   ::google::protobuf::internal::GetEmptyString();
   _cached_size_ = 0;
+  proc_name_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   host_name_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   ip_address_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   status_ = 0;
@@ -174,6 +178,7 @@ ServerStatus::~ServerStatus() {
 }
 
 void ServerStatus::SharedDtor() {
+  proc_name_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   host_name_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   ip_address_.DestroyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   if (this != default_instance_) {
@@ -206,7 +211,10 @@ ServerStatus* ServerStatus::New(::google::protobuf::Arena* arena) const {
 }
 
 void ServerStatus::Clear() {
-  if (_has_bits_[0 / 32] & 7u) {
+  if (_has_bits_[0 / 32] & 15u) {
+    if (has_proc_name()) {
+      proc_name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+    }
     if (has_host_name()) {
       host_name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
     }
@@ -231,9 +239,26 @@ bool ServerStatus::MergePartialFromCodedStream(
     tag = p.first;
     if (!p.second) goto handle_unusual;
     switch (::google::protobuf::internal::WireFormatLite::GetTagFieldNumber(tag)) {
-      // required string host_name = 1;
+      // required string proc_name = 1;
       case 1: {
         if (tag == 10) {
+          DO_(::google::protobuf::internal::WireFormatLite::ReadString(
+                input, this->mutable_proc_name()));
+          ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
+            this->proc_name().data(), this->proc_name().length(),
+            ::google::protobuf::internal::WireFormat::PARSE,
+            "ClioServerStatus.ServerStatus.proc_name");
+        } else {
+          goto handle_unusual;
+        }
+        if (input->ExpectTag(18)) goto parse_host_name;
+        break;
+      }
+
+      // required string host_name = 2;
+      case 2: {
+        if (tag == 18) {
+         parse_host_name:
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
                 input, this->mutable_host_name()));
           ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
@@ -243,13 +268,13 @@ bool ServerStatus::MergePartialFromCodedStream(
         } else {
           goto handle_unusual;
         }
-        if (input->ExpectTag(18)) goto parse_ip_address;
+        if (input->ExpectTag(26)) goto parse_ip_address;
         break;
       }
 
-      // required string ip_address = 2;
-      case 2: {
-        if (tag == 18) {
+      // required string ip_address = 3;
+      case 3: {
+        if (tag == 26) {
          parse_ip_address:
           DO_(::google::protobuf::internal::WireFormatLite::ReadString(
                 input, this->mutable_ip_address()));
@@ -260,13 +285,13 @@ bool ServerStatus::MergePartialFromCodedStream(
         } else {
           goto handle_unusual;
         }
-        if (input->ExpectTag(24)) goto parse_status;
+        if (input->ExpectTag(32)) goto parse_status;
         break;
       }
 
-      // required .ClioServerStatus.ServerStatus.E_STATUS status = 3;
-      case 3: {
-        if (tag == 24) {
+      // required .ClioServerStatus.ServerStatus.E_STATUS status = 4;
+      case 4: {
+        if (tag == 32) {
          parse_status:
           int value;
           DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
@@ -275,7 +300,7 @@ bool ServerStatus::MergePartialFromCodedStream(
           if (::ClioServerStatus::ServerStatus_E_STATUS_IsValid(value)) {
             set_status(static_cast< ::ClioServerStatus::ServerStatus_E_STATUS >(value));
           } else {
-            mutable_unknown_fields()->AddVarint(3, value);
+            mutable_unknown_fields()->AddVarint(4, value);
           }
         } else {
           goto handle_unusual;
@@ -309,30 +334,40 @@ failure:
 void ServerStatus::SerializeWithCachedSizes(
     ::google::protobuf::io::CodedOutputStream* output) const {
   // @@protoc_insertion_point(serialize_start:ClioServerStatus.ServerStatus)
-  // required string host_name = 1;
+  // required string proc_name = 1;
+  if (has_proc_name()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
+      this->proc_name().data(), this->proc_name().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE,
+      "ClioServerStatus.ServerStatus.proc_name");
+    ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
+      1, this->proc_name(), output);
+  }
+
+  // required string host_name = 2;
   if (has_host_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
       this->host_name().data(), this->host_name().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE,
       "ClioServerStatus.ServerStatus.host_name");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
-      1, this->host_name(), output);
+      2, this->host_name(), output);
   }
 
-  // required string ip_address = 2;
+  // required string ip_address = 3;
   if (has_ip_address()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
       this->ip_address().data(), this->ip_address().length(),
       ::google::protobuf::internal::WireFormat::SERIALIZE,
       "ClioServerStatus.ServerStatus.ip_address");
     ::google::protobuf::internal::WireFormatLite::WriteStringMaybeAliased(
-      2, this->ip_address(), output);
+      3, this->ip_address(), output);
   }
 
-  // required .ClioServerStatus.ServerStatus.E_STATUS status = 3;
+  // required .ClioServerStatus.ServerStatus.E_STATUS status = 4;
   if (has_status()) {
     ::google::protobuf::internal::WireFormatLite::WriteEnum(
-      3, this->status(), output);
+      4, this->status(), output);
   }
 
   if (_internal_metadata_.have_unknown_fields()) {
@@ -345,7 +380,18 @@ void ServerStatus::SerializeWithCachedSizes(
 ::google::protobuf::uint8* ServerStatus::SerializeWithCachedSizesToArray(
     ::google::protobuf::uint8* target) const {
   // @@protoc_insertion_point(serialize_to_array_start:ClioServerStatus.ServerStatus)
-  // required string host_name = 1;
+  // required string proc_name = 1;
+  if (has_proc_name()) {
+    ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
+      this->proc_name().data(), this->proc_name().length(),
+      ::google::protobuf::internal::WireFormat::SERIALIZE,
+      "ClioServerStatus.ServerStatus.proc_name");
+    target =
+      ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
+        1, this->proc_name(), target);
+  }
+
+  // required string host_name = 2;
   if (has_host_name()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
       this->host_name().data(), this->host_name().length(),
@@ -353,10 +399,10 @@ void ServerStatus::SerializeWithCachedSizes(
       "ClioServerStatus.ServerStatus.host_name");
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
-        1, this->host_name(), target);
+        2, this->host_name(), target);
   }
 
-  // required string ip_address = 2;
+  // required string ip_address = 3;
   if (has_ip_address()) {
     ::google::protobuf::internal::WireFormat::VerifyUTF8StringNamedField(
       this->ip_address().data(), this->ip_address().length(),
@@ -364,13 +410,13 @@ void ServerStatus::SerializeWithCachedSizes(
       "ClioServerStatus.ServerStatus.ip_address");
     target =
       ::google::protobuf::internal::WireFormatLite::WriteStringToArray(
-        2, this->ip_address(), target);
+        3, this->ip_address(), target);
   }
 
-  // required .ClioServerStatus.ServerStatus.E_STATUS status = 3;
+  // required .ClioServerStatus.ServerStatus.E_STATUS status = 4;
   if (has_status()) {
     target = ::google::protobuf::internal::WireFormatLite::WriteEnumToArray(
-      3, this->status(), target);
+      4, this->status(), target);
   }
 
   if (_internal_metadata_.have_unknown_fields()) {
@@ -384,22 +430,29 @@ void ServerStatus::SerializeWithCachedSizes(
 int ServerStatus::RequiredFieldsByteSizeFallback() const {
   int total_size = 0;
 
+  if (has_proc_name()) {
+    // required string proc_name = 1;
+    total_size += 1 +
+      ::google::protobuf::internal::WireFormatLite::StringSize(
+        this->proc_name());
+  }
+
   if (has_host_name()) {
-    // required string host_name = 1;
+    // required string host_name = 2;
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::StringSize(
         this->host_name());
   }
 
   if (has_ip_address()) {
-    // required string ip_address = 2;
+    // required string ip_address = 3;
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::StringSize(
         this->ip_address());
   }
 
   if (has_status()) {
-    // required .ClioServerStatus.ServerStatus.E_STATUS status = 3;
+    // required .ClioServerStatus.ServerStatus.E_STATUS status = 4;
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::EnumSize(this->status());
   }
@@ -409,18 +462,23 @@ int ServerStatus::RequiredFieldsByteSizeFallback() const {
 int ServerStatus::ByteSize() const {
   int total_size = 0;
 
-  if (((_has_bits_[0] & 0x00000007) ^ 0x00000007) == 0) {  // All required fields are present.
-    // required string host_name = 1;
+  if (((_has_bits_[0] & 0x0000000f) ^ 0x0000000f) == 0) {  // All required fields are present.
+    // required string proc_name = 1;
+    total_size += 1 +
+      ::google::protobuf::internal::WireFormatLite::StringSize(
+        this->proc_name());
+
+    // required string host_name = 2;
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::StringSize(
         this->host_name());
 
-    // required string ip_address = 2;
+    // required string ip_address = 3;
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::StringSize(
         this->ip_address());
 
-    // required .ClioServerStatus.ServerStatus.E_STATUS status = 3;
+    // required .ClioServerStatus.ServerStatus.E_STATUS status = 4;
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::EnumSize(this->status());
 
@@ -453,6 +511,10 @@ void ServerStatus::MergeFrom(const ::google::protobuf::Message& from) {
 void ServerStatus::MergeFrom(const ServerStatus& from) {
   if (GOOGLE_PREDICT_FALSE(&from == this)) MergeFromFail(__LINE__);
   if (from._has_bits_[0 / 32] & (0xffu << (0 % 32))) {
+    if (from.has_proc_name()) {
+      set_has_proc_name();
+      proc_name_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.proc_name_);
+    }
     if (from.has_host_name()) {
       set_has_host_name();
       host_name_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.host_name_);
@@ -483,7 +545,7 @@ void ServerStatus::CopyFrom(const ServerStatus& from) {
 }
 
 bool ServerStatus::IsInitialized() const {
-  if ((_has_bits_[0] & 0x00000007) != 0x00000007) return false;
+  if ((_has_bits_[0] & 0x0000000f) != 0x0000000f) return false;
 
   return true;
 }
@@ -493,6 +555,7 @@ void ServerStatus::Swap(ServerStatus* other) {
   InternalSwap(other);
 }
 void ServerStatus::InternalSwap(ServerStatus* other) {
+  proc_name_.Swap(&other->proc_name_);
   host_name_.Swap(&other->host_name_);
   ip_address_.Swap(&other->ip_address_);
   std::swap(status_, other->status_);
@@ -512,15 +575,68 @@ void ServerStatus::InternalSwap(ServerStatus* other) {
 #if PROTOBUF_INLINE_NOT_IN_HEADERS
 // ServerStatus
 
-// required string host_name = 1;
-bool ServerStatus::has_host_name() const {
+// required string proc_name = 1;
+bool ServerStatus::has_proc_name() const {
   return (_has_bits_[0] & 0x00000001u) != 0;
 }
-void ServerStatus::set_has_host_name() {
+void ServerStatus::set_has_proc_name() {
   _has_bits_[0] |= 0x00000001u;
 }
-void ServerStatus::clear_has_host_name() {
+void ServerStatus::clear_has_proc_name() {
   _has_bits_[0] &= ~0x00000001u;
+}
+void ServerStatus::clear_proc_name() {
+  proc_name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  clear_has_proc_name();
+}
+ const ::std::string& ServerStatus::proc_name() const {
+  // @@protoc_insertion_point(field_get:ClioServerStatus.ServerStatus.proc_name)
+  return proc_name_.GetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+ void ServerStatus::set_proc_name(const ::std::string& value) {
+  set_has_proc_name();
+  proc_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), value);
+  // @@protoc_insertion_point(field_set:ClioServerStatus.ServerStatus.proc_name)
+}
+ void ServerStatus::set_proc_name(const char* value) {
+  set_has_proc_name();
+  proc_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), ::std::string(value));
+  // @@protoc_insertion_point(field_set_char:ClioServerStatus.ServerStatus.proc_name)
+}
+ void ServerStatus::set_proc_name(const char* value, size_t size) {
+  set_has_proc_name();
+  proc_name_.SetNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(),
+      ::std::string(reinterpret_cast<const char*>(value), size));
+  // @@protoc_insertion_point(field_set_pointer:ClioServerStatus.ServerStatus.proc_name)
+}
+ ::std::string* ServerStatus::mutable_proc_name() {
+  set_has_proc_name();
+  // @@protoc_insertion_point(field_mutable:ClioServerStatus.ServerStatus.proc_name)
+  return proc_name_.MutableNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+ ::std::string* ServerStatus::release_proc_name() {
+  clear_has_proc_name();
+  return proc_name_.ReleaseNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+}
+ void ServerStatus::set_allocated_proc_name(::std::string* proc_name) {
+  if (proc_name != NULL) {
+    set_has_proc_name();
+  } else {
+    clear_has_proc_name();
+  }
+  proc_name_.SetAllocatedNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), proc_name);
+  // @@protoc_insertion_point(field_set_allocated:ClioServerStatus.ServerStatus.proc_name)
+}
+
+// required string host_name = 2;
+bool ServerStatus::has_host_name() const {
+  return (_has_bits_[0] & 0x00000002u) != 0;
+}
+void ServerStatus::set_has_host_name() {
+  _has_bits_[0] |= 0x00000002u;
+}
+void ServerStatus::clear_has_host_name() {
+  _has_bits_[0] &= ~0x00000002u;
 }
 void ServerStatus::clear_host_name() {
   host_name_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -565,15 +681,15 @@ void ServerStatus::clear_host_name() {
   // @@protoc_insertion_point(field_set_allocated:ClioServerStatus.ServerStatus.host_name)
 }
 
-// required string ip_address = 2;
+// required string ip_address = 3;
 bool ServerStatus::has_ip_address() const {
-  return (_has_bits_[0] & 0x00000002u) != 0;
+  return (_has_bits_[0] & 0x00000004u) != 0;
 }
 void ServerStatus::set_has_ip_address() {
-  _has_bits_[0] |= 0x00000002u;
+  _has_bits_[0] |= 0x00000004u;
 }
 void ServerStatus::clear_has_ip_address() {
-  _has_bits_[0] &= ~0x00000002u;
+  _has_bits_[0] &= ~0x00000004u;
 }
 void ServerStatus::clear_ip_address() {
   ip_address_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
@@ -618,15 +734,15 @@ void ServerStatus::clear_ip_address() {
   // @@protoc_insertion_point(field_set_allocated:ClioServerStatus.ServerStatus.ip_address)
 }
 
-// required .ClioServerStatus.ServerStatus.E_STATUS status = 3;
+// required .ClioServerStatus.ServerStatus.E_STATUS status = 4;
 bool ServerStatus::has_status() const {
-  return (_has_bits_[0] & 0x00000004u) != 0;
+  return (_has_bits_[0] & 0x00000008u) != 0;
 }
 void ServerStatus::set_has_status() {
-  _has_bits_[0] |= 0x00000004u;
+  _has_bits_[0] |= 0x00000008u;
 }
 void ServerStatus::clear_has_status() {
-  _has_bits_[0] &= ~0x00000004u;
+  _has_bits_[0] &= ~0x00000008u;
 }
 void ServerStatus::clear_status() {
   status_ = 0;
