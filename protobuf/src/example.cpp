@@ -1,15 +1,20 @@
-#include <boost/lambda/lambda.hpp>
 #include <iostream>
-#include <iterator>
-#include <algorithm>
+#include <fstream>
+#include <string>
+
+#include <boost/asio/ip/host_name.hpp>
+
+#include "server.pb.h"   // $(top_srcdir)/src/proto
+
+using namespace std;
 
 int main() {
-	using namespace boost::lambda;
-	typedef std::istream_iterator<int> in;
+	ClioServerStatus::ServerStatus ss;
 
-	std::for_each(
-			in(std::cin), in(), std::cout << (_1 * 3) << " ");
-	std::cout << std::endl;
+	ss.set_proc_name("clio");
+	ss.set_host_name(boost::asio::ip::host_name());
+	ss.set_ip_address("127.0.0.1");
+	ss.set_status(ClioServerStatus::ServerStatus::UP);
 
-	return 0;
+	cout << ss.DebugString() << endl;
 }
