@@ -29,6 +29,7 @@
 #include <google/protobuf/generated_enum_reflection.h>
 #include <google/protobuf/service.h>
 #include <google/protobuf/unknown_field_set.h>
+#include "google/protobuf/descriptor.pb.h"
 // @@protoc_insertion_point(includes)
 
 namespace ClioApi {
@@ -860,6 +861,14 @@ class ClioAgent_Stub : public ClioAgent {
 
 // ===================================================================
 
+static const int kServiceIdFieldNumber = 1000;
+extern ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::ServiceOptions,
+    ::google::protobuf::internal::PrimitiveTypeTraits< ::google::protobuf::int32 >, 5, false >
+  service_id;
+static const int kMethodIdFieldNumber = 1000;
+extern ::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::MethodOptions,
+    ::google::protobuf::internal::PrimitiveTypeTraits< ::google::protobuf::int32 >, 5, false >
+  method_id;
 
 // ===================================================================
 

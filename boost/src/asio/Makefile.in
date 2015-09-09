@@ -80,7 +80,8 @@ build_triplet = @build@
 host_triplet = @host@
 bin_PROGRAMS = timer1$(EXEEXT) timer2$(EXEEXT) timer3$(EXEEXT) \
 	sync_server$(EXEEXT) sync_client$(EXEEXT) \
-	async_server$(EXEEXT) http_client$(EXEEXT)
+	async_server$(EXEEXT) http_client$(EXEEXT) \
+	async_udp_server$(EXEEXT)
 subdir = src/asio
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/build-aux/depcomp
@@ -105,6 +106,10 @@ AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+am_async_udp_server_OBJECTS = async_udp_server.$(OBJEXT)
+async_udp_server_OBJECTS = $(am_async_udp_server_OBJECTS)
+async_udp_server_LDADD = $(LDADD)
+async_udp_server_DEPENDENCIES =
 am_http_client_OBJECTS = http_client.$(OBJEXT)
 http_client_OBJECTS = $(am_http_client_OBJECTS)
 http_client_LDADD = $(LDADD)
@@ -163,12 +168,14 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(async_server_SOURCES) $(http_client_SOURCES) \
-	$(sync_client_SOURCES) $(sync_server_SOURCES) \
-	$(timer1_SOURCES) $(timer2_SOURCES) $(timer3_SOURCES)
-DIST_SOURCES = $(async_server_SOURCES) $(http_client_SOURCES) \
-	$(sync_client_SOURCES) $(sync_server_SOURCES) \
-	$(timer1_SOURCES) $(timer2_SOURCES) $(timer3_SOURCES)
+SOURCES = $(async_server_SOURCES) $(async_udp_server_SOURCES) \
+	$(http_client_SOURCES) $(sync_client_SOURCES) \
+	$(sync_server_SOURCES) $(timer1_SOURCES) $(timer2_SOURCES) \
+	$(timer3_SOURCES)
+DIST_SOURCES = $(async_server_SOURCES) $(async_udp_server_SOURCES) \
+	$(http_client_SOURCES) $(sync_client_SOURCES) \
+	$(sync_server_SOURCES) $(timer1_SOURCES) $(timer2_SOURCES) \
+	$(timer3_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -323,6 +330,7 @@ sync_server_SOURCES = sync_server.cpp
 sync_client_SOURCES = sync_client.cpp
 http_client_SOURCES = http_client.cpp
 async_server_SOURCES = async_server.cpp
+async_udp_server_SOURCES = async_udp_server.cpp
 all: all-am
 
 .SUFFIXES:
@@ -411,6 +419,10 @@ async_server$(EXEEXT): $(async_server_OBJECTS) $(async_server_DEPENDENCIES) $(EX
 	@rm -f async_server$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(async_server_OBJECTS) $(async_server_LDADD) $(LIBS)
 
+async_udp_server$(EXEEXT): $(async_udp_server_OBJECTS) $(async_udp_server_DEPENDENCIES) $(EXTRA_async_udp_server_DEPENDENCIES) 
+	@rm -f async_udp_server$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(async_udp_server_OBJECTS) $(async_udp_server_LDADD) $(LIBS)
+
 http_client$(EXEEXT): $(http_client_OBJECTS) $(http_client_DEPENDENCIES) $(EXTRA_http_client_DEPENDENCIES) 
 	@rm -f http_client$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(http_client_OBJECTS) $(http_client_LDADD) $(LIBS)
@@ -442,6 +454,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/async_server.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/async_udp_server.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/http_client.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sync_client.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sync_server.Po@am__quote@

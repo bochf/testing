@@ -218,35 +218,40 @@ void protobuf_AddDesc_clio_5fapi_2eproto() {
   already_here = true;
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
+  ::google::protobuf::protobuf_AddDesc_google_2fprotobuf_2fdescriptor_2eproto();
   ::google::protobuf::DescriptorPool::InternalAddGeneratedFile(
-    "\n\016clio_api.proto\022\007ClioApi\"t\n\rClioMsgHead"
-    "er\022\020\n\010msg_name\030\001 \001(\t\022\021\n\tproc_name\030\002 \001(\t\022"
-    "\014\n\004from\030\003 \001(\t\022\n\n\002to\030\004 \001(\t\022\021\n\ttimestamp\030\005"
-    " \001(\005\022\021\n\tcheck_sum\030\006 \001(\014\"B\n\nClioNotify\022&\n"
-    "\006header\030\001 \001(\0132\026.ClioApi.ClioMsgHeader\022\014\n"
-    "\004body\030\002 \001(\014\"\217\001\n\013ClioRequest\022&\n\006header\030\001 "
-    "\001(\0132\026.ClioApi.ClioMsgHeader\022\026\n\016transacti"
-    "on_id\030\002 \001(\t\022\013\n\003seq\030\003 \001(\005\022\017\n\007contact\030\004 \001("
-    "\t\022\024\n\014request_type\030\005 \001(\005\022\014\n\004body\030\006 \001(\014\"i\n"
-    "\014ClioResponse\022&\n\006header\030\001 \001(\0132\026.ClioApi."
-    "ClioMsgHeader\022\026\n\016transaction_id\030\002 \001(\t\022\013\n"
-    "\003seq\030\003 \001(\005\022\014\n\004body\030\004 \001(\014\"\220\001\n\007ClioApi\022%\n\006"
-    "notify\030\001 \001(\0132\023.ClioApi.ClioNotifyH\000\022\'\n\007r"
-    "equest\030\002 \001(\0132\024.ClioApi.ClioRequestH\000\022)\n\010"
-    "response\030\003 \001(\0132\025.ClioApi.ClioResponseH\000B"
-    "\n\n\010clio_api\"q\n\020ClioServerStatus\0222\n\006statu"
-    "s\030\001 \001(\0162\".ClioApi.ClioServerStatus.E_STA"
-    "TUS\")\n\010E_STATUS\022\006\n\002UP\020\000\022\010\n\004DOWN\020\001\022\013\n\007SUS"
-    "PEND\020\002*\272\001\n\013MessageType\022\025\n\021A2C_REQ_RECORD"
-    "ING\020\000\022\027\n\023A2C_START_RECORDING\020\001\022\026\n\022A2C_ST"
-    "OP_RECORDING\020\002\022\020\n\nC2A_NOTIFY\020\240\234\001\022\027\n\021C2A_"
-    "SERVER_STATUS\020\241\234\001\022\027\n\021C2A_RSP_RECORDING\020\260"
-    "\352\001\022\037\n\031C2A_RSP_RECORDING_STARTED\020\261\352\0012}\n\tC"
-    "lioAgent\0226\n\010OnNotify\022\023.ClioApi.ClioNotif"
-    "y\032\025.ClioApi.ClioResponse\0228\n\tOnRequest\022\024."
+    "\n\016clio_api.proto\022\007ClioApi\032 google/protob"
+    "uf/descriptor.proto\"t\n\rClioMsgHeader\022\020\n\010"
+    "msg_name\030\001 \001(\t\022\021\n\tproc_name\030\002 \001(\t\022\014\n\004fro"
+    "m\030\003 \001(\t\022\n\n\002to\030\004 \001(\t\022\021\n\ttimestamp\030\005 \001(\005\022\021"
+    "\n\tcheck_sum\030\006 \001(\014\"B\n\nClioNotify\022&\n\006heade"
+    "r\030\001 \001(\0132\026.ClioApi.ClioMsgHeader\022\014\n\004body\030"
+    "\002 \001(\014\"\217\001\n\013ClioRequest\022&\n\006header\030\001 \001(\0132\026."
+    "ClioApi.ClioMsgHeader\022\026\n\016transaction_id\030"
+    "\002 \001(\t\022\013\n\003seq\030\003 \001(\005\022\017\n\007contact\030\004 \001(\t\022\024\n\014r"
+    "equest_type\030\005 \001(\005\022\014\n\004body\030\006 \001(\014\"i\n\014ClioR"
+    "esponse\022&\n\006header\030\001 \001(\0132\026.ClioApi.ClioMs"
+    "gHeader\022\026\n\016transaction_id\030\002 \001(\t\022\013\n\003seq\030\003"
+    " \001(\005\022\014\n\004body\030\004 \001(\014\"\220\001\n\007ClioApi\022%\n\006notify"
+    "\030\001 \001(\0132\023.ClioApi.ClioNotifyH\000\022\'\n\007request"
+    "\030\002 \001(\0132\024.ClioApi.ClioRequestH\000\022)\n\010respon"
+    "se\030\003 \001(\0132\025.ClioApi.ClioResponseH\000B\n\n\010cli"
+    "o_api\"q\n\020ClioServerStatus\0222\n\006status\030\001 \001("
+    "\0162\".ClioApi.ClioServerStatus.E_STATUS\")\n"
+    "\010E_STATUS\022\006\n\002UP\020\000\022\010\n\004DOWN\020\001\022\013\n\007SUSPEND\020\002"
+    "*\272\001\n\013MessageType\022\025\n\021A2C_REQ_RECORDING\020\000\022"
+    "\027\n\023A2C_START_RECORDING\020\001\022\026\n\022A2C_STOP_REC"
+    "ORDING\020\002\022\020\n\nC2A_NOTIFY\020\240\234\001\022\027\n\021C2A_SERVER"
+    "_STATUS\020\241\234\001\022\027\n\021C2A_RSP_RECORDING\020\260\352\001\022\037\n\031"
+    "C2A_RSP_RECORDING_STARTED\020\261\352\0012\215\001\n\tClioAg"
+    "ent\022;\n\010OnNotify\022\023.ClioApi.ClioNotify\032\025.C"
+    "lioApi.ClioResponse\"\003\300>\001\022=\n\tOnRequest\022\024."
     "ClioApi.ClioRequest\032\025.ClioApi.ClioRespon"
-    "seB\"\n\022com.cisco.clio.apiB\007ClioApiH\001\200\001\001b\006"
-    "proto3", 1086);
+    "se\"\003\300>\002\032\004\300>\375\021:4\n\nservice_id\022\037.google.pro"
+    "tobuf.ServiceOptions\030\350\007 \001(\005:2\n\tmethod_id"
+    "\022\036.google.protobuf.MethodOptions\030\350\007 \001(\005B"
+    "\"\n\022com.cisco.clio.apiB\007ClioApiH\001\200\001\001b\006pro"
+    "to3", 1243);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "clio_api.proto", &protobuf_RegisterTypes);
   ClioMsgHeader::default_instance_ = new ClioMsgHeader();
@@ -256,6 +261,12 @@ void protobuf_AddDesc_clio_5fapi_2eproto() {
   ClioApi::default_instance_ = new ClioApi();
   ClioApi_default_oneof_instance_ = new ClioApiOneofInstance();
   ClioServerStatus::default_instance_ = new ClioServerStatus();
+  ::google::protobuf::internal::ExtensionSet::RegisterExtension(
+    &::google::protobuf::ServiceOptions::default_instance(),
+    1000, 5, false, false);
+  ::google::protobuf::internal::ExtensionSet::RegisterExtension(
+    &::google::protobuf::MethodOptions::default_instance(),
+    1000, 5, false, false);
   ClioMsgHeader::default_instance_->InitAsDefaultInstance();
   ClioNotify::default_instance_->InitAsDefaultInstance();
   ClioRequest::default_instance_->InitAsDefaultInstance();
@@ -3314,6 +3325,12 @@ void ClioAgent_Stub::OnRequest(::google::protobuf::RpcController* controller,
   channel_->CallMethod(descriptor()->method(1),
                        controller, request, response, done);
 }
+::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::ServiceOptions,
+    ::google::protobuf::internal::PrimitiveTypeTraits< ::google::protobuf::int32 >, 5, false >
+  service_id(kServiceIdFieldNumber, 0);
+::google::protobuf::internal::ExtensionIdentifier< ::google::protobuf::MethodOptions,
+    ::google::protobuf::internal::PrimitiveTypeTraits< ::google::protobuf::int32 >, 5, false >
+  method_id(kMethodIdFieldNumber, 0);
 
 // @@protoc_insertion_point(namespace_scope)
 

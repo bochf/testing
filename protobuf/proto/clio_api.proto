@@ -13,6 +13,8 @@
 syntax="proto3";
 package ClioApi;
 
+import "google/protobuf/descriptor.proto";
+
 option java_package = "com.cisco.clio.api";
 option java_outer_classname = "ClioApi";
 option optimize_for = SPEED;
@@ -87,8 +89,22 @@ message ClioServerStatus {
 	E_STATUS status = 1;
 }
 
+extend google.protobuf.ServiceOptions {
+	int32 service_id = 1000;
+}
+
+extend google.protobuf.MethodOptions {
+	int32 method_id = 1000;
+}
+
 /// Clio Agent Service
 service ClioAgent {
-	rpc OnNotify(ClioNotify) returns (ClioResponse);
-	rpc OnRequest(ClioRequest) returns (ClioResponse);
+	option (service_id) = 2301;
+
+	rpc OnNotify(ClioNotify) returns (ClioResponse) {
+		option (method_id) = 1;
+	}
+	rpc OnRequest(ClioRequest) returns (ClioResponse) {
+		option (method_id) = 2;
+	}
 }

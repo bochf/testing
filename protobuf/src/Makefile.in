@@ -78,7 +78,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = example$(EXEEXT)
+bin_PROGRAMS = example$(EXEEXT) file_access$(EXEEXT) clio_api$(EXEEXT)
 subdir = src
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/build-aux/depcomp
@@ -95,14 +95,23 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
-am_example_OBJECTS = example.$(OBJEXT) server.pb.$(OBJEXT)
-example_OBJECTS = $(am_example_OBJECTS)
-example_LDADD = $(LDADD)
-example_DEPENDENCIES =
+am_clio_api_OBJECTS = clio_api.$(OBJEXT) clio_api.pb.$(OBJEXT)
+clio_api_OBJECTS = $(am_clio_api_OBJECTS)
+clio_api_LDADD = $(LDADD)
+clio_api_DEPENDENCIES =
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+am_example_OBJECTS = example.$(OBJEXT) server.pb.$(OBJEXT)
+example_OBJECTS = $(am_example_OBJECTS)
+example_LDADD = $(LDADD)
+example_DEPENDENCIES =
+am_file_access_OBJECTS = file_access.$(OBJEXT) server.pb.$(OBJEXT) \
+	clio_command.pb.$(OBJEXT)
+file_access_OBJECTS = $(am_file_access_OBJECTS)
+file_access_LDADD = $(LDADD)
+file_access_DEPENDENCIES =
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -137,8 +146,10 @@ AM_V_CXXLD = $(am__v_CXXLD_@AM_V@)
 am__v_CXXLD_ = $(am__v_CXXLD_@AM_DEFAULT_V@)
 am__v_CXXLD_0 = @echo "  CXXLD   " $@;
 am__v_CXXLD_1 = 
-SOURCES = $(example_SOURCES)
-DIST_SOURCES = $(example_SOURCES)
+SOURCES = $(clio_api_SOURCES) $(example_SOURCES) \
+	$(file_access_SOURCES)
+DIST_SOURCES = $(clio_api_SOURCES) $(example_SOURCES) \
+	$(file_access_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -288,10 +299,17 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-BOOST_INC = /opt/boost_1_59_0
-LDADD = -lprotobuf
-AM_CXXFLAGS = -I$(BOOST_INC)
-example_SOURCES = example.cpp $(top_srcdir)/proto/server.pb.cc
+GTEST_DIR = /opt/gtest
+BOOST_DIR = /opt/boost
+PROTO_AUTO_GEN_DIR = $(top_srcdir)/proto
+AM_CXXFLAGS = -I$(GTEST_DIR)/include -I$(BOOST_DIR) -I$(PROTO_AUTO_GEN_DIR)
+LDADD = -lprotobuf \
+			-lgtest -lpthread \
+			-L$(BOOST_DIR)/libs -lboost_system
+
+example_SOURCES = example.cpp $(PROTO_AUTO_GEN_DIR)/server.pb.cc
+file_access_SOURCES = file_access.cpp $(PROTO_AUTO_GEN_DIR)/server.pb.cc $(PROTO_AUTO_GEN_DIR)/clio_command.pb.cc
+clio_api_SOURCES = clio_api.cpp $(PROTO_AUTO_GEN_DIR)/clio_api.pb.cc
 all: all-am
 
 .SUFFIXES:
@@ -376,9 +394,17 @@ clean-binPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
+clio_api$(EXEEXT): $(clio_api_OBJECTS) $(clio_api_DEPENDENCIES) $(EXTRA_clio_api_DEPENDENCIES) 
+	@rm -f clio_api$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(clio_api_OBJECTS) $(clio_api_LDADD) $(LIBS)
+
 example$(EXEEXT): $(example_OBJECTS) $(example_DEPENDENCIES) $(EXTRA_example_DEPENDENCIES) 
 	@rm -f example$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(example_OBJECTS) $(example_LDADD) $(LIBS)
+
+file_access$(EXEEXT): $(file_access_OBJECTS) $(file_access_DEPENDENCIES) $(EXTRA_file_access_DEPENDENCIES) 
+	@rm -f file_access$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(file_access_OBJECTS) $(file_access_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -386,7 +412,11 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clio_api.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clio_api.pb.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/clio_command.pb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/example.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/file_access.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/server.pb.Po@am__quote@
 
 .cc.o:
@@ -410,19 +440,47 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(LTCXXCOMPILE) -c -o $@ $<
 
-server.pb.o: $(top_srcdir)/proto/server.pb.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT server.pb.o -MD -MP -MF $(DEPDIR)/server.pb.Tpo -c -o server.pb.o `test -f '$(top_srcdir)/proto/server.pb.cc' || echo '$(srcdir)/'`$(top_srcdir)/proto/server.pb.cc
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/server.pb.Tpo $(DEPDIR)/server.pb.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/proto/server.pb.cc' object='server.pb.o' libtool=no @AMDEPBACKSLASH@
+clio_api.pb.o: $(PROTO_AUTO_GEN_DIR)/clio_api.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT clio_api.pb.o -MD -MP -MF $(DEPDIR)/clio_api.pb.Tpo -c -o clio_api.pb.o `test -f '$(PROTO_AUTO_GEN_DIR)/clio_api.pb.cc' || echo '$(srcdir)/'`$(PROTO_AUTO_GEN_DIR)/clio_api.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/clio_api.pb.Tpo $(DEPDIR)/clio_api.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(PROTO_AUTO_GEN_DIR)/clio_api.pb.cc' object='clio_api.pb.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o server.pb.o `test -f '$(top_srcdir)/proto/server.pb.cc' || echo '$(srcdir)/'`$(top_srcdir)/proto/server.pb.cc
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o clio_api.pb.o `test -f '$(PROTO_AUTO_GEN_DIR)/clio_api.pb.cc' || echo '$(srcdir)/'`$(PROTO_AUTO_GEN_DIR)/clio_api.pb.cc
 
-server.pb.obj: $(top_srcdir)/proto/server.pb.cc
-@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT server.pb.obj -MD -MP -MF $(DEPDIR)/server.pb.Tpo -c -o server.pb.obj `if test -f '$(top_srcdir)/proto/server.pb.cc'; then $(CYGPATH_W) '$(top_srcdir)/proto/server.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/proto/server.pb.cc'; fi`
-@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/server.pb.Tpo $(DEPDIR)/server.pb.Po
-@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(top_srcdir)/proto/server.pb.cc' object='server.pb.obj' libtool=no @AMDEPBACKSLASH@
+clio_api.pb.obj: $(PROTO_AUTO_GEN_DIR)/clio_api.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT clio_api.pb.obj -MD -MP -MF $(DEPDIR)/clio_api.pb.Tpo -c -o clio_api.pb.obj `if test -f '$(PROTO_AUTO_GEN_DIR)/clio_api.pb.cc'; then $(CYGPATH_W) '$(PROTO_AUTO_GEN_DIR)/clio_api.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(PROTO_AUTO_GEN_DIR)/clio_api.pb.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/clio_api.pb.Tpo $(DEPDIR)/clio_api.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(PROTO_AUTO_GEN_DIR)/clio_api.pb.cc' object='clio_api.pb.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o server.pb.obj `if test -f '$(top_srcdir)/proto/server.pb.cc'; then $(CYGPATH_W) '$(top_srcdir)/proto/server.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/proto/server.pb.cc'; fi`
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o clio_api.pb.obj `if test -f '$(PROTO_AUTO_GEN_DIR)/clio_api.pb.cc'; then $(CYGPATH_W) '$(PROTO_AUTO_GEN_DIR)/clio_api.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(PROTO_AUTO_GEN_DIR)/clio_api.pb.cc'; fi`
+
+server.pb.o: $(PROTO_AUTO_GEN_DIR)/server.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT server.pb.o -MD -MP -MF $(DEPDIR)/server.pb.Tpo -c -o server.pb.o `test -f '$(PROTO_AUTO_GEN_DIR)/server.pb.cc' || echo '$(srcdir)/'`$(PROTO_AUTO_GEN_DIR)/server.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/server.pb.Tpo $(DEPDIR)/server.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(PROTO_AUTO_GEN_DIR)/server.pb.cc' object='server.pb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o server.pb.o `test -f '$(PROTO_AUTO_GEN_DIR)/server.pb.cc' || echo '$(srcdir)/'`$(PROTO_AUTO_GEN_DIR)/server.pb.cc
+
+server.pb.obj: $(PROTO_AUTO_GEN_DIR)/server.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT server.pb.obj -MD -MP -MF $(DEPDIR)/server.pb.Tpo -c -o server.pb.obj `if test -f '$(PROTO_AUTO_GEN_DIR)/server.pb.cc'; then $(CYGPATH_W) '$(PROTO_AUTO_GEN_DIR)/server.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(PROTO_AUTO_GEN_DIR)/server.pb.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/server.pb.Tpo $(DEPDIR)/server.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(PROTO_AUTO_GEN_DIR)/server.pb.cc' object='server.pb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o server.pb.obj `if test -f '$(PROTO_AUTO_GEN_DIR)/server.pb.cc'; then $(CYGPATH_W) '$(PROTO_AUTO_GEN_DIR)/server.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(PROTO_AUTO_GEN_DIR)/server.pb.cc'; fi`
+
+clio_command.pb.o: $(PROTO_AUTO_GEN_DIR)/clio_command.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT clio_command.pb.o -MD -MP -MF $(DEPDIR)/clio_command.pb.Tpo -c -o clio_command.pb.o `test -f '$(PROTO_AUTO_GEN_DIR)/clio_command.pb.cc' || echo '$(srcdir)/'`$(PROTO_AUTO_GEN_DIR)/clio_command.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/clio_command.pb.Tpo $(DEPDIR)/clio_command.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(PROTO_AUTO_GEN_DIR)/clio_command.pb.cc' object='clio_command.pb.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o clio_command.pb.o `test -f '$(PROTO_AUTO_GEN_DIR)/clio_command.pb.cc' || echo '$(srcdir)/'`$(PROTO_AUTO_GEN_DIR)/clio_command.pb.cc
+
+clio_command.pb.obj: $(PROTO_AUTO_GEN_DIR)/clio_command.pb.cc
+@am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -MT clio_command.pb.obj -MD -MP -MF $(DEPDIR)/clio_command.pb.Tpo -c -o clio_command.pb.obj `if test -f '$(PROTO_AUTO_GEN_DIR)/clio_command.pb.cc'; then $(CYGPATH_W) '$(PROTO_AUTO_GEN_DIR)/clio_command.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(PROTO_AUTO_GEN_DIR)/clio_command.pb.cc'; fi`
+@am__fastdepCXX_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/clio_command.pb.Tpo $(DEPDIR)/clio_command.pb.Po
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	$(AM_V_CXX)source='$(PROTO_AUTO_GEN_DIR)/clio_command.pb.cc' object='clio_command.pb.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCXX_FALSE@	DEPDIR=$(DEPDIR) $(CXXDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCXX_FALSE@	$(AM_V_CXX@am__nodep@)$(CXX) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CXXFLAGS) $(CXXFLAGS) -c -o clio_command.pb.obj `if test -f '$(PROTO_AUTO_GEN_DIR)/clio_command.pb.cc'; then $(CYGPATH_W) '$(PROTO_AUTO_GEN_DIR)/clio_command.pb.cc'; else $(CYGPATH_W) '$(srcdir)/$(PROTO_AUTO_GEN_DIR)/clio_command.pb.cc'; fi`
 
 .cpp.o:
 @am__fastdepCXX_TRUE@	$(AM_V_CXX)$(CXXCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
