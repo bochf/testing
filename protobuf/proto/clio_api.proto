@@ -1,0 +1,79 @@
+/**
+ * This file describes the interface between Clio server and agent
+ * There are 3 types of messages: Notification, Request, and Response
+ *
+ * Notifications are the event happened on one component which are interested by the other,
+ * the component who sends notification does not expect response or acknowledge from receiver.
+ *
+ * Requests are the messages one component sends to the other to do sth, it will need response.
+ *
+ * Reponses are the feedback of the components sends to the requester of the result.
+ */
+
+syntax="proto3";
+package ClioApi;
+
+option java_package = "com.cisco.clio.api";
+option java_outer_classname = "ClioApi";
+option optimize_for = SPEED;
+
+/// Common header of clio messages
+message ClioMsgHeader {
+	string msg_name  = 1;  /// the name of the message, e.g. StartRecording
+	string proc_name = 2;  /// the name of the process, e.g. ClioAgent or ClioServer
+	string from      = 3;  /// the human readable and meaningful string of the sender, typically we can use the url of the component, e.g. <proto://10.100.13.157:2222;transport=udp>
+	string to        = 4;  /// the human readable and meaningful string of the receiver
+	int32  timestamp = 5;  /// the time message was generated
+	bytes  check_sum = 6;  /// check sum of message body to ensure the data integrity
+}
+
+/// Notification
+message ClioNotify {
+	ClioMsgHeader header = 1;  /// common header
+	         bytes body           = 2;  /// message payload, needs further parsing
+}
+
+/// Request
+message ClioRequest {
+	ClioMsgHeader header  = 1;  /// common header
+	string transaction_id = 2;  /// unique transaction identifier
+	int32  seq            = 3;  /// incremental sequence number within one transaction, the retransmitted message must use the same seq
+	string contact        = 4;  /// the url to be used when response sent back, it will be same as from header by default
+	bytes  body           = 5;  /// message payload, needs further parsing
+}
+
+/// Response
+message ClioResponse {
+	ClioMsgHeader header  = 1;  /// common header
+	string transaction_id = 2;  /// unique transaction identifier, response must keep the same transaction_id it responds to
+	int32  seq            = 3;  /// incremental sequence number within one transaction, the retransmitted message must use the same seq
+	bytes  body           = 4;  /// message payload, needs further parsing
+}
+
+/**
+ * Clio API
+ */
+message ClioApi {
+	oneof clio_api {
+		ClioNotify notify = 1;
+		ClioRequest request = 2;
+		ClioResponse response = 3;
+	}
+}
+
+/// server status notification
+message ClioServerStatus {
+	enum E_STATUS {
+		UP = 0;
+		DOWN = 1;
+		SUSPEND = 2;
+	}
+
+	E_STATUS status = 1;
+}
+
+/// Clio Agent Service
+service ClioAgent {
+	rpc OnNotify(ClioNotify) returns (ClioResponse);
+	rpc OnRequest(ClioRequest) returns (ClioResponse);
+}

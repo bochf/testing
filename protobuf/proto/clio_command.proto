@@ -1,0 +1,27 @@
+syntax="proto2";
+package ClioCommand;
+
+// commands
+message CmdShutdown {
+	optional string reason = 1;
+	optional int32  after  = 2;
+}
+
+message CmdSuspend {
+	optional string reason = 1;
+	optional int32  after  = 2;
+	required bool   need_notify = 3;
+}
+
+message CmdResume {
+	optional string reason = 1;
+}
+
+// command message
+message ClioCommand {
+	required int32 cmd_type = 1;
+	required string cmd_name = 2;
+	optional CmdShutdown cmd_shutdown = 3;
+	optional CmdSuspend  cmd_suspend  = 4;
+	optional CmdResume   cmd_resume   = 5;
+}
