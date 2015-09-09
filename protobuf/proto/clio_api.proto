@@ -16,6 +16,20 @@ package ClioApi;
 option java_package = "com.cisco.clio.api";
 option java_outer_classname = "ClioApi";
 option optimize_for = SPEED;
+option cc_generic_services = true;
+
+/// definition of message types
+enum MessageType {
+	A2C_REQ_RECORDING   = 0;
+	A2C_START_RECORDING = 1;
+	A2C_STOP_RECORDING  = 2;
+
+	C2A_NOTIFY          = 20000;
+	C2A_SERVER_STATUS   = 20001;
+
+	C2A_RSP_RECORDING   = 30000;
+	C2A_RSP_RECORDING_STARTED = 30001;
+}
 
 /// Common header of clio messages
 message ClioMsgHeader {
@@ -39,7 +53,8 @@ message ClioRequest {
 	string transaction_id = 2;  /// unique transaction identifier
 	int32  seq            = 3;  /// incremental sequence number within one transaction, the retransmitted message must use the same seq
 	string contact        = 4;  /// the url to be used when response sent back, it will be same as from header by default
-	bytes  body           = 5;  /// message payload, needs further parsing
+	int32  request_type   = 5;  /// the unique numeric id of the request, 
+	bytes  body           = 6;  /// message payload, needs further parsing
 }
 
 /// Response

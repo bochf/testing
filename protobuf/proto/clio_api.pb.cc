@@ -44,6 +44,8 @@ const ::google::protobuf::Descriptor* ClioServerStatus_descriptor_ = NULL;
 const ::google::protobuf::internal::GeneratedMessageReflection*
   ClioServerStatus_reflection_ = NULL;
 const ::google::protobuf::EnumDescriptor* ClioServerStatus_E_STATUS_descriptor_ = NULL;
+const ::google::protobuf::EnumDescriptor* MessageType_descriptor_ = NULL;
+const ::google::protobuf::ServiceDescriptor* ClioAgent_descriptor_ = NULL;
 
 }  // namespace
 
@@ -91,11 +93,12 @@ void protobuf_AssignDesc_clio_5fapi_2eproto() {
       GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ClioNotify, _internal_metadata_),
       GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ClioNotify, _is_default_instance_));
   ClioRequest_descriptor_ = file->message_type(2);
-  static const int ClioRequest_offsets_[5] = {
+  static const int ClioRequest_offsets_[6] = {
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ClioRequest, header_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ClioRequest, transaction_id_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ClioRequest, seq_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ClioRequest, contact_),
+    GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ClioRequest, request_type_),
     GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ClioRequest, body_),
   };
   ClioRequest_reflection_ =
@@ -163,6 +166,8 @@ void protobuf_AssignDesc_clio_5fapi_2eproto() {
       GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ClioServerStatus, _internal_metadata_),
       GOOGLE_PROTOBUF_GENERATED_MESSAGE_FIELD_OFFSET(ClioServerStatus, _is_default_instance_));
   ClioServerStatus_E_STATUS_descriptor_ = ClioServerStatus_descriptor_->enum_type(0);
+  MessageType_descriptor_ = file->enum_type(0);
+  ClioAgent_descriptor_ = file->service(0);
 }
 
 namespace {
@@ -219,23 +224,29 @@ void protobuf_AddDesc_clio_5fapi_2eproto() {
     "\014\n\004from\030\003 \001(\t\022\n\n\002to\030\004 \001(\t\022\021\n\ttimestamp\030\005"
     " \001(\005\022\021\n\tcheck_sum\030\006 \001(\014\"B\n\nClioNotify\022&\n"
     "\006header\030\001 \001(\0132\026.ClioApi.ClioMsgHeader\022\014\n"
-    "\004body\030\002 \001(\014\"y\n\013ClioRequest\022&\n\006header\030\001 \001"
-    "(\0132\026.ClioApi.ClioMsgHeader\022\026\n\016transactio"
-    "n_id\030\002 \001(\t\022\013\n\003seq\030\003 \001(\005\022\017\n\007contact\030\004 \001(\t"
-    "\022\014\n\004body\030\005 \001(\014\"i\n\014ClioResponse\022&\n\006header"
-    "\030\001 \001(\0132\026.ClioApi.ClioMsgHeader\022\026\n\016transa"
-    "ction_id\030\002 \001(\t\022\013\n\003seq\030\003 \001(\005\022\014\n\004body\030\004 \001("
-    "\014\"\220\001\n\007ClioApi\022%\n\006notify\030\001 \001(\0132\023.ClioApi."
-    "ClioNotifyH\000\022\'\n\007request\030\002 \001(\0132\024.ClioApi."
-    "ClioRequestH\000\022)\n\010response\030\003 \001(\0132\025.ClioAp"
-    "i.ClioResponseH\000B\n\n\010clio_api\"q\n\020ClioServ"
-    "erStatus\0222\n\006status\030\001 \001(\0162\".ClioApi.ClioS"
-    "erverStatus.E_STATUS\")\n\010E_STATUS\022\006\n\002UP\020\000"
-    "\022\010\n\004DOWN\020\001\022\013\n\007SUSPEND\020\0022}\n\tClioAgent\0226\n\010"
-    "OnNotify\022\023.ClioApi.ClioNotify\032\025.ClioApi."
-    "ClioResponse\0228\n\tOnRequest\022\024.ClioApi.Clio"
-    "Request\032\025.ClioApi.ClioResponseB\037\n\022com.ci"
-    "sco.clio.apiB\007ClioApiH\001b\006proto3", 871);
+    "\004body\030\002 \001(\014\"\217\001\n\013ClioRequest\022&\n\006header\030\001 "
+    "\001(\0132\026.ClioApi.ClioMsgHeader\022\026\n\016transacti"
+    "on_id\030\002 \001(\t\022\013\n\003seq\030\003 \001(\005\022\017\n\007contact\030\004 \001("
+    "\t\022\024\n\014request_type\030\005 \001(\005\022\014\n\004body\030\006 \001(\014\"i\n"
+    "\014ClioResponse\022&\n\006header\030\001 \001(\0132\026.ClioApi."
+    "ClioMsgHeader\022\026\n\016transaction_id\030\002 \001(\t\022\013\n"
+    "\003seq\030\003 \001(\005\022\014\n\004body\030\004 \001(\014\"\220\001\n\007ClioApi\022%\n\006"
+    "notify\030\001 \001(\0132\023.ClioApi.ClioNotifyH\000\022\'\n\007r"
+    "equest\030\002 \001(\0132\024.ClioApi.ClioRequestH\000\022)\n\010"
+    "response\030\003 \001(\0132\025.ClioApi.ClioResponseH\000B"
+    "\n\n\010clio_api\"q\n\020ClioServerStatus\0222\n\006statu"
+    "s\030\001 \001(\0162\".ClioApi.ClioServerStatus.E_STA"
+    "TUS\")\n\010E_STATUS\022\006\n\002UP\020\000\022\010\n\004DOWN\020\001\022\013\n\007SUS"
+    "PEND\020\002*\272\001\n\013MessageType\022\025\n\021A2C_REQ_RECORD"
+    "ING\020\000\022\027\n\023A2C_START_RECORDING\020\001\022\026\n\022A2C_ST"
+    "OP_RECORDING\020\002\022\020\n\nC2A_NOTIFY\020\240\234\001\022\027\n\021C2A_"
+    "SERVER_STATUS\020\241\234\001\022\027\n\021C2A_RSP_RECORDING\020\260"
+    "\352\001\022\037\n\031C2A_RSP_RECORDING_STARTED\020\261\352\0012}\n\tC"
+    "lioAgent\0226\n\010OnNotify\022\023.ClioApi.ClioNotif"
+    "y\032\025.ClioApi.ClioResponse\0228\n\tOnRequest\022\024."
+    "ClioApi.ClioRequest\032\025.ClioApi.ClioRespon"
+    "seB\"\n\022com.cisco.clio.apiB\007ClioApiH\001\200\001\001b\006"
+    "proto3", 1086);
   ::google::protobuf::MessageFactory::InternalRegisterGeneratedFile(
     "clio_api.proto", &protobuf_RegisterTypes);
   ClioMsgHeader::default_instance_ = new ClioMsgHeader();
@@ -260,6 +271,25 @@ struct StaticDescriptorInitializer_clio_5fapi_2eproto {
     protobuf_AddDesc_clio_5fapi_2eproto();
   }
 } static_descriptor_initializer_clio_5fapi_2eproto_;
+const ::google::protobuf::EnumDescriptor* MessageType_descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return MessageType_descriptor_;
+}
+bool MessageType_IsValid(int value) {
+  switch(value) {
+    case 0:
+    case 1:
+    case 2:
+    case 20000:
+    case 20001:
+    case 30000:
+    case 30001:
+      return true;
+    default:
+      return false;
+  }
+}
+
 
 namespace {
 
@@ -1317,6 +1347,7 @@ const int ClioRequest::kHeaderFieldNumber;
 const int ClioRequest::kTransactionIdFieldNumber;
 const int ClioRequest::kSeqFieldNumber;
 const int ClioRequest::kContactFieldNumber;
+const int ClioRequest::kRequestTypeFieldNumber;
 const int ClioRequest::kBodyFieldNumber;
 #endif  // !_MSC_VER
 
@@ -1347,6 +1378,7 @@ void ClioRequest::SharedCtor() {
   transaction_id_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   seq_ = 0;
   contact_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+  request_type_ = 0;
   body_.UnsafeSetDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
 
@@ -1390,12 +1422,24 @@ ClioRequest* ClioRequest::New(::google::protobuf::Arena* arena) const {
 }
 
 void ClioRequest::Clear() {
+#define ZR_HELPER_(f) reinterpret_cast<char*>(\
+  &reinterpret_cast<ClioRequest*>(16)->f)
+
+#define ZR_(first, last) do {\
+  ::memset(&first, 0,\
+           ZR_HELPER_(last) - ZR_HELPER_(first) + sizeof(last));\
+} while (0)
+
+  ZR_(seq_, request_type_);
   if (GetArenaNoVirtual() == NULL && header_ != NULL) delete header_;
   header_ = NULL;
   transaction_id_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
-  seq_ = 0;
   contact_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
   body_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
+
+#undef ZR_HELPER_
+#undef ZR_
+
 }
 
 bool ClioRequest::MergePartialFromCodedStream(
@@ -1465,13 +1509,28 @@ bool ClioRequest::MergePartialFromCodedStream(
         } else {
           goto handle_unusual;
         }
-        if (input->ExpectTag(42)) goto parse_body;
+        if (input->ExpectTag(40)) goto parse_request_type;
         break;
       }
 
-      // optional bytes body = 5;
+      // optional int32 request_type = 5;
       case 5: {
-        if (tag == 42) {
+        if (tag == 40) {
+         parse_request_type:
+          DO_((::google::protobuf::internal::WireFormatLite::ReadPrimitive<
+                   ::google::protobuf::int32, ::google::protobuf::internal::WireFormatLite::TYPE_INT32>(
+                 input, &request_type_)));
+
+        } else {
+          goto handle_unusual;
+        }
+        if (input->ExpectTag(50)) goto parse_body;
+        break;
+      }
+
+      // optional bytes body = 6;
+      case 6: {
+        if (tag == 50) {
          parse_body:
           DO_(::google::protobuf::internal::WireFormatLite::ReadBytes(
                 input, this->mutable_body()));
@@ -1537,10 +1596,15 @@ void ClioRequest::SerializeWithCachedSizes(
       4, this->contact(), output);
   }
 
-  // optional bytes body = 5;
+  // optional int32 request_type = 5;
+  if (this->request_type() != 0) {
+    ::google::protobuf::internal::WireFormatLite::WriteInt32(5, this->request_type(), output);
+  }
+
+  // optional bytes body = 6;
   if (this->body().size() > 0) {
     ::google::protobuf::internal::WireFormatLite::WriteBytesMaybeAliased(
-      5, this->body(), output);
+      6, this->body(), output);
   }
 
   // @@protoc_insertion_point(serialize_end:ClioApi.ClioRequest)
@@ -1583,11 +1647,16 @@ void ClioRequest::SerializeWithCachedSizes(
         4, this->contact(), target);
   }
 
-  // optional bytes body = 5;
+  // optional int32 request_type = 5;
+  if (this->request_type() != 0) {
+    target = ::google::protobuf::internal::WireFormatLite::WriteInt32ToArray(5, this->request_type(), target);
+  }
+
+  // optional bytes body = 6;
   if (this->body().size() > 0) {
     target =
       ::google::protobuf::internal::WireFormatLite::WriteBytesToArray(
-        5, this->body(), target);
+        6, this->body(), target);
   }
 
   // @@protoc_insertion_point(serialize_to_array_end:ClioApi.ClioRequest)
@@ -1625,7 +1694,14 @@ int ClioRequest::ByteSize() const {
         this->contact());
   }
 
-  // optional bytes body = 5;
+  // optional int32 request_type = 5;
+  if (this->request_type() != 0) {
+    total_size += 1 +
+      ::google::protobuf::internal::WireFormatLite::Int32Size(
+        this->request_type());
+  }
+
+  // optional bytes body = 6;
   if (this->body().size() > 0) {
     total_size += 1 +
       ::google::protobuf::internal::WireFormatLite::BytesSize(
@@ -1666,6 +1742,9 @@ void ClioRequest::MergeFrom(const ClioRequest& from) {
 
     contact_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.contact_);
   }
+  if (from.request_type() != 0) {
+    set_request_type(from.request_type());
+  }
   if (from.body().size() > 0) {
 
     body_.AssignWithDefault(&::google::protobuf::internal::GetEmptyStringAlreadyInited(), from.body_);
@@ -1698,6 +1777,7 @@ void ClioRequest::InternalSwap(ClioRequest* other) {
   transaction_id_.Swap(&other->transaction_id_);
   std::swap(seq_, other->seq_);
   contact_.Swap(&other->contact_);
+  std::swap(request_type_, other->request_type_);
   body_.Swap(&other->body_);
   _internal_metadata_.Swap(&other->_internal_metadata_);
   std::swap(_cached_size_, other->_cached_size_);
@@ -1851,7 +1931,21 @@ void ClioRequest::clear_contact() {
   // @@protoc_insertion_point(field_set_allocated:ClioApi.ClioRequest.contact)
 }
 
-// optional bytes body = 5;
+// optional int32 request_type = 5;
+void ClioRequest::clear_request_type() {
+  request_type_ = 0;
+}
+ ::google::protobuf::int32 ClioRequest::request_type() const {
+  // @@protoc_insertion_point(field_get:ClioApi.ClioRequest.request_type)
+  return request_type_;
+}
+ void ClioRequest::set_request_type(::google::protobuf::int32 value) {
+  
+  request_type_ = value;
+  // @@protoc_insertion_point(field_set:ClioApi.ClioRequest.request_type)
+}
+
+// optional bytes body = 6;
 void ClioRequest::clear_body() {
   body_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -3111,6 +3205,115 @@ void ClioServerStatus::clear_status() {
 }
 
 #endif  // PROTOBUF_INLINE_NOT_IN_HEADERS
+
+// ===================================================================
+
+ClioAgent::~ClioAgent() {}
+
+const ::google::protobuf::ServiceDescriptor* ClioAgent::descriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return ClioAgent_descriptor_;
+}
+
+const ::google::protobuf::ServiceDescriptor* ClioAgent::GetDescriptor() {
+  protobuf_AssignDescriptorsOnce();
+  return ClioAgent_descriptor_;
+}
+
+void ClioAgent::OnNotify(::google::protobuf::RpcController* controller,
+                         const ::ClioApi::ClioNotify*,
+                         ::ClioApi::ClioResponse*,
+                         ::google::protobuf::Closure* done) {
+  controller->SetFailed("Method OnNotify() not implemented.");
+  done->Run();
+}
+
+void ClioAgent::OnRequest(::google::protobuf::RpcController* controller,
+                         const ::ClioApi::ClioRequest*,
+                         ::ClioApi::ClioResponse*,
+                         ::google::protobuf::Closure* done) {
+  controller->SetFailed("Method OnRequest() not implemented.");
+  done->Run();
+}
+
+void ClioAgent::CallMethod(const ::google::protobuf::MethodDescriptor* method,
+                             ::google::protobuf::RpcController* controller,
+                             const ::google::protobuf::Message* request,
+                             ::google::protobuf::Message* response,
+                             ::google::protobuf::Closure* done) {
+  GOOGLE_DCHECK_EQ(method->service(), ClioAgent_descriptor_);
+  switch(method->index()) {
+    case 0:
+      OnNotify(controller,
+             ::google::protobuf::down_cast<const ::ClioApi::ClioNotify*>(request),
+             ::google::protobuf::down_cast< ::ClioApi::ClioResponse*>(response),
+             done);
+      break;
+    case 1:
+      OnRequest(controller,
+             ::google::protobuf::down_cast<const ::ClioApi::ClioRequest*>(request),
+             ::google::protobuf::down_cast< ::ClioApi::ClioResponse*>(response),
+             done);
+      break;
+    default:
+      GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
+      break;
+  }
+}
+
+const ::google::protobuf::Message& ClioAgent::GetRequestPrototype(
+    const ::google::protobuf::MethodDescriptor* method) const {
+  GOOGLE_DCHECK_EQ(method->service(), descriptor());
+  switch(method->index()) {
+    case 0:
+      return ::ClioApi::ClioNotify::default_instance();
+    case 1:
+      return ::ClioApi::ClioRequest::default_instance();
+    default:
+      GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
+      return *static_cast< ::google::protobuf::Message*>(NULL);
+  }
+}
+
+const ::google::protobuf::Message& ClioAgent::GetResponsePrototype(
+    const ::google::protobuf::MethodDescriptor* method) const {
+  GOOGLE_DCHECK_EQ(method->service(), descriptor());
+  switch(method->index()) {
+    case 0:
+      return ::ClioApi::ClioResponse::default_instance();
+    case 1:
+      return ::ClioApi::ClioResponse::default_instance();
+    default:
+      GOOGLE_LOG(FATAL) << "Bad method index; this should never happen.";
+      return *static_cast< ::google::protobuf::Message*>(NULL);
+  }
+}
+
+ClioAgent_Stub::ClioAgent_Stub(::google::protobuf::RpcChannel* channel)
+  : channel_(channel), owns_channel_(false) {}
+ClioAgent_Stub::ClioAgent_Stub(
+    ::google::protobuf::RpcChannel* channel,
+    ::google::protobuf::Service::ChannelOwnership ownership)
+  : channel_(channel),
+    owns_channel_(ownership == ::google::protobuf::Service::STUB_OWNS_CHANNEL) {}
+ClioAgent_Stub::~ClioAgent_Stub() {
+  if (owns_channel_) delete channel_;
+}
+
+void ClioAgent_Stub::OnNotify(::google::protobuf::RpcController* controller,
+                              const ::ClioApi::ClioNotify* request,
+                              ::ClioApi::ClioResponse* response,
+                              ::google::protobuf::Closure* done) {
+  channel_->CallMethod(descriptor()->method(0),
+                       controller, request, response, done);
+}
+void ClioAgent_Stub::OnRequest(::google::protobuf::RpcController* controller,
+                              const ::ClioApi::ClioRequest* request,
+                              ::ClioApi::ClioResponse* response,
+                              ::google::protobuf::Closure* done) {
+  channel_->CallMethod(descriptor()->method(1),
+                       controller, request, response, done);
+}
 
 // @@protoc_insertion_point(namespace_scope)
 

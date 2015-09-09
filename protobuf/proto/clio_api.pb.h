@@ -27,6 +27,7 @@
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/extension_set.h>
 #include <google/protobuf/generated_enum_reflection.h>
+#include <google/protobuf/service.h>
 #include <google/protobuf/unknown_field_set.h>
 // @@protoc_insertion_point(includes)
 
@@ -65,6 +66,32 @@ inline bool ClioServerStatus_E_STATUS_Parse(
     const ::std::string& name, ClioServerStatus_E_STATUS* value) {
   return ::google::protobuf::internal::ParseNamedEnum<ClioServerStatus_E_STATUS>(
     ClioServerStatus_E_STATUS_descriptor(), name, value);
+}
+enum MessageType {
+  A2C_REQ_RECORDING = 0,
+  A2C_START_RECORDING = 1,
+  A2C_STOP_RECORDING = 2,
+  C2A_NOTIFY = 20000,
+  C2A_SERVER_STATUS = 20001,
+  C2A_RSP_RECORDING = 30000,
+  C2A_RSP_RECORDING_STARTED = 30001,
+  MessageType_INT_MIN_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32min,
+  MessageType_INT_MAX_SENTINEL_DO_NOT_USE_ = ::google::protobuf::kint32max
+};
+bool MessageType_IsValid(int value);
+const MessageType MessageType_MIN = A2C_REQ_RECORDING;
+const MessageType MessageType_MAX = C2A_RSP_RECORDING_STARTED;
+const int MessageType_ARRAYSIZE = MessageType_MAX + 1;
+
+const ::google::protobuf::EnumDescriptor* MessageType_descriptor();
+inline const ::std::string& MessageType_Name(MessageType value) {
+  return ::google::protobuf::internal::NameOfEnum(
+    MessageType_descriptor(), value);
+}
+inline bool MessageType_Parse(
+    const ::std::string& name, MessageType* value) {
+  return ::google::protobuf::internal::ParseNamedEnum<MessageType>(
+    MessageType_descriptor(), name, value);
 }
 // ===================================================================
 
@@ -392,9 +419,15 @@ class ClioRequest : public ::google::protobuf::Message {
   ::std::string* release_contact();
   void set_allocated_contact(::std::string* contact);
 
-  // optional bytes body = 5;
+  // optional int32 request_type = 5;
+  void clear_request_type();
+  static const int kRequestTypeFieldNumber = 5;
+  ::google::protobuf::int32 request_type() const;
+  void set_request_type(::google::protobuf::int32 value);
+
+  // optional bytes body = 6;
   void clear_body();
-  static const int kBodyFieldNumber = 5;
+  static const int kBodyFieldNumber = 6;
   const ::std::string& body() const;
   void set_body(const ::std::string& value);
   void set_body(const char* value);
@@ -411,8 +444,9 @@ class ClioRequest : public ::google::protobuf::Message {
   ::ClioApi::ClioMsgHeader* header_;
   ::google::protobuf::internal::ArenaStringPtr transaction_id_;
   ::google::protobuf::internal::ArenaStringPtr contact_;
-  ::google::protobuf::internal::ArenaStringPtr body_;
   ::google::protobuf::int32 seq_;
+  ::google::protobuf::int32 request_type_;
+  ::google::protobuf::internal::ArenaStringPtr body_;
   mutable int _cached_size_;
   friend void  protobuf_AddDesc_clio_5fapi_2eproto();
   friend void protobuf_AssignDesc_clio_5fapi_2eproto();
@@ -757,6 +791,73 @@ class ClioServerStatus : public ::google::protobuf::Message {
   void InitAsDefaultInstance();
   static ClioServerStatus* default_instance_;
 };
+// ===================================================================
+
+class ClioAgent_Stub;
+
+class ClioAgent : public ::google::protobuf::Service {
+ protected:
+  // This class should be treated as an abstract interface.
+  inline ClioAgent() {};
+ public:
+  virtual ~ClioAgent();
+
+  typedef ClioAgent_Stub Stub;
+
+  static const ::google::protobuf::ServiceDescriptor* descriptor();
+
+  virtual void OnNotify(::google::protobuf::RpcController* controller,
+                       const ::ClioApi::ClioNotify* request,
+                       ::ClioApi::ClioResponse* response,
+                       ::google::protobuf::Closure* done);
+  virtual void OnRequest(::google::protobuf::RpcController* controller,
+                       const ::ClioApi::ClioRequest* request,
+                       ::ClioApi::ClioResponse* response,
+                       ::google::protobuf::Closure* done);
+
+  // implements Service ----------------------------------------------
+
+  const ::google::protobuf::ServiceDescriptor* GetDescriptor();
+  void CallMethod(const ::google::protobuf::MethodDescriptor* method,
+                  ::google::protobuf::RpcController* controller,
+                  const ::google::protobuf::Message* request,
+                  ::google::protobuf::Message* response,
+                  ::google::protobuf::Closure* done);
+  const ::google::protobuf::Message& GetRequestPrototype(
+    const ::google::protobuf::MethodDescriptor* method) const;
+  const ::google::protobuf::Message& GetResponsePrototype(
+    const ::google::protobuf::MethodDescriptor* method) const;
+
+ private:
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ClioAgent);
+};
+
+class ClioAgent_Stub : public ClioAgent {
+ public:
+  ClioAgent_Stub(::google::protobuf::RpcChannel* channel);
+  ClioAgent_Stub(::google::protobuf::RpcChannel* channel,
+                   ::google::protobuf::Service::ChannelOwnership ownership);
+  ~ClioAgent_Stub();
+
+  inline ::google::protobuf::RpcChannel* channel() { return channel_; }
+
+  // implements ClioAgent ------------------------------------------
+
+  void OnNotify(::google::protobuf::RpcController* controller,
+                       const ::ClioApi::ClioNotify* request,
+                       ::ClioApi::ClioResponse* response,
+                       ::google::protobuf::Closure* done);
+  void OnRequest(::google::protobuf::RpcController* controller,
+                       const ::ClioApi::ClioRequest* request,
+                       ::ClioApi::ClioResponse* response,
+                       ::google::protobuf::Closure* done);
+ private:
+  ::google::protobuf::RpcChannel* channel_;
+  bool owns_channel_;
+  GOOGLE_DISALLOW_EVIL_CONSTRUCTORS(ClioAgent_Stub);
+};
+
+
 // ===================================================================
 
 
@@ -1219,7 +1320,21 @@ inline void ClioRequest::set_allocated_contact(::std::string* contact) {
   // @@protoc_insertion_point(field_set_allocated:ClioApi.ClioRequest.contact)
 }
 
-// optional bytes body = 5;
+// optional int32 request_type = 5;
+inline void ClioRequest::clear_request_type() {
+  request_type_ = 0;
+}
+inline ::google::protobuf::int32 ClioRequest::request_type() const {
+  // @@protoc_insertion_point(field_get:ClioApi.ClioRequest.request_type)
+  return request_type_;
+}
+inline void ClioRequest::set_request_type(::google::protobuf::int32 value) {
+  
+  request_type_ = value;
+  // @@protoc_insertion_point(field_set:ClioApi.ClioRequest.request_type)
+}
+
+// optional bytes body = 6;
 inline void ClioRequest::clear_body() {
   body_.ClearToEmptyNoArena(&::google::protobuf::internal::GetEmptyStringAlreadyInited());
 }
@@ -1596,6 +1711,11 @@ template <> struct is_proto_enum< ::ClioApi::ClioServerStatus_E_STATUS> : ::goog
 template <>
 inline const EnumDescriptor* GetEnumDescriptor< ::ClioApi::ClioServerStatus_E_STATUS>() {
   return ::ClioApi::ClioServerStatus_E_STATUS_descriptor();
+}
+template <> struct is_proto_enum< ::ClioApi::MessageType> : ::google::protobuf::internal::true_type {};
+template <>
+inline const EnumDescriptor* GetEnumDescriptor< ::ClioApi::MessageType>() {
+  return ::ClioApi::MessageType_descriptor();
 }
 
 }  // namespace protobuf
