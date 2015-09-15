@@ -7,7 +7,7 @@ LDADD=-lprotobuf \
 			-lgtest -lpthread \
 			-L$(BOOST_DIR)/libs -lboost_system
 
-bin_PROGRAMS=example file_access clio_api
+bin_PROGRAMS=clio_api
 
 example_SOURCES=example.cpp $(PROTO_AUTO_GEN_DIR)/server.pb.cc
 file_access_SOURCES=file_access.cpp $(PROTO_AUTO_GEN_DIR)/server.pb.cc $(PROTO_AUTO_GEN_DIR)/clio_command.pb.cc
