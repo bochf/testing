@@ -1,110 +1,92 @@
 /**
- * This file describes the interface between Clio server and agent
- * There are 3 types of messages: Notification, Request, and Response
- *
- * Notifications are the event happened on one component which are interested by the other,
- * the component who sends notification does not expect response or acknowledge from receiver.
- *
- * Requests are the messages one component sends to the other to do sth, it will need response.
- *
- * Reponses are the feedback of the components sends to the requester of the result.
+ * Clio API between Clio Agent and Clio Server
  */
 
 syntax="proto3";
 package ClioApi;
 
-import "google/protobuf/descriptor.proto";
-
 option java_package = "com.cisco.clio.api";
 option java_outer_classname = "ClioApi";
 option optimize_for = SPEED;
-option cc_generic_services = true;
 
-/// definition of message types
-enum MessageType {
-	A2C_REQ_RECORDING   = 0;
-	A2C_START_RECORDING = 1;
-	A2C_STOP_RECORDING  = 2;
+/// Clio server status
+enum E_SERVER_STATUS {
+	UP = 0;
+	DOWN = 1;
+	SUSPEND = 2;
+}
 
-	C2A_NOTIFY          = 20000;
-	C2A_SERVER_STATUS   = 20001;
-
-	C2A_RSP_RECORDING   = 30000;
-	C2A_RSP_RECORDING_STARTED = 30001;
+/// phony message
+message Empty {
 }
 
 /// Common header of clio messages
 message ClioMsgHeader {
-	string msg_name  = 1;  /// the name of the message, e.g. StartRecording
-	string proc_name = 2;  /// the name of the process, e.g. ClioAgent or ClioServer
-	string from      = 3;  /// the human readable and meaningful string of the sender, typically we can use the url of the component, e.g. <proto://10.100.13.157:2222;transport=udp>
-	string to        = 4;  /// the human readable and meaningful string of the receiver
-	int32  timestamp = 5;  /// the time message was generated
-	bytes  check_sum = 6;  /// check sum of message body to ensure the data integrity
-}
-
-/// Notification
-message ClioNotify {
-	ClioMsgHeader header = 1;  /// common header
-	         bytes body           = 2;  /// message payload, needs further parsing
+	string msg_name       = 1;  /// the name of the message, e.g. StartRecording, it is descriptive
+	string proc_name      = 2;  /// the name of the process, e.g. ClioAgent or ClioServer
+	string from           = 3;  /// the human readable and meaningful string of the sender, typically we can use the url of the component, e.g. <proto://10.100.13.157:2222;transport=tcp>
+	string to             = 4;  /// the human readable and meaningful string of the receiver
+	int32  timestamp      = 5;  /// the time message was generated
+	string transaction_id = 6;  /// unique transaction identifier
+	int32  seq            = 7;  /// incremental sequence number within one transaction, the retransmitted message must use the same seq
+	bytes  check_sum      = 8;  /// check sum of message body to ensure the data integrity
 }
 
 /// Request
-message ClioRequest {
-	ClioMsgHeader header  = 1;  /// common header
-	string transaction_id = 2;  /// unique transaction identifier
-	int32  seq            = 3;  /// incremental sequence number within one transaction, the retransmitted message must use the same seq
-	string contact        = 4;  /// the url to be used when response sent back, it will be same as from header by default
-	int32  request_type   = 5;  /// the unique numeric id of the request, 
-	bytes  body           = 6;  /// message payload, needs further parsing
+message A2C_ShutdownRequest {   /// Agent to server, shutdown
+	ClioMsgHeader header  = 100;  /// common header
+	int32  after          = 200; /// take action after a while, default 0
+	string reason         = 201;  /// the reason of the request, optional
+}
+
+message A2C_SuspendRequest {   /// Agent to server, shutdown
+	ClioMsgHeader header  = 100;  /// common header
+	int32  after          = 200; /// take action after a while, default 0
+	string reason         = 201;  /// the reason of the request, optional
+}
+
+message A2C_ResumeRequest {   /// Agent to server, shutdown
+	ClioMsgHeader header  = 100;  /// common header
+	int32  after          = 200; /// take action after a while, default 0
+	string reason         = 201;  /// the reason of the request, optional
 }
 
 /// Response
-message ClioResponse {
-	ClioMsgHeader header  = 1;  /// common header
-	string transaction_id = 2;  /// unique transaction identifier, response must keep the same transaction_id it responds to
-	int32  seq            = 3;  /// incremental sequence number within one transaction, the retransmitted message must use the same seq
-	bytes  body           = 4;  /// message payload, needs further parsing
+message C2A_ShutdownResponse {   /// Server to agent, shutdown result
+	ClioMsgHeader header  = 100;  /// common header
+	int32  response_code  = 200;  /// response code, default 200 OK
+	string description    = 201; /// description of the result, optional
+	E_SERVER_STATUS server_status = 6;  /// current status, optional, the final status will be sent in the C2A_Status notification
 }
 
-/**
- * Clio API
- */
-message ClioApi {
-	oneof clio_api {
-		ClioNotify notify = 1;
-		ClioRequest request = 2;
-		ClioResponse response = 3;
-	}
+message C2A_SuspendResponse {   /// Server to agent, shutdown result
+	ClioMsgHeader header  = 100;  /// common header
+	int32  response_code  = 200;  /// response code, default 200 OK
+	string description    = 201; /// description of the result, optional
+	E_SERVER_STATUS server_status = 6;  /// current status, optional, the final status will be sent in the C2A_Status notification
+}
+
+message C2A_ResumeResponse {   /// Server to agent, shutdown result
+	ClioMsgHeader header  = 100;  /// common header
+	int32  response_code  = 200;  /// response code, default 200 OK
+	string description    = 201; /// description of the result, optional
+	E_SERVER_STATUS server_status = 6;  /// current status, optional, the final status will be sent in the C2A_Status notification
 }
 
 /// server status notification
-message ClioServerStatus {
-	enum E_STATUS {
-		UP = 0;
-		DOWN = 1;
-		SUSPEND = 2;
-	}
-
-	E_STATUS status = 1;
-}
-
-extend google.protobuf.ServiceOptions {
-	int32 service_id = 1000;
-}
-
-extend google.protobuf.MethodOptions {
-	int32 method_id = 1000;
+message C2A_Status {
+	ClioMsgHeader header  = 1;  /// common header
+	E_SERVER_STATUS server_status = 2;
 }
 
 /// Clio Agent Service
 service ClioAgent {
-	option (service_id) = 2301;
+	rpc ServerStatusUpdate(C2A_Status) returns (Empty);
+}
 
-	rpc OnNotify(ClioNotify) returns (ClioResponse) {
-		option (method_id) = 1;
-	}
-	rpc OnRequest(ClioRequest) returns (ClioResponse) {
-		option (method_id) = 2;
-	}
+/// Clio Server Service
+service ClioServer {
+	rpc Shutdown(A2C_ShutdownRequest) returns (C2A_ShutdownResponse);
+	rpc Suspend(A2C_SuspendRequest) returns (C2A_SuspendResponse);
+	rpc Resume(A2C_ResumeRequest) returns (C2A_ResumeResponse);
 }
