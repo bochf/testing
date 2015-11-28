@@ -13,7 +13,7 @@ memcheck.gcda: memcheck
 	./$< 100 50
 
 report: memcheck.info
-	genhtml -o $@ -s --legend -p /home/josh/dev/testing/practice $?
+	genhtml -o $@ -s --legend -p /home/josh/dev/testing/practice --demangle-cpp $?
 
 clean-local: clean-lcov clean-report
 
