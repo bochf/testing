@@ -38,14 +38,12 @@ class Singleton {
 
 				cout << "thread " << s_threadPool.size() << " stopped" << endl;
 			}
+			vector<pthread_t>(s_threadPool).swap(s_threadPool); // release unused vector space
 		}
 };
 
 vector<pthread_t> Singleton::s_threadPool;
 bool Singleton::s_exit = false;
-
-void * func(void * attr) {
-}
 
 int main(int argc, char * argv[]) {
 	const unsigned int MB = 1024 * 1024;
@@ -77,7 +75,6 @@ int main(int argc, char * argv[]) {
 
 	if (NULL == buffer) {
 		delete [] buffer;
-		buffer = NULL;
 	}
 
   return 0;
