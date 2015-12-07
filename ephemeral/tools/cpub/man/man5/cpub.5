@@ -1,0 +1,221 @@
+.\" Process this file with
+.\" groff -man -Tascii cpub.5
+.\"
+.\"=============================================================================
+.TH CPUB 5 "9/5/14" "BB Manpage" "Perf Tools"
+.SH NAME
+.B cpub
+Config File
+.SH DESCRIPTION
+The
+.B cpub
+config file is a means to specify a grouping of data to be collected on any
+given system (that has a compatible set of providers). This file works like a
+script to the
+.B cpub
+command on how to run, collect data, and handle the data collected.
+
+The file has three major sections: core settings, provider quads, and writer
+arguments. The core settings determine how the core of the framework will
+run (such as iteration time). The provider quads are a section that describes
+what data
+.B cpub
+should collect as well as arguments for individual data items. The writer 
+arguments are writer-specific arguments on how the writer module should write,
+display, or otherwise process the data once it has been collected.
+
+By convention,
+.B cpub
+files have a short descriptive name with a .cpub extension.
+
+.SH CORE PARAMETERS
+Core parameters are typically passed in the top of the file and have the
+following syntax:
+
+name="value"
+
+Possible names and value combinations are:
+.IP "run_every"
+This is the time in ms (1000 ms = 1 s) between sampling iterations. The
+threshold is 100 ms but sub-second values can only be entered under the 
+.B \-D
+(anger) flag. 
+.B cpub
+will allow values slightly under 1 s (about 950 ms) to introduce skew that will
+not require the
+.B \-D
+flag.
+.IP "run_for"
+This is how long
+.B cpub
+should run for. It accepts time modifiers such as M(in), H(ours), and D(ays).
+The default time format when not specified is seconds. The default time is 0
+which specifies that
+.B cpub
+should run forever.
+.IP "send_to"
+This is the writer module name. The data will be sent to the writer module
+where it will handle the specifics of writing the data collected. Arguments
+for the writer module are not included in this option.
+.IP "run_method"
+This specifies how
+.B cpub
+will run. The two existing options are
+.I daemon
+and
+.I interactive.
+.SH PROVIDER QUADS
+Provider quads are enclosed in a
+.I PROVIDER_LIST_BEGIN
+and
+.I PROVIDER_LIST_END
+block. These directives denote the beginning and end of a list of quads and
+optional quad arguments - one per line.
+
+Quads take the format of provider:provider_arg:data_item:data_item_args.
+.IP "provider"
+This is the top level grouping of a data source. This has a number of
+implications - Specifically that when a provider is engaged, a dedicated set
+of code is enabled along with a
+.B cpub
+thread to run it. A provider generally represents a single data source such as
+an API or /proc file.
+.IP "provider args"
+In most instances this is left blank. (Eg: provider::item) It is likely to be
+used when a provider has more than one instance of a data item such as a PID
+to a process-based provider.
+
+[As of this writing, there are no providers that utilize arguments.]
+.IP "data item"
+This is a specific data item that a provider serves. For example, the core
+provider serves a number of timestamps. The name of one of the timestamp types
+would be the data item argument.
+.IP "data item arguments"
+Data items arguments specify operations done on the data prior to presentation.
+These operations are specific and not "full" mathematical operations. Instead
+they 
+
+.SH WRITER ARGUMENTS
+Writer arguments are writer-specific. Descriptions of the options to a
+specific writer can be found in the
+.B WRITERS
+section below. Like the provider quad lists, writer arguments are encapsulated
+in a
+.I WRITER_ARGS_BEGIN
+and
+.I WRITER_ARGS_END
+block.
+
+.SH CONFIG FILE $ARGX ARGUMENTS
+The confg file parsing will allow for $ARGx substitution where x is a value 
+betwen 1 and 9. ($ARG0 is the config file name itself.) These are options
+that are passed on the command line AFTER the config file name. Substitution
+works much like shell and similar tools. Key differences are:
+.IP "- Only one $ARGx substituion per line"
+.IP "- Substitutions only in quads (and NOT quad arguments)"
+.IP "- Only $ARG0 through $ARG9"
+
+.SH ERROR HANDLING
+.B cpub
+will tend to consider all errors as critical. If the config file cannot be
+parsed, then
+.B cpub
+will not attempt to guess at the intent, but will instead report an error and
+exit in failure.
+
+
+.SH USAGE
+The config file can use a shebang interpreter magic at the top of the file
+and then set executable to then behave like a command.
+
+.SH WRITERS
+
+.IP "stdout"
+This writer writes to stdout and is designed to behave much like an interactive
+command line "stat" tool.
+
+.IP "file"
+
+.IP "alarm"
+The alarm provider requires that each quad have an
+.I alarm_at
+threshold set. Alarms can be set for all the equality comparison options using the standard comparison symbols (Shell numeric & C compares). Only integer data types are supported. So timestamps, strings, or factored data cannot be compared. The following are valid writer arguments for this writer:
+.\"Begin relative indent
+.RS
+.\"Begin hanging paragraph
+.HP
+.I alarm_to
+This is where to send alarm messages. Potential values are
+.I stdout,
+.I file,
+and
+.I actlog.
+.HP
+.I actlog_tag
+Specifies the "app name" used for act.log output.
+.HP
+.I survive_turn
+When set to true, the alarm module will not generate errors when it cannot alarm to act.log.
+.HP
+.I include_timestamp
+Set this to true to include a timestamp in
+.I file
+or
+.I stdout
+output.
+.\"End relative indent
+.RE
+.IP "bcd"
+This is a "binary compressed data" format that will dump the output to a specialized format just for cpub data. The resulting file can be expanded with
+.I ebcd.
+Writer specific arguments for
+.I bcd
+are:
+.\"Begin relative indent
+.RS
+.\"Begin hanging paragraph
+.HP
+.I keep_files
+The number of files to keep (if rotating files).
+.HP
+.I format_version
+This is the version of the file format to use. If omitted, the writer will default to the latest version. (The current option is only "1".)
+.HP
+.I roll_at
+Specifies when to roll to the next file. This is a numeric followed by a text "multiplier". The multiplier options are
+.I m(eg),
+.I g(ig),
+.I h(our),
+and
+.I d(ay).
+Note that
+.I hour
+and
+.I day
+behave like
+.I meg
+and
+.I gig
+in that they are "offsets" from 0, instead of specific times. So if "1 d" is specificed, then the file will roll at one day from the point it was started. 
+.HP
+.I skip_compress
+1 to turn on skip (redundant data elimination) compression, 0 to turn it off.
+.HP
+.I gzip_compress
+1 to enable gzip compression of the output file, 0 to disable.
+.HP
+.I filename
+This is the name of the output file. If files are set to
+.I roll_at
+then this is the basename, and the extension will be a sequential number of the file.
+.\"End relative indent
+.RE
+.SH AUTHOR
+Ottmar Mergenthaler <etaion.shrdlu@linotype.com>
+.br
+William Favorite <wfavorite2@bloomberg.net>
+.SH "SEE ALSO"
+.BR cpub (1),
+.BR ebcd (1).
+
+

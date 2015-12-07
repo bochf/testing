@@ -1,0 +1,41 @@
+#!/usr/bin/ksh
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+### This reads in whatever paramaters may have been passed on command line
+shift
+while [[ -n ${1} ]]
+do
+    eval ${1}
+    shift
+done
+
+dot
+
+# Find the checksum
+if [[ -f /bb/bin/bbcpu.lst ]]
+then
+    cksum /bb/bin/bbcpu.lst | read cksumval size file
+else
+    cksumval="N/A"
+    size=0
+fi
+
+dot
+
+printf "bbcpu cksum  : %s\n" ${cksumval} >> ${outfile}
+printf "bbcpu size   : %s\n" ${size} >> ${outfile}
+
+dot
+
+exit 0
+

@@ -1,0 +1,151 @@
+#!/bin/ksh93
+
+# Note: This is based on 201.networks_*. The difference is that there is only
+#       one script with the per-OS magic happening in the functions and a 
+#       case-ish series of if-then statements sitting in the middle of the
+#       script. These functions have been tested here and are *likely* portable
+#       elsewhere. They could be turned into global functions, but would
+#       require some testing before going global.
+
+
+
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Source in functions we will need
+if [[ -f modules/functions/netif.ksh ]]
+then
+    . modules/functions/netif.ksh
+else
+    exit 1
+fi
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+### This reads in whatever paramaters may have been passed on command line
+shift
+while [[ -n ${1} ]]
+do
+    eval ${1}
+    shift
+done
+
+dot
+uname_n=$(uname -n)
+uname_s=$(uname -s)
+
+typeset -A if_to_ip
+typeset -A hn_to_if
+typeset -A mcast_per_if
+
+#printf "\nDEBUG:\n"
+
+for ifname in $(up_if_list ${uname_s})
+do
+    ipaddr=
+    hname=
+    
+    #printf "DEBUG: ip_from_if [%s] [%s]\n" "${ifname}" "${uname_s}"
+    if ! ipaddr=$(get_ip_for_if ${ifname} ${uname_s})
+    then
+        ipaddr=
+    fi
+
+    if ! hname=$(get_hn_for_if ${ifname} ${uname_s})
+    then
+        hname=
+    fi
+    
+    if [[ -n ${ipaddr} && -n ${hname} ]]
+    then
+        #printf "DEBUG: [%s][%s][%s]\n" "${ifname}" "${ipaddr}" "${hname}"
+        if_to_ip[$ifname]=${ipaddr}
+        hn_to_if[$hname]=${ifname}
+        mcast_per_if[$ifname]=0
+    fi
+
+done
+
+dot
+
+set -sA sortedHosts ${!hn_to_if[@]}
+
+#echo "DEBUG: "${sortedHosts[@]}
+
+# ------------------------------
+if [[ ${uname_s} == "Linux" ]]
+then
+    netstat -gn | while read line
+    do
+        # This captures both lines of the header
+        if [[ ${line} == I* ]] ; then continue ; fi
+        # This captures the dividing line after the header
+        if [[ ${line} == "--"* ]] ; then continue ; fi
+
+        mcif=${line%% *}
+        (( mcast_per_if[$mcif]++ ))
+    done
+fi
+
+# ------------------------------
+if [[ ${uname_s} == "SunOS" ]]
+then
+    netstat -gn | while read line
+    do
+        # This captures both lines of the header
+        if [[ ${line} == Gr* ]] ; then continue ; fi
+        if [[ ${line} == In* ]] ; then continue ; fi
+        # This captures the dividing line after the header
+        if [[ ${line} == "--"* ]] ; then continue ; fi
+
+        mcif=${line%% *}
+        (( mcast_per_if[$mcif]++ ))
+    done
+fi
+
+# ------------------------------
+if [[ ${uname_s} == "AIX" ]]
+then
+    for mcif in $(ifconfig -l)
+    do
+        typeset -i count_them=0
+        netstat -aI ${mcif} | while read line
+        do
+            if [[ ${line} == *$(uname -n)* ]] ; then count_them=1 ; continue ; fi
+
+            if (( count_them ))
+            then
+                (( mcast_per_if[$mcif]++ ))
+            fi
+        done
+    done
+fi
+
+typeset -i ifn=0
+
+for hname in ${sortedHosts[@]}
+do
+    if [[ ${hname} == ${uname_n} ]]
+    then
+        printf "if%02d   type  : Primary\n" ${ifn} >> ${outfile}
+    else
+        printf "if%02d   type  : %s\n" ${ifn} ${hname#$uname_n} >> ${outfile}
+    fi
+
+    ifname=${hn_to_if[$hname]}
+    mccount=${mcast_per_if[$ifname]}
+
+    printf "if%02d McastCnt: %s\n" ${ifn} ${mccount} >> ${outfile}
+
+    dot
+    (( ifn++ ))
+done
+
+exit 0

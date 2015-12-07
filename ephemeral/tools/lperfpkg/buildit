@@ -1,0 +1,38 @@
+#!/bin/sh
+
+# This is a VERY THIN wrapper. Don't go looking for logic here.
+
+if (( $# != 1 ))
+then
+    echo "ERROR: Argument list not understood." >&2
+    exit 1
+fi
+
+target_pkg=${1}
+
+if [[ -z ${target_pkg} ]]
+then
+    echo "ERROR: Missing required argument." >&2
+    exit 1
+fi
+
+if [[ ! -x bin/buildit ]]
+then
+    echo "ERROR: Missing the bin directory version of buildit." >&2
+    exit 1
+fi
+
+case ${target_pkg} in
+    "common"|"bin")
+        echo "ERROR: ${target_pkg} is not a proper buildit target. Exiting." >&2
+        exit 1
+        ;;
+esac
+
+if ! cd ${target_pkg} > /dev/null 2>&1
+then
+    echo "ERROR: Unable to change to ${target_pkg} directory." >&2
+    exit 1
+fi
+
+exec ../bin/buildit

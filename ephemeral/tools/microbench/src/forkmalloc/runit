@@ -1,0 +1,16 @@
+#!./forkmalloc
+
+set FORK_CHILDREN = 3
+set MEG_TO_MALLOC = 512
+set TOUCH_COUNT = 255
+
+set VERBOSITY = normal
+
+GO
+
+# Settings used for a large AIX system
+set FORK_CHILDREN = 64
+set MEG_TO_MALLOC = 8192
+set TOUCH_COUNT = 255
+
+

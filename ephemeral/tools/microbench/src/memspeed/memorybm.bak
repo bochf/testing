@@ -1,0 +1,229 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <malloc.h>
+#include <math.h>
+#include <unistd.h>
+#include <numa.h>
+#include <limits.h>
+#include <stdint.h>
+#include <wchar.h>
+#include <sys/resource.h>
+#include <time.h>
+#include <sys/time.h>
+
+#include "../lib/optparser.h"
+#include "../lib/verbosity.h"
+
+#define  N 20
+
+#define CLOCK CLOCK_REALTIME
+/* #define CLOCK CLOCK_REALTIME_COARSE */
+/* #define CLOCK CLOCK_MONOTONIC */
+/* #define CLOCK CLOCK_MONOTONIC_COARSE */
+/* #define CLOCK CLOCK_PROCESS_CPUTIME_ID */
+/* #define CLOCK CLOCK_THREAD_CPUTIME_ID */
+
+
+
+#ifdef USE_NANOSEC
+
+
+    /*this part of the code is for simple acquire the time stamp, 
+       we should add the define as done for mmapexe for using different clock
+     */
+typedef struct timespec time_type;
+
+static inline void
+getTime (time_type * _ts)
+{
+  clock_gettime (CLOCK, _ts);
+}
+
+static inline long int
+timeDiff (const time_type * _start, const time_type * _finish)
+{
+  return _finish->tv_nsec - _start->tv_nsec + (_finish->tv_sec -
+					       _start->tv_sec) * 1000000000l;
+}
+
+#else
+
+typedef struct timeval time_type;
+
+static inline void
+getTime (time_type * _ts)
+{
+  gettimeofday (_ts, NULL);
+}
+
+static inline long int
+timeDiff (const time_type * _start, const time_type * _finish)
+{
+  return (_finish->tv_usec - _start->tv_usec +
+	  (_finish->tv_sec - _start->tv_sec) * 1000000l) * 1000l;
+}
+
+#endif /* USE_NANOSEC */
+
+
+
+
+
+int
+Rvec_gen (float V[], long long int S)
+{
+
+  float maxf = ((float) RAND_MAX);
+  time_t t;
+  srand ((unsigned) time (NULL));
+
+  long long int i;
+
+  for (i = 0; i < S; i++)
+    {
+      V[i] = ((float) rand () / (maxf + 1));
+
+    }
+
+  return 0;
+
+}
+
+
+int
+main (int argc, char *argv[])
+{
+
+  numa_run_on_node (0);
+
+  time_type start, finish;
+
+  getTime (&start);
+
+  float *mem_array[N];
+  long long int n_page;
+  long long int mem_size;
+  int u_size;
+  int n_node;
+  int p_size;
+  long long int n_size[N];
+  long long int i;
+
+  long long int M;
+
+  n_page = sysconf (_SC_PHYS_PAGES);
+  u_size = sizeof (float);
+  p_size = sysconf (_SC_PAGESIZE) / 1024;
+  mem_size = n_page * p_size;
+
+
+  if (numa_available () == 0)
+    {
+
+      n_node = numa_max_node () + 1;
+
+      for (i = 0; i < n_node; i++)
+	{
+	  n_size[i] = numa_node_size (i, NULL);
+	}
+
+    }
+  else
+    {
+      printf ("Numa not available\n");
+
+      n_node = -1;
+      return -1;
+    }
+
+  VerboseMessage ("number of pages %u\n", n_page);
+  VerboseMessage ("this is the ram %lld\n", mem_size);
+  VerboseMessage ("this is the sizeof unit %d\n", u_size);
+  VerboseMessage ("this is the page size %dk\n", p_size);
+  VerboseMessage ("this is the number of numa nodes %d\n", n_node);
+  VerboseMessage ("this is the size  of one numa node 0 %lld\n", n_size[0]);
+  VerboseMessage ("this is the size  of one numa node 1 %lld\n", n_size[1]);
+  VerboseMessage ("this is size max %zu\n", SIZE_MAX);
+
+
+  int j;
+  long long int min_size;
+
+  min_size = n_size[0];
+  for (j = 1; j < n_node; j++)
+    {
+      if (n_size[j] < min_size)
+	{
+	  min_size = n_size[j];
+	}
+    }
+
+  printf ("this is min_size %lld, %lld\n", min_size, n_size[0]);
+
+  long int mem_alloc = (long int) min_size / 2;
+
+  M = mem_alloc / sizeof (float);
+
+  printf ("this is M %lld allocating %lld\n", M, M * sizeof (float));
+
+
+  for (j = 0; j < n_node; j++)
+    {
+      mem_array[j] = numa_alloc_onnode (mem_alloc, j);
+    }
+
+
+
+  struct rusage *memory = malloc (sizeof (struct rusage));
+  getrusage (RUSAGE_SELF, memory);
+
+  VerboseMessage ("Usage: %ld\n", memory->ru_ixrss);
+  VerboseMessage ("Usage: %ld\n", memory->ru_isrss);
+  VerboseMessage ("Usage: %ld\n", memory->ru_idrss);
+  VerboseMessage ("Max: %ld\n", memory->ru_maxrss);
+
+
+  Rvec_gen (mem_array[0], M);
+
+  getTime (&finish);
+
+  const long int total = timeDiff (&start, &finish);
+
+  printf ("Total Elapsed  Time = %d usec.\n", (total) / 1000 / 1000);
+
+
+  VerboseMessage ("getting meminfo again\n");
+  getrusage (RUSAGE_SELF, memory);
+
+  VerboseMessage ("Usage: %ld\n", memory->ru_ixrss);
+  VerboseMessage ("Usage: %ld\n", memory->ru_isrss);
+  VerboseMessage ("Usage: %ld\n", memory->ru_idrss);
+  VerboseMessage ("Max: %ld\n", memory->ru_maxrss);
+
+
+  long long int k;
+/*
+for (k=0;k<M;k++){
+
+}
+*/
+
+
+  if (mem_array[0] != NULL)
+    {
+      printf ("freeing mem\n");
+      numa_free (mem_array[0], mem_alloc);
+//free(mem_array);
+
+
+    }
+  else
+    {
+
+      printf ("null pointer\n");
+
+    }
+
+  return 0;
+}

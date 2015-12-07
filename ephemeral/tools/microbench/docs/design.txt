@@ -1,0 +1,50 @@
+Design considerations not yet implemented - and potential solutions:
+
+------------------------------
+Tracking and stopping:
+
+All processes (including children) should be tracked so that a sudden abort is
+possible. This could be done through pipes, shared memory, or the more basic
+means of pid files and signals. Library functions can be written to simplify this issue.
+
+------------------------------
+Verbosity:
+
+All modules should support a VERBOSITY setting (through the config file). This
+is facilitated by using one of the *Message() functions. They are:
+   VerboseMessage()  ---> stdout (also has a VerboseFlush() API)
+   ErrorMessage()    ---> stderr
+   DebugMessage()    ---> stderr
+
+These can be called *after* ReadOptions() has been entered. (The first thing
+ReadOptions() does is set a default verbosity level.)
+
+The module author does not need to parse VERBOSITY. This will be done for
+you automatically by the 
+
+
+Concievably the library code could even parse and handle the VERBOSE entry,
+so that the module writer does not even need to handle that, only the call
+to the write function. For example:
+
+VerboseWrite("Starting %d worker threads...", thread_count);
+VerboseFlush();
+...launch threads...
+VerboseWrite("Done.\n");
+
+With this API the output can be redirected without the module writer even
+getting involved.
+
+------------------------------
+Noise or benchmark mode:
+
+Modules should (but should not necessarily required to) provide two modes. One
+mode is to run in constant stress mode for X duration; where X is a time or
+a number of iterations.
+
+------------------------------
+Setting a pair value more than once
+
+Pair values are inserted into the options linked list backwards, but are read
+"forwards". This means that the last set value will be the first encountered
+when searching the list of items.

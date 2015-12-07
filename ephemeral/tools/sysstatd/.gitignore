@@ -1,0 +1,7 @@
+*.o
+core
+*~
+sysstatd
+access.log
+qc_conr_results*
+bbcheckaix*

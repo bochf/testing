@@ -1,0 +1,26 @@
+#!/bin/ksh93
+
+
+typeset -r ANSI_GREEN=32
+typeset -r ANSI_RED=31
+
+function cprintf
+{
+    typeset -i ansi_color=$1
+
+    shift
+
+    [[ ${BB_COLOR_TOOLS} == "ON" ]] && printf "\x1b[%dm" ${ansi_color}
+    
+    printf $*
+
+    [[ ${BB_COLOR_TOOLS} == "ON" ]] && printf "\x1b[%dm" 0
+}
+
+
+
+BB_COLOR_TOOLS=ON
+
+printf "System results: "
+cprintf ${ANSI_GREEN} "PASS"
+printf "\n"

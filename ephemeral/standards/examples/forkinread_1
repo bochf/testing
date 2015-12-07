@@ -1,0 +1,19 @@
+#!/bin/ksh93
+
+tmpfile=REMOVE_ME_ON_SIGHT
+
+echo "1" > ${tmpfile}
+
+printf "Reading file..."
+gotval=$( < ${tmpfile} )
+printf "%s.\n" ${gotval}
+
+printf "Reading file..."
+gotval=${ < ${tmpfile} }
+printf "%s.\n" ${gotval}
+
+printf "Reading file..."
+gotval=$( cat ${tmpfile} )
+printf "%s.\n" ${gotval}
+
+rm ${tmpfile}

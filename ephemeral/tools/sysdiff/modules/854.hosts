@@ -1,0 +1,35 @@
+#!/usr/bin/ksh
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+### This reads in whatever paramaters may have been passed on command line
+shift
+while [[ -n ${1} ]]
+do
+    eval ${1}
+    shift
+done
+
+dot
+
+# Find the checksum
+cksum /etc/hosts | read cksumval size file
+
+dot
+
+printf "hosts cksum  : %s\n" ${cksumval} >> ${outfile}
+printf "hosts size   : %s\n" ${size} >> ${outfile}
+
+dot
+
+exit 0
+

@@ -1,0 +1,5 @@
+#!/usr/bin/ksh93
+
+typeset input_file=lorem_ipsum
+
+(<##EOT) < "$input_file"

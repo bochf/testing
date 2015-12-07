@@ -1,0 +1,31 @@
+#!/bin/bash
+
+
+if (( $(id -u) != 0 ))
+then
+    echo "ERROR: This can only be run as root!" >&2
+    #exit 1
+fi
+
+
+
+sys_type=$(/usr/sbin/dmidecode --type 1 2>/dev/null 1| grep "Product Name")
+sys_type=${sys_type##*:[[:space:]]}
+
+# Chop off unnessary/redundant kruft
+sys_type=${sys_type##*ProLiant[[:space:]]} # HP ProLiant
+sys_type=${sys_type##*System[[:space:]]}   # IBM System x
+sys_type=${sys_type/-\[*\]-/}              # IBM System X MT-MN
+
+if [[ ${sys_type} == *VMware* ]]
+then
+    sys_type=VMware
+fi
+
+if [[ ${sys_type} == *Gen[0-9]* ]]
+then
+    sys_type=${sys_type/Gen/G}
+fi
+
+
+echo ${sys_type}

@@ -1,0 +1,356 @@
+#!/bin/bash
+
+
+# All things are relative to the home directory. This is how we find our way.
+# This should be a derived value, but it is not entirely impratical to make
+# it a static setting.
+# STUB: Find a home for this
+QC_HOME=/home/wfavorit/proj/ephemeral/design/linqc
+
+# -----------------------------------------------------------------------------
+# Global/defines - NOT exported to the clients
+#                  Unfortunately these must be re-defined in multiple locations
+#                  because of the nature of the framework. This block of
+#                  defines MUST be consistent with other copies elsewhere.
+#                  So DO NOT MODIFY THESE haphazardly.
+declare -ri QCRV_PASS=0     # All is good
+declare -ri QCRV_SKIP=1     # Test not applicable, considered a PASS
+declare -ri QCRV_WARN=2     # Test passed, but should be checked further
+declare -ri QCRV_FAIL=3     # Test failed
+declare -ri QCRV_BAIL=4     # Test failed so bad that we should stop checks
+declare -ri QCRV_IERR=5     # Internal (QC coding) error
+declare -ri QCRV_NOPF=6     # Missing policy file
+declare -ri QCRV_BADP=7     # Bad policy file - not in expected format
+declare -ri QCRV_OVRR=8     # Test had a temporary override (skipped)
+declare -ri QCRV_NOGC=9     # No global config file
+declare -ri QCRV_BMGC=10    # Bad or missing global config file options
+
+declare -ri QCVL_BSILENT=0  # BL Silent (show results to stdout ONLY)
+declare -ri QCVL_REGULAR=1  # Regular verbosity (print all stdout messages)
+declare -ri QCVL_SUMMARY=2  # Show "qc_conr" PASS/FAIL only
+
+
+
+
+# -----------------------------------------------------------------------------
+# Wrapper locals
+# Counters for test results (STUB: Put in associative array?)
+declare -i testr_tcnt=0
+declare -i testr_pass=0
+declare -i testr_skip=0
+declare -i testr_warn=0
+declare -i testr_fail=0
+declare -i testr_bail=0
+declare -i testr_ierr=0
+declare -i testr_nopf=0
+declare -i testr_badp=0
+declare -i testr_ovrr=0
+declare -i testr_nogc=0
+declare -i testr_bmgc=0
+declare -i test_last_return=0    # Temp variable for the last return value
+declare -i testr_global_pass=1   # Summary/global PASS|FAIL flag (see notes below)
+# Input options
+declare -i warg_d=0       # Debug mode (shows time stats)
+declare -i warg_g=0       # User supplied group (for consistency really)
+declare -i warg_h=0       # User asked for help (not supported at this time)
+declare    warg_group=    # Place holder for group info
+declare -i warg_q=0       # Run in qc_conr compatibility mode
+declare -i warg_r=0       # Clean up a stale run (clear lock and log file)
+# Timestamps for begin and end
+declare -i wrap_end_time=0
+declare -i wrap_start_time=0
+
+declare -i qc_verbosity=${QCVL_REGULAR}
+
+# -----------------------------------------------------------------------------
+# Check where we are
+if [[ $(uname -s) != Linux || $(uname -i 2>/dev/null) != x86* ]]
+then
+    echo "ERROR: This script is for x86 Linux only." >&2
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+# Parse input
+while getopts ":g:hqr" OPTS
+do
+   case ${OPTS} in
+      d) warg_d=1 ;;
+      g) warg_g=1
+         warg_group=${OPTARG} ;;
+      g) warg_h=1 ;;
+      q) warg_q=1 ;;
+      r) warg_r=1 ;;
+      ?) echo "ERROR: Option ${OPTARG} was not understood." >&2
+         exit 1 ;;
+   esac
+done
+
+# -----------------------------------------------------------------------------
+# Validate input
+if (( warg_g == 0 ))
+then
+    if (( warg_h == 0 && warg_r == 0 ))
+    then
+        echo "ERROR: Required check group was not supplied." >&2
+        exit 1
+    fi
+
+    # STUB: More here, just not coded in yet
+
+fi
+
+# -----------------------------------------------------------------------------
+# Handle (simple) input
+if (( warg_h )) # User wants help
+then
+    echo "clwrap - PoC QC wrapper"
+    echo "    Options:"
+    echo "      -g <group> Specifiy what group of tests to run"
+    echo "      -r         Reset the state on a failed run (clear locks)"
+    echo "      -h         Show help, exit"
+    echo "      -q         Run in qc_conr compatibility mode"
+    exit 0
+fi
+
+if (( warg_r )) # User wants to reset a (potentially) failed run
+then
+    # STUB - Insure that this process is currently not running
+    rm -f runlog/running
+    exit 0
+fi
+
+
+# -----------------------------------------------------------------------------
+# Handle (simple) input
+if (( warg_q == 1 ))
+then
+    qc_verbosity=${QCVL_SUMMARY}
+fi
+
+# -----------------------------------------------------------------------------
+# Validate that the HOME directory can be found
+if [[ ! -d ${QC_HOME} ]]
+then 
+    echo "ERROR: Unable to find the QC HOME location." >&2
+    exit 1
+fi
+
+# Clean up this nastiness before we proceed
+unset CDPATH
+
+# Make sure we are in our correct directory
+if ! cd ${QC_HOME}
+then
+    # This message is a *bit* cryptic for the user
+    echo "ERROR: Unable to set CWD to QC HOME." >&2
+    exit 1
+fi
+
+# Now check for the expected directories and content
+if [[ ! -d checks ]]
+then
+    echo "ERROR: Missing the checks (source) directory from QC HOME." >&2
+    exit 1
+fi
+
+if [[ ! -d lib ]]
+then
+    echo "ERROR: Missing the lib (functions) directory from QC HOME." >&2
+    exit 1
+fi
+
+if [[ ! -d policy ]]
+then
+    echo "ERROR: Missing the policy (template) directory from QC HOME." >&2
+    exit 1
+fi
+
+if [[ ! -d runcfg ]]
+then
+    echo "ERROR: Missing the runcfg (instructions) directory from QC HOME." >&2
+    exit 1
+fi
+
+if [[ ! -d runlog ]]
+then
+    echo "ERROR: Missing the runlog (results) directory from QC HOME." >&2
+    exit 1
+fi
+
+if [[ -e runlog/running ]]
+then
+    # STUB: Pull results from this file and validate that it *is* running
+    # STUB: contents should be either PID of running process or "BL Launched"
+    echo "ERROR: A QC appears to be running at this time" >&2
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+# Take a lock
+echo $$ > runlog/running
+
+# -----------------------------------------------------------------------------
+# Build our config/runfile
+# NOTE: I would like to dump all these values in a compound variable and
+#       pass to a function that will write the values AND commentary to the
+#       run file. I think that just seems cleaner to me than some inline
+#       file dump. The other possible alternative is to dump a standard file
+#       with stubbed values and then sed in the expected values. So far, all
+#       I have come to is that this is an in-elegant solution.
+run_file=runcfg/QCGlobal.conf
+cat /dev/null > ${run_file}
+echo "# This is a config file that is auto-created by the framework. Do not modify " >> ${run_file}
+echo "# values here, they will be overwritten on the next run of the framework.    " >> ${run_file}
+echo "# Created by: ["$$"] "${0}                                                     >> ${run_file}
+echo "# Creation time: "$(date)                                                      >> ${run_file}
+echo ""                                                                              >> ${run_file}
+echo "# This is the grouping we are running in. Possible values are:               " >> ${run_file}
+echo "#   online - Tests that must pass for the system to go online. These are     " >> ${run_file}
+echo "#            "wake you in the night" WP type tests"                            >> ${run_file}
+echo "#   daily  - Tests that are run daily for healthy quality control. These are " >> ${run_file}
+echo "#            IW or OU type tests. (Of course auto-remediation is supported if" >> ${run_file}
+echo "#            called from BL)"                                                  >> ${run_file}
+echo "#   weekly - Tests that are run weekly. These are generally just items in a  " >> ${run_file}
+echo "#            report in BL. No ticket is generated. This is a good place to   " >> ${run_file}
+echo "#            introduce new tests"                                              >> ${run_file}
+echo "QC_GROUP="${warg_group}                                                        >> ${run_file}
+echo                                                                                 >> ${run_file}
+echo "#   QCVL_BSILENT   - For BladeLogic output. The only thing that goes to"       >> ${run_file}
+echo "#                    stdout is the printed return code (PASS/FAIL/etc...)"     >> ${run_file}
+echo "#   QCVL_REGULAR   - Regular verbosity (print all stdout messages). This"      >> ${run_file}
+echo "#                    also means print tables and various reporting info."      >> ${run_file}
+echo "#   QCVL_SUMMARY   - Show qc_conr PASS/FAIL only"                              >> ${run_file}
+echo "QC_VERBOSITY="${qc_verbosity}                                                  >> ${run_file}
+echo                                                                                 >> ${run_file}
+echo "# This is where (verbose) results will be set to (independent of stdout)"      >> ${run_file}
+echo "QC_RESULTS_FILE=runlog/qcresults_"$(date +%y%m%d_%H%M%S)                       >> ${run_file}
+echo                                                                                 >> ${run_file}
+echo                                                                                 >> ${run_file}
+
+
+
+# Grab our start time
+wrap_start_time=${SECONDS}
+
+
+# -----------------------------------------------------------------------------
+# Run the tests
+for qctest in $(ls checks)
+do
+    checks/${qctest}
+    test_last_return=$?
+    
+    # Yepper... an associative array would be best here (or at least easier)
+    case ${test_last_return} in
+       ${QCRV_PASS})
+          (( testr_pass++ )) ;;
+       ${QCRV_SKIP})
+          (( testr_skip++ )) ;;
+        ${QCRV_WARN})
+          (( testr_warn++ )) ;;
+        ${QCRV_FAIL})
+          testr_global_pass=0
+          (( testr_fail++ )) ;;
+        ${QCRV_BAIL})
+          # STUB: Need to exit here
+          testr_global_pass=0
+          (( testr_bail++ )) ;;
+        ${QCRV_IERR})
+          testr_global_pass=0
+          (( testr_ierr++ )) ;;
+        ${QCRV_NOPF})
+          testr_global_pass=0
+          (( testr_nopf++ )) ;;
+        ${QCRV_BADP})
+          testr_global_pass=0
+          (( testr_badp++ )) ;;
+        ${QCRV_OVRR})
+          (( testr_ovrr++ )) ;;
+        ${QCRV_NOGC})
+          testr_global_pass=0
+          (( testr_nogc++ )) ;;
+        ${QCRV_BMGC})
+          testr_global_pass=0
+          (( testr_bmgc++ )) ;;
+        *)
+          testr_global_pass=0
+          (( testr_ierr++ )) ;;
+        esac
+
+    (( testr_tcnt++ ))
+done
+
+# Grab our end time
+wrap_end_time=${SECONDS}
+
+
+# -----------------------------------------------------------------------------
+# Discussion: I have included ALL return codes here. This is WAY TOO COMPLEX
+#      for the end user. The "Secondary" result count should be rolled into
+#      an "Other" count that can be seen in detail by going into a "debug" mode
+if (( warg_q == 0 )) # If NOT run in qc_conr mode
+then
+    echo
+    echo "Test result summary"
+    printf "   Primary                            Secondary\n"
+    printf "   Passed         : %-3d               Coding Fail    : %-3d\n" ${testr_pass} ${testr_bail}
+    printf "   Skipped        : %-3d               No poicy       : %-3d\n" ${testr_skip} ${testr_nopf}
+    printf "   Warning (Pass) : %-3d               Bad poicy      : %-3d\n" ${testr_warn} ${testr_badp}
+    printf "   Failed         : %-3d               No global cfg  : %-3d\n" ${testr_fail} ${testr_nogc}
+    printf "   Stop           : %-3d               Bad global cfg : %-3d\n" ${testr_bail} ${testr_bmgc}
+    printf "   Overridden     : %-3d\n" ${testr_ovrr}
+    printf "   Total (count)  : %-3d\n" ${testr_tcnt}
+fi
+
+if ((  warg_d )) # If run in debug or verbose mode(s)
+then
+    echo "Timing summary"
+    printf "   Total time     : %-3d\n" $(( wrap_end_time - wrap_start_time ))
+    printf "   times output\n"  # This appears to be worthless (wall time is what matters)
+    times | sed -e "s/^/     /"
+    # STUB: Longest test time
+    # STUB: Average test time
+fi
+
+# No matter what, we want a space here
+echo
+
+# Check results, print expected output, return appropriate code
+# The messages here are largely about compatibility with other QC methods (other platforms)
+if (( warg_q )) # If run in qc_conr mode
+then
+    if (( testr_global_pass ))
+    then
+        echo "QC-CONR STATUS : Test PASSED"
+    else
+        echo "QC-CONR STATUS : Test FAILED"
+    fi
+
+    echo "Finished "$(date)
+    echo "Session Recorded in runlog/qcresults_"$(date +%y%m%d_%H%M%S)
+    echo "---------------------------------------------------------------"
+else # Normal summary (not qc_conr mode)
+
+    if (( testr_global_pass ))
+    then
+        echo "FINAL STATUS : LINUX QC PASSED"
+        echo "Finished "$(date)
+    else
+        echo "FINAL STATUS : LINUX QC FAILED"
+        echo "Finished "$(date)
+    fi
+fi
+
+# -----------------------------------------------------------------------------
+# Pull the lock
+# NOTEs on the lock:
+#  1. Should have an option to force clear a (stale) lock
+#  2. This is required because of the test-centric nature of the design
+#     - Test cannot get specific output file (must be general) --> This could
+#       be put in the config file!
+#  3. Should check contents of lock before clearing here
+rm -f runlog/running
+
+
+

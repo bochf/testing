@@ -1,0 +1,193 @@
+#!/bin/ksh93
+
+# Notes:
+#  - Only files are currently specified.
+#  - Only USR part is specified. This would need to be done on an exception
+#    basis for just one directory (like /etc/). As it stands, there are no
+#    files that fall under ROOT part (system specific) configuration rules
+#    at this time.
+#  - There are only a few config files that are 664. They are handled on
+#    an exception basis.
+
+# ----------------------------------------------------------------------------
+parse_digit ()
+{
+    if [[ -z ${1} ]]
+    then
+        return 1
+    fi
+
+    case ${1} in
+        rwx) echo 7 ;;
+        rw-) echo 6 ;;
+        r-x) echo 5 ;;
+        r--) echo 4 ;;
+        -wx) echo 3 ;;
+        -w-) echo 2 ;;
+        --x) echo 1 ;;
+        ---) echo 0 ;;
+        *) return 1 ;;
+    esac
+
+    return 0
+}
+
+# ----------------------------------------------------------------------------
+parse_mode ()
+{
+    l_file=${1}
+    l_prot=
+    l_user=
+    l_group=
+    l_world=
+
+    if [[ -z ${l_file} ]]
+    then
+        return 1
+    fi
+
+    l_prot=$(istat ${l_file} 2> /dev/null | grep "^Protection:")
+    l_prot=${l_prot#*: }
+
+    if [[ -z ${l_prot} ]]
+    then
+        return 1
+    fi
+
+
+    if ! l_user=$(parse_digit ${l_prot:0:3})
+    then
+        return 1
+    fi
+
+    if ! l_group=$(parse_digit ${l_prot:3:3})
+    then
+        return 1
+    fi
+
+    if ! l_world=$(parse_digit ${l_prot:6:3})
+    then
+        return 1
+    fi
+
+    echo ${l_user}${l_group}${l_world}
+    return 0
+}
+
+# ----------------------------------------------------------------------------
+# Source in the config
+if [[ -f buildit.conf ]]
+then
+    . ./buildit.conf
+else
+    echo "ERROR: Unable to source in config file." >&2
+    exit 1
+fi
+
+inventory_type=${1}
+file_name=
+
+if [[ -z ${inventory_type} ]]
+then
+    exit 1
+fi
+
+case ${inventory_type} in
+    usr|USR)
+        build_src=BUILD_ROOT
+        ;;
+    root|ROOT)
+        build_src=ROOT_PART
+        ;;
+    *)
+        echo "ERROR (mk_inventory): Internal script fault. Unknown \"part\" specification." >&2
+        exit 1
+        ;;
+esac
+
+# Directories are currently not part of the inventory. They are created
+#  with default (good) permissions / ownership. Currently, the post un-
+#  install script removes the whole bbcheckaix directory so this is ok.
+
+for FILE in $(find ${build_src} -type f | grep -v "liblpp.a$" | grep -v "gitignore")
+do
+    if ! MODE=$(parse_mode ${FILE})
+    then
+        echo "ERROR: Unable to parse info on ${FILE}."
+        exit 1
+    fi
+
+    # Weed out the .svn directory entries
+    if [[ ${FILE} == */.svn/* ]]
+    then
+        continue
+    fi
+
+    if [[ ${FILE} == */inst_root/* ]]
+    then
+        continue
+    fi
+
+    case ${inventory_type} in
+         usr|USR)
+            file_name=${FILE#*ROOT}
+            ;;
+        root|ROOT)
+            file_name=${FILE#*PART}
+            ;;
+    esac
+
+    printf "%s:\n" ${file_name}
+    printf "\ttype = FILE\n"
+    printf "\tclass = %s,inventory,apply\n" ${FILESET}
+    printf "\towner = root\n"
+    printf "\tgroup = system\n"
+    printf "\tmode = %s\n" ${MODE}
+    printf "\tsize = %d\n" $(ls -l ${FILE} | awk '{ print $5 }')
+    SUM_R=$(sum -r ${FILE})
+    case ${inventory_type} in
+         usr|USR)
+            SUM_R=${SUM_R%%BUILD_*}
+            ;;
+        root|ROOT)
+            SUM_R=${SUM_R%%ROOT_*}
+            ;;
+    esac
+    printf "\tchecksum = \"%s\"\n" "${SUM_R}"
+    printf "\n"
+done
+
+for LINK in $(find ${build_src} -type l | grep -v "liblpp.a$" | grep -v "gitignore")
+do
+    if [[ ${LINK} == */inst_root/* ]]
+    then
+        continue
+    fi
+
+    # This is a full path (as according to ibm documentation.
+    # mkinstallp uses relative paths
+    target=$(perl -e 'use Cwd abs_path; print abs_path($ARGV[0]), "\n"' ${file_name})
+
+    case ${inventory_type} in
+         usr|USR)
+            file_name=${LINK#*ROOT}
+            target=${target#*ROOT}
+            ;;
+        root|ROOT)
+            file_name=${LINK#*PART}
+            target=${target#*PART}
+            ;;
+    esac
+
+    
+    printf "%s:\n" ${file_name}
+    printf "\ttype = SYMLINK\n"
+    printf "\ttarget = %s\n" ${target}
+    printf "\tclass = %s,inventory,apply\n" ${FILESET}
+    printf "\towner = root\n"
+    printf "\tgroup = system\n"
+    printf "\tmode = 777\n"
+    printf "\n"
+done
+
+exit 0

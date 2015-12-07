@@ -1,0 +1,31 @@
+.\" Process this file with
+.\" groff -man -Tascii cpub.5
+.\"
+.\"=============================================================================
+.SH AIX PROVIDERS
+.IP "perfstat.cputotal"
+The 
+.B perfstat.cputotal
+provider comes straight from the
+.I libperfstat
+library.
+
+.IP "vminfo"
+This pulls stats from the
+.I vmgetinfo()
+API. See
+.B <sys/vminfo.h>
+for details on the data items. The
+.B VMINFO64
+variant of the call/struct is used.
+
+.IP "process"
+This is a "dynamic" provider that requires a provider argument in the second
+quad part. The argument is the PID to monitor. This provider relies on the
+.I getprocs64()
+API to retrieve data. See
+.B <procinfo.h>
+for details on the supported data items. Note that the 64bit variant of the
+API and the returned struct is the
+.B procentry64
+variant.

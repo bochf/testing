@@ -1,0 +1,324 @@
+#!/bin/sh
+
+# buildit - A script (framework) to build packages as a user
+#
+#
+# NOTE: THIS IS NOT TO BE USED WITH PREVIOUS SETUPS IT DELETES THE
+#       BUILD_ROOT DIRECTORY AND EXPECTS USR_PART AND ROOT_PARTS!
+#
+#
+# Version history:
+#  0.4.0   12/29/11 - Changed ordering of buildinfo creation. It was created
+#                     *after* the ROOT_PART was copied.
+#  0.5.0     1/3/12 - Added makefile integration for binaries
+#  0.6.0    4/20/12 - Moved bin (helper scripts) to a common dir
+#  0.6.1            - Eugene's changes
+#  0.7.0   10/10/12 - Option to skip over Makefiles
+#  0.8.0     3/9/13 - Optionally run pre-build script if it exists
+#  0.9.0     5/2/13 - Added platform check to buildit
+#  0.10.0   6/30/14 - Modified for cpub / ephemeral
+#
+
+SCRIPT_NAME=buildit
+BUILDIT_VERSION="0.10.0"
+
+# Untaint
+export PATH="/usr/bin:/usr/sbin:$PATH"
+unset CDPATH
+
+
+# ===========================================================================
+echo "buildit (AIX/real) version ${BUILDIT_VERSION} starting."
+
+# ===========================================================================
+printf "Determining platform..."
+if ! thisos=$(uname -s 2>/dev/null)
+then
+    echo "Failed."
+    echo "ERROR: Unable to determine the platform type." >&2
+    exit 1
+fi
+
+if [[ ${thisos} == "AIX" ]]
+then
+    echo "Good."
+else
+    echo "Wrong!"
+    echo "ERROR: This build process is for AIX only." >&2
+    exit 1
+fi
+
+# ===========================================================================
+echo "Checking current directory.\c"
+baddir=0
+if [[ ! -d USR_PART ]]  ; then baddir=1 ; fi
+echo ".\c"
+if [[ ! -d ROOT_PART ]] ; then baddir=1 ; fi
+echo ".\c"
+if [[ ! -d bin ]]       ; then baddir=1 ; fi
+echo ".\c"
+if (( baddir ))
+then
+    echo "Failed."
+    echo "ERROR: Unable to determine where we are."
+fi
+pkg_base_dir="$(pwd)"
+echo "Good."
+
+# ===========================================================================
+echo "Testing and setting the bin dir\c"
+buildit_bin_dir=
+typeset -i missing_binary=0
+echo ".\c"
+
+for binary in mk_buildinfo mk_filelist mk_inventory mk_liblppa mk_lpp_name
+do
+    echo ".\c"
+    [[ -x "bin/${binary}" ]] || missing_binary=1
+done
+
+if (( missing_binary ))
+then 
+    echo "ERROR: Unable to find at least one helper tool." >&2
+    exit 1
+fi
+
+echo ".\c"
+
+export buildit_bin_dir=${pkg_base_dir}/bin
+echo "Done."
+
+# ===========================================================================
+echo "Sourcing main config file.\c"
+if [[ -f buildit.conf ]]
+then
+    echo ".\c"
+    . ./buildit.conf
+    echo ".Done."
+
+    typeset -i badconf=0
+
+    # Required (to be in the environment) for some helper tools
+	for x in BUILD_ROOT ROOT_PART USR_PART SOURCE_DIR PACKAGE FILESET FILESET_DESC LIBLPP_DIR LIBLPP_ROOT_DIR LIBLPPA_SRC BUILD_INFO_FILE
+	do
+       state=GOOD
+
+       if eval "[[ -z \${$x} ]]"
+       then
+           state=FAIL
+           badconf=1
+       else
+           export $x
+       fi
+
+       printf "  %-15s  %s\n" ${x} ${state}
+   done
+
+   if (( badconf ))
+   then
+       echo "ERROR: Config file is missing one or more required options." >&2
+       exit 1
+   fi
+
+else
+    echo "Failed."
+    echo "ERROR: Unable to find config file." >&2
+    exit 1
+fi
+
+# ===========================================================================
+echo "Determining version...\c"
+if [[ ! -e VERSION_STRING ]]
+then
+    echo "Failed."
+    echo "ERROR: Failed to find the VERSION_STRING file (check the thin-wrapper)." >&2
+    exit 1
+fi
+VERSION_STRING=$(< VERSION_STRING)
+VERSION_STRING="${VERSION_STRING}.0"
+echo "${VERSION_STRING}."
+
+# ===========================================================================
+echo "Cleaning up before build..\c"
+if ! rm -rf BUILD_ROOT > /dev/null 2>&1
+then
+    echo "Failed."
+    echo "ERROR: Unable to remove the BUILD_ROOT directory." >&2
+    exit 1
+fi
+echo ".\c"
+if ! mkdir BUILD_ROOT > /dev/null 2>&1
+then
+    echo "Failed."
+    echo "ERROR: Unable to re-create the BUILD_ROOT directory." >&2
+    exit 1
+fi
+echo ".\c"
+if ! rm -f ${BUILD_INFO_FILE} > /dev/null 2>&1
+then
+    echo "Failed."
+    echo "ERROR: Unable to remove BUILD_INFO_FILE.." >&2
+    exit 1
+fi
+echo "Done."
+
+# ===========================================================================
+echo "Copying USR data into build directory...\c"
+# Best to use cp or cpio here?  cpio hard link?
+if ! cp -r ${USR_PART}/* ${BUILD_ROOT} > /dev/null 2>&1
+then
+    echo "Failed."
+    echo "ERROR: Copy of USR_PART to BUILD_ROOT failed." >&2
+    exit 1
+fi
+echo "Done."
+
+# ===========================================================================
+# Create the buildinfo file
+echo "Creating/checking the buildinfo file directory.\c"
+
+if [[ ! -d ROOT_PART/etc ]]
+then
+    mkdir -p ROOT_PART/etc/
+    echo ".\c"
+fi
+
+if [[ ! -d ROOT_PART/etc ]]
+then
+    echo "Failed."
+    echo "ERROR: Missing ROOT_PART directory structure." >&2
+    exit 1
+fi
+echo "Done."
+
+if ! bin/mk_buildinfo "${VERSION_STRING}" "${BUILD_INFO_FILE}"
+then
+    echo "ERROR: Failed to create buildinfo file." >&2
+    exit 1
+fi
+
+# ===========================================================================
+if [[ -f "liblppa.root" ]]
+then
+    echo "This package has a root part."
+    echo "Copying root part into place..\c"
+    if ! mkdir -p ${BUILD_ROOT}/usr/lpp/${PACKAGE}/inst_root
+    then
+        echo "Failed."
+        echo "ERROR: Failed to create lpp directory structure." >&2
+        exit 1
+    fi
+    echo ".\c"
+
+    if ! cp -r ${ROOT_PART}/* ${BUILD_ROOT}/usr/lpp/${PACKAGE}/inst_root > /dev/null 2>&1
+    then
+        echo "Failed."
+        echo "ERROR: Copy of ROOT_PART to BUILD_ROOT/usr/lpp/.../inst_root failed." >&2
+    fi
+
+    echo "Done."
+fi
+
+# ===========================================================================
+# This is a VERY complex section. mk_liblppa calls a number of helpers
+# and does a large amount of work to build these archives.
+echo "Checking liblppa.usr...\c"
+if [[ ! -f "liblppa.usr" ]]
+then
+    echo "Failed."
+    echo "ERROR: No liblpp.a config file for USR part." >&2
+fi
+echo "Done."
+
+if ! ${buildit_bin_dir}/mk_liblppa liblppa.usr
+then
+    exit 1
+fi
+
+echo "Checking liblppa.root...\c"
+if [[ ! -f "liblppa.root" ]]
+then
+    echo "Failed."
+    echo "ERROR: No liblpp.a config file for ROOT part." >&2
+fi
+echo "Done."
+
+if ! ${buildit_bin_dir}/mk_liblppa liblppa.root
+then
+    exit 1
+fi
+
+# ===========================================================================
+# Create the package.listing file (now that all package files are in place).
+# Note: The lpp_name (used for the .toc) is not in the directory yet. This is
+#       OK because but this script will insert it at the top (where it belongs).
+# Note: The helper script is verbose. No need to say anything here.
+if ! ${buildit_bin_dir}/mk_filelist
+then
+    exit 1
+fi
+
+# ===========================================================================
+if ! ${buildit_bin_dir}/mk_lpp_name ${VERSION_STRING}
+then
+    echo "ERROR: Unable to make lpp_name file." >&2
+    exit 1
+fi
+
+# ===========================================================================
+echo "Building package...\c"
+if ! cd BUILD_ROOT > /dev/null 2>&1
+then
+    echo "Failed."
+    echo "ERROR: Failed to move to BUILD_ROOT." >&2
+    exit 1
+fi
+
+# package.listing was created by a helper-script several steps above
+if [[ ! -f ${SOURCE_DIR}/package.listing ]]
+then
+    echo "Failed."
+    echo "ERROR: Missing package.listing file."
+    exit 1
+fi
+
+if backup -i -f ${SOURCE_DIR}/${PACKAGE}.${VERSION_STRING}.NEW -q < ${SOURCE_DIR}/package.listing
+then
+    echo "Done."
+
+    echo "Starting (previous) package archive process...\c"
+    if ! cd ${SOURCE_DIR} > /dev/null 2>&1
+    then
+        echo "Failed."
+        echo "ERROR: Failed to change to SOURCE_DIR." >&2
+        exit 1
+    fi
+    echo "Done."
+
+    echo "Looking for previous packages...\c"
+    if [[ -e *.bff ]]
+    then
+        echo "Found."
+        echo "Archiving older versions...\c"
+        mkdir bff_archive
+        for FILE in *.bff
+        do
+            mv ${FILE} bff_archive
+        done
+        echo "Done."
+    else
+        echo "None."
+    fi
+
+    echo "Moving package into place...\c"
+    mv ${PACKAGE}.${VERSION_STRING}.NEW ${PACKAGE}.${VERSION_STRING}.bff
+    echo "Done."
+    echo "PACKAGE ==>" "${PACKAGE}.${VERSION_STRING}.bff"
+    rm -f package.listing
+    exit 0
+else
+    rm -f package.listing
+    echo "Failed."
+    echo "ERROR: Unable to build the package." >&2
+fi
+

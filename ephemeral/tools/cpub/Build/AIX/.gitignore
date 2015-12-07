@@ -1,0 +1,8 @@
+# Temp directory for the package build
+BUILD_ROOT
+# This file is derived - do not version/save
+VERSION_STRING
+# This should not be here, but just in case
+package.listing
+# Packages that are left in the root
+*.bff

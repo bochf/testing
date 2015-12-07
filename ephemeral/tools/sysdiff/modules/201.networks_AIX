@@ -1,0 +1,358 @@
+#!/bin/ksh93
+
+function get_hba_from_ent
+{
+    typeset entdev=$1
+    typeset this_hba=
+
+    if [[ -z ${entdev} ]] ; then return 1 ; fi
+
+    for this_hba in $(lsdev -Cc adapter -F name | grep "^hba[0-9]")
+    do
+        if [[ $(lsdev -Cp ${this_hba} -F name 2>/dev/null) == ${entdev} ]]
+        then
+            echo ${this_hba}
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+function dump_card_attr
+{
+    typeset ifnum=$1
+    typeset legnum=$2
+    typeset legdev=$3
+    typeset outf=$4
+    
+    if [[ -z ${ifnum} ]] ; then return 1 ; fi
+    if [[ -z ${legnum} ]] ; then return 1 ; fi
+    if [[ -z ${legdev} ]] ; then return 1 ; fi
+    if [[ -z ${outf} ]] ; then return 1 ; fi
+
+    typeset ckofld=
+    typeset dlopen=
+    typeset flwctl=
+    typeset intrcl=
+    typeset jumbo=
+    typeset lg_rx=
+    typeset lg_tx=
+    typeset rdma=
+    typeset rxchn=
+    typeset rQelem=
+    typeset tQelem=
+    typeset tx_tmo=
+    typeset altadr=
+    typeset cptmod=
+    typeset cpByts=
+    typeset dlyopn=
+    typeset fback=
+    typeset fbackd=
+    typeset flover=
+    typeset intpri=
+    typeset intrat=
+    typeset lnkupt=
+    typeset mspeed=
+    typeset rx_hog=
+    typeset rzbufs=
+    typeset rxdesQ=
+    typeset slihog=
+    typeset txQsz=
+    typeset txdQsz=
+
+    typeset -i chelsio_hint=0
+
+    lsattr -El ${legdev} -F "attribute value" 2>/dev/null | while read attribute value
+    do
+        #printf "DEBUG [%s] [%s]\n" "${attribute}" "${value}"
+        if [[ ${attribute} == chksum_offload ]]  ; then ckofld=${value} ; continue; fi
+        if [[ ${attribute} == delay_open ]]      ; then dlopen=${value} ; continue; fi
+        if [[ ${attribute} == flow_ctrl ]]       ; then flwctl=${value} ; continue; fi
+        if [[ ${attribute} == intr_coalesce ]]   ; then intrcl=${value} ; continue; fi
+        if [[ ${attribute} == jumbo_frames ]]    ; then jumbo=${value}  ; continue; fi
+        if [[ ${attribute} == large_receive ]]   ; then lg_rx=${value}  ; continue; fi
+        if [[ ${attribute} == large_send ]]      ; then lg_tx=${value}  ; continue; fi
+        if [[ ${attribute} == rdma_enabled ]]    ; then rdma=${value}   ; chelsio_hint=1; continue; fi
+        if [[ ${attribute} == receive_chain ]]   ; then rxchn=${value}  ; continue; fi
+        if [[ ${attribute} == receive_q_elem ]]  ; then rQelem=${value} ; continue; fi
+        if [[ ${attribute} == transmit_q_elem ]] ; then tQelem=${value} ; continue; fi
+        if [[ ${attribute} == tx_timeout ]]      ; then tx_tmo=${value} ; continue; fi
+        if [[ ${attribute} == use_alt_addr ]]    ; then altadr=${value} ; continue; fi
+        if [[ ${attribute} == compat_mode ]]     ; then cptmod=${value} ; continue; fi
+        if [[ ${attribute} == copy_bytes ]]      ; then cpByts=${value} ; continue; fi
+        if [[ ${attribute} == delay_open ]]      ; then dlyopn=${value} ; continue; fi
+        if [[ ${attribute} == failback ]]        ; then fback=${value}  ; continue; fi
+        if [[ ${attribute} == failback_delay ]]  ; then fbackd=${value} ; continue; fi
+        if [[ ${attribute} == failover ]]        ; then flover=${value} ; continue; fi
+        if [[ ${attribute} == intr_priority ]]   ; then intpri=${value} ; continue; fi
+        if [[ ${attribute} == intr_rate ]]       ; then intrat=${value} ; continue; fi
+        if [[ ${attribute} == link_up_timer ]]   ; then lnkupt=${value} ; continue; fi
+        if [[ ${attribute} == media_speed ]]     ; then mspeed=${value} ; continue; fi
+        if [[ ${attribute} == rx_hog ]]          ; then rx_hog=${value} ; continue; fi
+        if [[ ${attribute} == rxbuf_pool_sz ]]   ; then rzbufs=${value} ; continue; fi
+        if [[ ${attribute} == rxdesc_que_sz ]]   ; then rxdesQ=${value} ; continue; fi
+        if [[ ${attribute} == slih_hog ]]        ; then slihog=${value} ; continue; fi
+        if [[ ${attribute} == tx_que_sz ]]       ; then txQsz=${value}  ; continue; fi
+        if [[ ${attribute} == txdesc_que_sz ]]   ; then txdQsz=${value} ; continue; fi
+    done
+
+   # Common
+    printf "if%02d.%1d ckofld: %s\n" ${ifnum} ${legnum} "${ckofld}" >> ${outf}
+    printf "if%02d.%1d jumbo : %s\n" ${ifnum} ${legnum} "${jumbo}" >> ${outf}
+    printf "if%02d.%1d lg_tx : %s\n" ${ifnum} ${legnum} "${lg_tx}" >> ${outf}
+    printf "if%02d.%1d altadr: %s\n" ${ifnum} ${legnum} "${altadr}" >> ${outf}
+    # Chelsio (ent)
+    printf "if%02d.%1d dlopen: %s\n" ${ifnum} ${legnum} "${dlopen}" >> ${outf}
+    printf "if%02d.%1d flwctl: %s\n" ${ifnum} ${legnum} "${flwctl}" >> ${outf}
+    printf "if%02d.%1d intrcl: %s\n" ${ifnum} ${legnum} "${intrcl}" >> ${outf}
+    printf "if%02d.%1d lg_rx : %s\n" ${ifnum} ${legnum} "${g_rx}" >> ${outf}
+    printf "if%02d.%1d rdma  : %s\n" ${ifnum} ${legnum} "${rdma}" >> ${outf}
+    printf "if%02d.%1d rxchn : %s\n" ${ifnum} ${legnum} "${rxchn}" >> ${outf}
+    printf "if%02d.%1d rQelem: %s\n" ${ifnum} ${legnum} "${rQelem}" >> ${outf}
+    printf "if%02d.%1d tQelem: %s\n" ${ifnum} ${legnum} "${tQelem}" >> ${outf}
+    printf "if%02d.%1d tx_tmo: %s\n" ${ifnum} ${legnum} "${tx_tmo}" >> ${outf}
+    # Intel
+    printf "if%02d.%1d cptmod: %s\n" ${ifnum} ${legnum} "${cptmod}" >> ${outf}
+    printf "if%02d.%1d cpByts: %s\n" ${ifnum} ${legnum} "${cpByts}" >> ${outf}
+    printf "if%02d.%1d dlyopn: %s\n" ${ifnum} ${legnum} "${dlyopn}" >> ${outf}
+    printf "if%02d.%1d fback : %s\n" ${ifnum} ${legnum} "${fback}" >> ${outf}
+    printf "if%02d.%1d fbackd: %s\n" ${ifnum} ${legnum} "${fbackd}" >> ${outf}
+    printf "if%02d.%1d flover: %s\n" ${ifnum} ${legnum} "${flover}" >> ${outf}
+    printf "if%02d.%1d intpri: %s\n" ${ifnum} ${legnum} "${intpri}" >> ${outf}
+    printf "if%02d.%1d intrat: %s\n" ${ifnum} ${legnum} "${intrat}" >> ${outf}
+    printf "if%02d.%1d lnkupt: %s\n" ${ifnum} ${legnum} "${lnkupt}" >> ${outf}
+    printf "if%02d.%1d mspeed: %s\n" ${ifnum} ${legnum} "${mspeed}" >> ${outf}
+    printf "if%02d.%1d rx_hog: %s\n" ${ifnum} ${legnum} "${rx_hog}" >> ${outf}
+    printf "if%02d.%1d rzbufs: %s\n" ${ifnum} ${legnum} "${rzbufs}" >> ${outf}
+    printf "if%02d.%1d rxdesQ: %s\n" ${ifnum} ${legnum} "${rxdesQ}" >> ${outf}
+    printf "if%02d.%1d slihog: %s\n" ${ifnum} ${legnum} "${slihog}" >> ${outf}
+    printf "if%02d.%1d txQsz : %s\n" ${ifnum} ${legnum} "${txQsz}" >> ${outf}
+    printf "if%02d.%1d txdQsz: %s\n" ${ifnum} ${legnum} "${txdQsz}" >> ${outf}
+
+
+    typeset cdliQs="N/A"
+    typeset laserd="N/A"
+    typeset timerl="N/A"
+    typeset timers="N/A"
+
+    # For those that can't take the hint!
+    #if [[ $(lscfg -l ${legdev} 2>/dev/null) == *"(ct3)"* ]]
+    if (( chelsio_hint ))
+    then
+        if the_hba=$(get_hba_from_ent ${legdev})
+        then
+            lsattr -El ${the_hba} -F "attribute value" 2>/dev/null | while read attribute value
+            do
+                if [[ ${attribute} == cdli_queues ]]   ; then cdliQs=${value} ; continue; fi
+                if [[ ${attribute} == laser_disable ]] ; then laserd=${value} ; continue; fi
+                if [[ ${attribute} == timer_link ]]    ; then timerl=${value} ; continue; fi
+                if [[ ${attribute} == timer_stats ]]   ; then timers=${value} ; continue; fi
+            done
+        else
+            cdliQs="UNK"
+            laserd="UNK"
+            timerl="UNK"
+            timers="UNK"
+        fi
+           
+    fi
+
+    printf "if%02d.%1d cdliQs: %s\n" ${ifnum} ${legnum} "${cdliQs}" >> ${outf}
+    printf "if%02d.%1d laserd: %s\n" ${ifnum} ${legnum} "${laserd}" >> ${outf}
+    printf "if%02d.%1d timerl: %s\n" ${ifnum} ${legnum} "${timerl}" >> ${outf}
+    printf "if%02d.%1d timers: %s\n" ${ifnum} ${legnum} "${timers}" >> ${outf}
+
+    ### Now, for the VPD
+    typeset eclevel=
+    typeset frunum=
+    typeset partno=
+    typeset manfid=
+    typeset featco=
+    typeset romlvl=
+
+    typeset vpddev=${legdev}
+    if (( chelsio_hint )) ; then vpddev=${the_hba} ; fi
+
+    if [[ -n ${vpddev} ]]
+    then
+        lscfg -vl ${vpddev} 2>/dev/null | while read line
+        do
+            if [[ ${line} == *"EC Level"* ]]
+            then
+                eclevel=${line##*.}
+            fi
+            
+            if [[ ${line} == *"FRU Number"* ]]
+            then
+                frunum=${line##*.}
+            fi
+            
+            if [[ ${line} == *"Part Number"* ]]
+            then
+                partno=${line##*.}
+            fi
+            
+            if [[ ${line} == *"Manufacture ID"* ]]
+            then
+                manfid=${line##*.}
+            fi
+
+            if [[ ${line} == *"Feature Code"* ]]
+            then
+                featco=${line##*.}
+            fi
+
+            if [[ ${line} == *"ROM Level"* ]]
+            then
+                romlvl=${line##*.}
+            fi
+
+        done
+    fi
+
+    printf "if%02d.%1d ec_lvl: %s\n" ${ifnum} ${legnum} "${eclevel}" >> ${outf}
+    printf "if%02d.%1d FRU#  : %s\n" ${ifnum} ${legnum} "${frunum}" >> ${outf}
+    printf "if%02d.%1d partno: %s\n" ${ifnum} ${legnum} "${partno}" >> ${outf}
+    printf "if%02d.%1d manfid: %s\n" ${ifnum} ${legnum} "${manfid}" >> ${outf}
+    printf "if%02d.%1d featco: %s\n" ${ifnum} ${legnum} "${featco}" >> ${outf}
+    printf "if%02d.%1d romlvl: %s\n" ${ifnum} ${legnum} "${romlvl}" >> ${outf}
+}
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+### This reads in whatever paramaters may have been passed on command line
+shift
+while [[ -n ${1} ]]
+do
+    eval ${1}
+    shift
+done
+
+dot
+uname_n=$(uname -n)
+
+case $(uname -s)
+in
+    SunOS) return 2 ;;
+    Linux) return 2 ;;
+esac
+
+typeset -A if_to_ip
+typeset -A hn_to_if
+
+for ifname in $(ifconfig -l)
+do
+    ipaddr=
+    hname=
+
+    ipaddr=$(ifconfig ${ifname})
+    ipaddr=${ipaddr#*inet }
+    ipaddr=${ipaddr% netm*}
+
+    if [[ -n ${ipaddr} ]]
+    then
+        if hname=$(host ${ipaddr} 2>/dev/null)
+        then
+            hname=${hname% is*}
+        fi
+    fi
+
+    if [[ -n ${ipaddr} && -n ${hname} ]]
+    then
+        if_to_ip[$ifname]=${ipaddr}
+        hn_to_if[$hname]=${ifname}
+
+        #printf "DEBUG  %5s  %16s  %12s\n" ${ifname} ${ipaddr} ${hname}
+    fi
+done
+
+dot
+
+set -sA sortedHosts ${!hn_to_if[*]}
+
+typeset -i ifn=0
+
+for hname in ${sortedHosts[*]}
+do
+    if [[ ${hname} == ${uname_n} ]]
+    then
+        printf "if%02d type    : Primary\n" ${ifn} >> ${outfile}
+    else
+        printf "if%02d type    : %s\n" ${ifn} ${hname#$uname_n} >> ${outfile}
+    fi
+
+    ifname=${hn_to_if[$hname]}
+
+    arp=
+    mtu=
+    mtu_byp=
+    remmtu=
+    rfc1323=
+    mssdflt=
+    nodelay=
+    recvspac=
+    sendspac=
+    dthread=
+
+    lsattr -El ${ifname} -F "attribute value" 2>/dev/null | while read attribute value
+    do
+        if [[ ${attribute} == arp ]]            ; then arp=${value} ; continue; fi
+        if [[ ${attribute} == mtu ]]            ; then mtu=${value} ; continue; fi
+        if [[ ${attribute} == mtu_bypass ]]     ; then mtu_byp=${value} ; continue; fi
+        if [[ ${attribute} == remmtu ]]         ; then remmtu=${value} ; continue; fi
+        if [[ ${attribute} == rfc1323 ]]        ; then rfc1323=${value} ; continue; fi
+        if [[ ${attribute} == tcp_mssdflt ]]    ; then mssdflt=${value} ; continue; fi
+        if [[ ${attribute} == tcp_nodelay ]]    ; then nodelay=${value} ; continue; fi
+        if [[ ${attribute} == tcp_recvspace ]]  ; then recvspac=${value} ; continue; fi
+        if [[ ${attribute} == tcp_sendspace ]]  ; then sendspac=${value} ; continue; fi
+        if [[ ${attribute} == thread ]]  ; then dthread=${value} ; continue; fi
+    done
+
+    printf "if%02d arp     : %s\n" ${ifn} "${arp}" >> ${outfile}
+    printf "if%02d mtu     : %s\n" ${ifn} "${mtu}" >> ${outfile}
+    printf "if%02d mtu_byp : %s\n" ${ifn} "${mtu_byp}" >> ${outfile}
+    printf "if%02d remmtu  : %s\n" ${ifn} "${remmtu}" >> ${outfile}
+    printf "if%02d rfc1323 : %s\n" ${ifn} "${rfc1323}" >> ${outfile}
+    printf "if%02d mssdflt : %s\n" ${ifn} "${mssdflt}" >> ${outfile}
+    printf "if%02d nodelay : %s\n" ${ifn} "${nodelay}" >> ${outfile}
+    printf "if%02d recvspac: %s\n" ${ifn} "${recvspac}" >> ${outfile}
+    printf "if%02d sendspac: %s\n" ${ifn} "${sendspac}" >> ${outfile}
+    printf "if%02d DOG     : %s\n" ${ifn} "${dthread}" >> ${outfile}
+
+    if [[ ${ifname} != lo0 ]]
+    then
+        entname=ent${ifname#en}
+        if has_legs=$(lsattr -El ${entname} -a adapter_names -F value 2>/dev/null)
+        then
+            printf "if%02d LACP    : Yes\n" ${ifn} >> ${outfile}
+
+            typeset -i legno=0
+            for legdev in $(echo ${has_legs} | tr "," " ")
+            do
+                dump_card_attr ${ifn} ${legno} ${legdev} ${outfile}
+
+               (( legno++ ))
+            done
+        else
+            printf "if%02d LACP    : No\n" ${ifn} >> ${outfile}
+            dump_card_attr ${ifn} 0 ${entname} ${outfile}
+        fi
+    fi
+    dot
+    (( ifn++ ))
+done
+
+
+
+
+

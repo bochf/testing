@@ -1,0 +1,101 @@
+#!/bin/ksh93
+
+VERSION_STRING="0.0.8"
+
+PRINTF=printf
+export PRINTF
+
+MODULES_DIR=modules
+#MODULES_DIR=mdebug
+export MODULES_DIR
+
+
+
+function errexit
+{
+    if [[ -z ${1} ]]
+    then
+        echo "ERROR: Unknown failure. Exiting." >&2
+    else
+        echo "ERROR: ${1}" >&2
+    fi
+    exit 1
+}
+
+### Options that the user can supply
+opt_Headers=0
+opt_quiet=0
+opt_dump_results=0
+
+### Parse the user options
+while getopts ":dHq" OPTS
+do
+   case ${OPTS} in
+       d) opt_dump_results=1          ;;
+       H) opt_Headers=1          ;;
+       h) show_usage ; exit 0 ;;
+       r) ECHO=echo ; opt_reset=1 ;;
+       q) opt_quiet=1 ;;
+       ?) echo "ERROR: ${OPTARG} was not understood." >&2
+           exit 1
+           ;;
+       *) echo "ERROR: Error parsing getopts arguments. Contact script author." >&2
+           exit 1
+           ;;
+   esac
+done
+
+### True-up and check the user options
+if (( opt_quiet ))
+then
+    opt_Headers=0
+    PRINTF=true
+fi
+
+${PRINTF} "Creating the destination file..."
+destfile=$(uname -n)_$(date +%y%m%d_%H%M%S).sysdiff
+destfile=$(uname -n).sysdiff
+echo "SysDiff Ver  : ${VERSION_STRING}" > ${destfile}
+echo "Run as user  : $(whoami)" >> ${destfile}
+${PRINTF} "Done.\n"
+
+${PRINTF} "Looking for the modules directory..."
+if [[ ! -d ${MODULES_DIR} ]]
+then
+    ${PRINTF} "Failed.\n"
+    errexit "Unable to locate the modules directory."
+fi
+${PRINTF} "Found.\n"
+
+${PRINTF} "Running modules\n"
+for module in $(ls ${MODULES_DIR})
+do
+    if [[ ${module} != [0-9][0-9][0-9].* ]] ; then continue ; fi
+
+    modprint=${module#*.}
+    ${PRINTF} "  %s" ${modprint}
+
+    if (( opt_Headers ))
+    then
+        hline=$(printf "---%s---------------------\n" ${modprint})
+        echo ${hline:0:24} >> ${destfile}
+    fi
+
+    if ${MODULES_DIR}/${module} ${destfile}
+    then
+        ${PRINTF} "Done.\n"
+    else
+        case $?
+        in
+            1) ${PRINTF} "Failed.\n" ;;
+            2) ${PRINTF} "Skipped.\n" ;;
+        esac
+    fi
+done
+
+
+if (( opt_dump_results ))
+then
+    echo "------------------------------------------------------------------------------"
+    cat ${destfile}
+fi

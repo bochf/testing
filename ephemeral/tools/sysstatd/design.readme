@@ -1,0 +1,41 @@
+The URL
+
+server.name/section?fields=a,b,c
+
+This will retrieve items a, b, & c from the "section" section of "server.name".
+
+server.name will be the hostname/IP address.
+
+section will be an optional non-exclusive list of:
+
+  osspecific - Things *specifically* related to the OS that might be used
+               by the SA teams only
+  json|xml   - This is the format that you will want the data in
+
+fields= will be used to limit the "query" to specific results.
+
+
+Some design considerations:
+ - Limit sections to just a few.
+ - All OSes have consistent items in the non-osspecific section
+ - Daemon runs continuiously, does not fork for data. (May fork for data on
+   startup. May fork for socket connection.*)
+    [* This is strictly a fork() and not a fork()/exec(). This is also
+       considered fairly rare (on the range of 1/hr or something like that). ]
+ - Daemon may be collecting info when not reporting.
+ - Daemon should collect last connection attempt (timestamp).
+
+
+Base data spec:
+ - version
+
+
+
+
+
+
+
+How the trees work:
+ - Each source has an init and refresh function. The source needs to know
+   what the init and refresh that is required for each tree. The init and
+   refresh is called on the tree. 

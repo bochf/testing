@@ -1,0 +1,16 @@
+mmap_file
+mmap_shared
+shmat_file
+mk_data_file
+shmat_bigdata
+shmat_file_append
+mk_bigdata_file
+mmap_file_append
+malloc_meg
+malloc_segments
+shmat_limit
+malloc_meg_MD
+
+core
+*.o
+*~

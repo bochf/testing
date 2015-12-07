@@ -1,0 +1,55 @@
+#!/bin/ksh
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+### This reads in whatever paramaters may have been passed on command line
+shift
+while [[ -n ${1} ]]
+do
+    eval ${1}
+    shift
+done
+
+dot
+
+### Disk performance statistics collection
+case $(uname -s)
+in
+    AIX)
+        diskstats=$(lsattr -El sys0 -a iostat -F value) ;;
+    *)
+        diskstats="N/A" ;;
+esac
+
+echo "DiskPerfOn   : "${diskstats} >> ${outfile}
+dot
+
+### The runlevel
+runlvl=$(who -r)
+runlvl=${runlvl#*run-level}
+runlvl=${runlvl## }
+runlvl=${runlvl%% *}
+
+echo "Run Level    : "${runlvl} >> ${outfile}
+dot
+
+### Maximum user processes
+case $(uname -s)
+in
+    AIX)
+        maxuproc=$(lsattr -El sys0 -a maxuproc -F value) ;;
+    *)
+        maxuproc="N/A" ;;
+esac
+echo "Max U procs  : "${maxuproc} >> ${outfile}
+dot
+

@@ -1,0 +1,131 @@
+#!/bin/ksh93
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+### This reads in whatever paramaters may have been passed on command line
+shift
+while [[ -n ${1} ]]
+do
+    eval ${1}
+    shift
+done
+
+### Bring in required functions
+. ${MODULES_DIR}/functions/rounding.ksh
+
+dot 
+ccnt=UNK
+scnt=UNK
+tcnt=UNK
+ctype=UNK
+cpufreq=UNK
+tperc=UNK
+
+# Commentary: Putting this all into a case statement is kind of awkward. The
+#   alternative is to call and save uname -s results for an if comparison
+uname_s=$(uname -s)
+
+# ------------------------------
+if [[ ${uname_s} == AIX ]]
+then
+    ccnt=$(lsattr -El sys0 -a ent_capacity -F value)
+    ccnt=${ccnt%.*}
+
+    # This is a "forced" test for IBM. It differentiates about what
+    # a socket means - For example: Re-binned parts in MHDs will
+    # look different than full-core count CPUs in MHBs
+    typeset -i scnt=$(lssrad -av | grep -v "^[0-9]" | grep -v REF | wc -l)
+
+    ctype=$(lsattr -El proc0 -a type -F value)
+    # 
+    tperc=$(lsattr -El proc0 -a smt_threads -F value)
+
+    cpufreq=$(lsattr -El proc0 -a frequency -F value)
+
+    typeset -i tcnt=$(lsdev -Cc processor | wc -l)
+    tcnt=$(( tcnt * tperc ))
+fi
+
+
+# ------------------------------
+if [[ ${uname_s} == Linux ]]
+then
+    ccnt=$(grep "core id" /proc/cpuinfo | sort -u | wc -l)
+
+    scnt=$(grep "physical id" /proc/cpuinfo | sort -u | wc -l)
+
+    ctype=$(grep "model name" /proc/cpuinfo | head -1 | tr -s ' ' ' ')
+    ctype=${ctype#*: }
+    
+    cpufreq=$(grep "MHz" /proc/cpuinfo | head -1)
+    cpufreq=${cpufreq#*: }
+
+    tcnt=$(grep "physical id" /proc/cpuinfo | grep 0 | wc -l)
+
+    if [[ ${ccnt} == +([0-9]) ]]
+    then
+        tperc=$(( tcnt / ccnt ))
+    fi
+fi
+
+# ------------------------------
+if [[ ${uname_s} == SunOS ]]
+then
+
+    kstat_cpu_info=$(kstat -m cpu_info | egrep "chip_id|core_id|module: cpu_info")
+    scnt=$(print -- "${kstat_cpu_info}" | /usr/xpg4/bin/grep chip_id | /usr/bin/nawk '{print $2}' |
+            /usr/xpg4/bin/sort -u | wc -l | /usr/xpg4/bin/tr -d ' ')
+    ccnt=$(print -- "${kstat_cpu_info}" | /usr/xpg4/bin/grep core_id | /usr/bin/nawk '{print $2}' |
+            /usr/xpg4/bin/sort -u | wc -l | /usr/xpg4/bin/tr -d ' ')
+    tcnt=$(print -- "${kstat_cpu_info}" | /usr/xpg4/bin/grep 'module: cpu_info' |
+            /usr/bin/nawk '{print $4}' | /usr/xpg4/bin/sort -u | wc -l | /usr/xpg4/bin/tr -d ' ')
+
+    kstat_cpu_info=$(kstat -m cpu_info | grep implementation | sort -u)
+    ctype=$(print -- "${kstat_cpu_info}" | head -1)
+
+    cpufreq=${ctype#*clock }
+    cpufreq=${cpufreq%\)*}
+
+    typeset -i ctypecnt=$(print -- "${kstat_cpu_info}" | wc -l)
+
+    ctype=${ctype#*ation}
+    ctype=${ctype##+( )}
+    ctype=${ctype%% *}
+    ctype=${ctype%%+( )}
+    if (( ctypecnt > 1 ))
+    then
+        ctype=${ctype}" (${ctypecnt} variants)"
+    fi
+
+    if [[ ${ccnt} == +([0-9]) ]]
+    then
+        tperc=$(( tcnt / ccnt ))
+    fi
+fi
+
+
+#   OS     ccnt   scnt   tcnt   ctype  cfreq  tperc
+#   AIX    x      x      x      x      x      x
+#   SunOS  x      x      x      x      x      d
+#   Linux  x      x      x      x      x      d
+
+dot
+
+printf "Core Cnt     : %s\n" "${ccnt}" >> ${outfile}
+printf "Socket Cnt   : %s\n" "${scnt}" >> ${outfile}
+printf "Thread Cnt   : %s\n" "${tcnt}" >> ${outfile}
+printf "Core Type    : %s\n" "${ctype}" >> ${outfile}
+printf "Core Freq    : %s\n" "${cpufreq}" >> ${outfile}
+printf "Threads/core : %s\n" "${tperc}" >> ${outfile}
+
+dot
+

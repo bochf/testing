@@ -1,0 +1,3 @@
+Q: Why build when you can buy or find an existing framework?
+A: Because there is an inherent value in learning from building. Once the
+   framework is in place, writing modules is very simple.

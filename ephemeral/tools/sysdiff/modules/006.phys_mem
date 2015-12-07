@@ -1,0 +1,43 @@
+#!/bin/ksh
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+dot 
+
+totalmem=UNK
+
+case $(uname -s)
+in
+    AIX)
+        totalmem=$(lsattr -El sys0 -a realmem -F value)
+        ;;
+    Linux)
+        totalmem=$(free | grep "^Mem:")
+        totalmem=${totalmem#Mem: }      # chop "Mem:"
+        totalmem=${totalmem##+( )}      # chop leading white space
+        totalmem=${totalmem%% *}        # chop everything after first #
+        ;;   
+    SunOS)
+        totalmem=$(prtconf | grep Memory)
+        totalmem=${totalmem##*size: }
+        totalmem=${totalmem%Megabytes*}
+        ;;
+esac
+
+dot
+
+echo "Physcal Mem  : "${totalmem} >> ${outfile}
+
+dot
+
+
+

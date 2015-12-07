@@ -1,0 +1,186 @@
+.\" This is (obviously) a troff formatted file. .\"
+.TH blog 08/06/14
+blog Command
+.PP
+.PP
+\fBPurpose
+\fR
+.PP
+\fBblog\fR - Circular/rotating logger
+.PP
+.PP
+\fBSyntax
+\fR
+\fBblog\fR [options] [filename]
+.PP
+.PP
+\fBOverview
+\fR
+.PP
+\fBblog\fR creates a "never full" \fBtee\fR on a pipe. Data can be punped into the pipe and only the last data (within the \fB-l\fR specified limit) will be saved to the file.
+.PP
+The default mode is circular (CLOG) mode. The data will stream into a single file that will track the head and tail pointer of the data. This type of file can only be read (dumped) with \fBblog -d\fR.
+.PP
+The optional rotating (RLOG) mode creates a sequence of files, and deletes the oldest as new files are created. The \fB-r\fR switch requires a numeric argument of the number of files to keep. The \fB-l\fR and \fB-r\fR arguments become multipliers to how much data to keep. RLOG sequence files can be dumped using the \fBblog -d\fR option. RLOG mode commands use the base filename without the extension to refer to the files.
+.PP
+\fBOptions
+\fR
+.RS +3
+\fB-A, --about
+\fR
+.RE
+.RS +9
+Prints information about blog, and exit
+.RE
+.RS +3
+\fB-a
+\fR
+.RE
+.RS +9
+Append new data to existing files
+.RE
+.RS +3
+\fB-C, --dump-header
+\fR
+.RE
+.RS +9
+Dump (just) the header of a circular file
+.RE
+.RS +3
+\fB-D [string]
+\fR
+.RE
+.RS +9
+Associate a provided description with this log
+.RE
+.RS +3
+\fB-d, --dump
+\fR
+.RE
+.RS +9
+Dump the contents of a (R/C)log file
+.RE
+.RS +3
+\fB-h, --help
+\fR
+.RE
+.RS +9
+Display this help and exit
+.RE
+.RS +3
+\fB-l [size]
+\fR
+.RE
+.RS +9
+Limit the file(s) to the provided size
+.RE
+.RS +3
+\fB-M, --dump-metadata
+\fR
+.RE
+.RS +9
+Dump the contents of an RLOG metadata file
+.RE
+.RS +3
+\fB-m, --mmap, --use-mmap
+\fR
+.RE
+.RS +9
+Uses mmap() for the circular log file
+.RE
+.RS +3
+\fB-r [count]
+\fR
+.RE
+.RS +9
+Generates "count" rolling logs instead of single circular log
+.RE
+.RS +3
+\fB-s, --stdout, --mirror-stdout
+\fR
+.RE
+.RS +9
+Mirror input to stdout (like \fBtee\fR behavior)
+.RE
+.RS +3
+\fB-t
+\fR
+.RE
+.RS +9
+Use timestamp extension on \fB-r\fR files.
+.RE
+.PP
+.PP
+\fBExamples
+\fR
+.RS +3
+.HP 3
+1. To limit the provided file name to the size specified; note that log files
+of less than 100K are not supported. Here we are sending the results of "Verbose LongRunning Command" (vlrc) into a pipe that blog will read and store in a circular file. (An extension is optional in the default CLOG mode. One will NOT be added for you.)
+.sp
+.nf
+vlrc | blog -l 101K \fIfile-name\fR
+.fi
+.sp
+.HP 3
+2. To display the log file header information including the max file size.
+.sp
+.nf
+blog --dump-header \fIfile-name\fR
+.fi
+.sp
+.HP 3
+3. To dump the contents of a previously stored file.
+.sp
+.nf
+blog -d \fIfile-name\fR
+.fi
+.sp
+.HP 3
+4. To send the output of vlrc to a series of 10 100 Meg rotating files. (Do not use the extension in this command, they will be added for you.)
+.sp
+.nf
+vlrc | blog -r 10 -l 100M \fIfile-name\fR
+.fi
+.sp
+.HP 3
+5. To dump the output of the previous stored files. (Do not use the extension in this command.)
+.sp
+.nf
+blog -d \fIfile-name\fR
+.fi
+.sp
+.RE
+.PP
+.PP
+\fBImplementation Trivia
+\fR
+.PP
+The circular CLOG mode creates a header at the top of the file that tracks how many bytes were input to the file, how many bytes are currently held, and locations of the head and tail pointers of the data. It also tracks first and last write timestamps. The header is endian-aware and versions after 0.40.0 are capable of dumping CLOG files created on different endian systems. The magic in a CLOG file is 'CLOG' in the first four bytes. Version information, and the remainder of the header data begins at byte offset 4. The data begins as early as offset 56 or later depending on if a description was supplied when creating the file.
+.PP
+The rotating RLOG files are pure text and are simply rotated with a numeric (iteration or timestamp) extension. The metadata (that is in the CLOG header) is stored in a file with a ".metadata" extension.
+.PP
+There is no "clean" method to copy off a log file while \fBblog\fR is running. If you copy off, or dump a log file while \fBblog\fR continues to run, there is a (slight) chance that you will copy a file in an inconsistent state. (This is more of a possiblity when copying a CLOG file than RLOG as RLOG is simply an append operation.) The current method is to either end the pipe or possibly to temporarily SIGSTOP the blog process for the duration of the dump/copy.
+.PP
+\fBLocation
+\fR
+.PP
+.RS +3
+\fB/usr/local/bin/blog\fR
+.RE
+.PP
+.PP
+\fBSee Also
+\fR
+.PP
+.RS +3
+\fBtee\fR(1), \fBassert\fR(2), \fBclose\fR(2), \fBctime\fR(3), \fBfree\fR(2),
+\fBlseek\fR(2), \fBmalloc\fR(3), \fBmemcpy\fR(3),
+\fBmmap\fR(2), \fBmunmap\fR(2),
+\fBopen\fR(2),
+\fBpthread_create\fR(), \fBpthread_mutex_init\fR(),
+\fBpthread_mutex_lock\fR(), \fBpthread_mutex_unlock\fR(),
+\fBread\fR(2),
+\fBsprintf\fR(3), \fBstat\fR(2), \fBtime\fR(3), \fBunlink\fR(2),
+\fBwrite\fR(2).
+.RE

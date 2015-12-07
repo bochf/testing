@@ -1,0 +1,4 @@
+*.o
+*~
+libosspecific.a
+libbuild.*

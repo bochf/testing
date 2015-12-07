@@ -1,0 +1,13 @@
+#!/bin/sh
+
+make toolsclean
+
+echo "Cleaning up.\c"
+rm -rf BUILD_ROOT/*
+echo ".\c"
+rm -rf tmp.usr
+echo ".\c"
+rm -rf tmp.root
+echo ".\c"
+
+echo ".Done."

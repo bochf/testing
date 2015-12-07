@@ -1,0 +1,36 @@
+#!/bin/ksh
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+### This reads in whatever paramaters may have been passed on command line
+shift
+while [[ -n ${1} ]]
+do
+    eval ${1}
+    shift
+done
+
+dot
+echo "uname -s     : "$(uname -s) >> ${outfile}
+
+dot
+general_release=UNK
+case $(uname -s)
+in
+    AIX) general_release=$(oslevel) ;;
+    Linux) general_release=$(</etc/redhat-release) ;;
+    SunOS) general_release=$(uname -r) ;;
+esac
+
+dot
+echo "Release      : "${general_release} >> ${outfile}
+

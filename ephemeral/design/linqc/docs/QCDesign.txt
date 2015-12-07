@@ -1,0 +1,263 @@
+This is a summarization of an email thread into a single document
+
+Introductory points:
+ - This is a PoC / design consideration based on my understanding of the TEAM
+   page for the Linux QC process. (That understanding is related later.)
+ - This is not a working copy of a QC process (although it approximates one)
+ - This is an attempt to open a discussion on the subject.
+ - Most of the exception handling (particularly in the functions file) is
+   missing - intentionally. This would be "beefed up" prior to productizing.
+
+Requirements:
+ - Must run from BL (BladeLogic)
+ - Must run from CL (Command Line) based wrapper/framework
+ - Must support grouping
+ - Must capture the nature of the error
+ - Must (when possible / appropriate) separate code from data (policy)
+ - Must use a consistent calling convention.
+ - Framework must not enforce test language.
+ - Must be modular.
+ + These requirements are largely from the TEAM page. Some are based on my
+   understanding, some are my additions, some are a mix of both.
+
+The files:
+ QC001_release---------------------
+     This is the best "reference" check
+     The individual check/test/checklet. This is callable from the BL or CL
+     frameworks the BL or CL frameworks. The naming convention is:
+       QC    - Pattern match for QC checks. This is probably unnessary because
+               they would likely live together in a test directory
+       001   - Sort order number of the test 
+       release - A convenient (but very short) name that uniquely identifies
+               the test.
+ QC00x_xxxx-------------------------
+     These are a number of other tests to demonstrate the framework. Some may
+     be part of the framework (000 and 999), and others are specifically 
+     created to demonstrate group membership and override behavior.
+ QCGlobal.conf----------------------
+     This is a "run config". It contains the personality of the specific
+     invocation of the QC process.
+ qcfunctions.bash-------------------
+     This is a functions file for the framework. Much of the logic is pushed
+     down into the tests and implemented here. In a full implementation a
+     .ksh and .pm version of this would exist as well. (A .h/c (or lib)
+     version would also exist in a build tree if a test were encoded in C.)
+ QC001_release.policy---------------
+     The separate "template" for this test.
+ clwrap-----------------------------
+     The CL wrapper. Not implemented or named at this time.
+
+Design considerations:
+ - The tests (that I tend to refer to as checklets) are callable as either
+   extended objects in BL or from a CL-based framework.
+ - The framework (in BL or CL cases) is very lightweight and is responsible
+   for only a few things:
+    1. Placing the QCGlobal.conf based on calling conventions
+    2. Sequentially calling all tests
+    3. Tabulating results and summarizing
+    4. Removing exceptionally old result sets (optional)
+ - New tests can be added with NO RISK at all. They will not automatically
+   "WP" on inclusion. They must be included in a called group to take effect.
+ - Groups map primarily to purpose, but also to the level of "alarm" raised.
+   The groups are (currently):
+     + online  - Tests that must pass for system to come online (WP/BF)
+     + daily   - Tests that must pass daily (OU/IW)
+     + weekly  - Tests that must pass weekly (report/informative only)
+ - With a "light framework" comes the nice side effect of having a degree of
+   "locality" - for example, the groups are defined in the test itself (and
+    are easily greppable for retrieval / reporting)
+ - The tests can be coded in any language. Shell is used here only as an
+   accessable reference implementation.
+ - When called as extended objects from BL, these tests save the verbosity
+   in a local run file (that *could* be pulled for a BL report) and is visible
+   to the system owner independent of BL login capability.
+ - The directories for log files, the QC tests, the run config, etc... are
+   not properly defined at this time. Standardized locations are expected
+   if "productionized" - At this time both the wrapper and the tests must
+   be modified when moved into production.
+ - Pushing this from a git repo (either as a package or through some BL job)
+   insures that version can be properly captured.
+ - Return values are all encoded in the functions file. These are set read-
+   only. The variables follow an ALL_CAPS convention consistent with "define"
+   globals. (See the Scripting Standards document.) IDEALLY this would be
+   provided by the framework - but that is exceptionally difficult because
+   of BL. So it is encoded in the .bash version, the .ksh version, the .pm
+   version, etc... That is ok, because this stuff tends to stay very static
+   once it is set (but *can* be changed if desired).
+ - The QCDI_* variables are Derived Items / State Items. These are "static"
+   to the library implementation.
+ - Naming convention follows the Scripting Standards document. DEFINES, GLOBALS
+   GlobalFunctions, local_functions, local_variables.
+ - As each test runs in its own environment, they do not "pollute" globals
+   or other settings. Each test starts with a new environment (regardless of
+   how it was called).
+ - "Verbose" output will be saved to the log/run file - always. So even if
+   the QC process is run in a silent mode, the verbosity remains for debuggery
+   issues.
+ - Tests are run locally, returning only state to BL. This leverages the
+   distributed power of the BL environment and is *intended* (side effect) to
+   reduce the load on the BL server.
+ - NEVER WRITE TO STDERR - this includes *allowing* something you call to 
+   write to stderr. Only the wrapper can write to stderr.
+ - New group inclusion is *explicit". Once defining a group, a test will only
+   run if the test is explicitly added to the group. So a new group will not
+   have implicit members (except for the reserved 000 and 999 tests - or
+   any other groups in the "always" group).
+
+Verbosity
+ I went "light" on verbosity options, but heavy on return codes. (Both are
+ considered related because: 1. they are implemented as define-ed values,
+ and 2. they contribute to complexity for the developer.) The thinking here is
+ that multiple levels of verbosity are typically not utilized in most use
+ cases. Verbosity is typically desired in three levels:
+  * None - I just want to know PASS/FAIL for the system
+  * Minimal - I only want to know *what* test failed
+  * Full - I am working the problem, I want to see it all
+ The BL cases is techically None (no verbosity) but BL handles the reporting
+ of "Minimal" (knowing *what* test failed). This three tier case is handled by
+ the API so that the developer is not encumbered with all the problems of
+ handling verbosity. Basically the developer prints everything, and the API
+ handles choosing where the output goes (it always goes somewhere).
+ .
+ To that point - The tests are *always* run with full verbosity, is is just 
+ that the verbosity does not necessarily make it to the terminal. The verbosity
+ does make it to the log file. So developers (and those debugging the problem)
+ can always see the full output regardless of how the tests were launched.
+
+Test return codes:
+ The importance of specific return codes in a framework should be self evident.
+ That said, I will take a few lines to insure clarity on the matter. Each test
+ run MUST report success, failure, and the potential "grey area" in between
+ when it finishes. The framework is responsible for understanding the aggregate
+ of the tests and summarizing for the user. The most definitive method of
+ accomplishing this is through a well defined set of possible return values.
+ The interface between tests and the framework needs to be simple so that
+ the test complexity remains *within* the test (the framework/calling wrapper
+ should not need to "understand" or need to parse specifics of the results
+ from inspecific output.
+ .
+ There are an unusually large number of return codes for a framework like this.
+ This is because the test developer can utilize the rich (specific) return code
+ descriptions to relay more precisely exactly what failed in an extended object
+ back to the BL interface.
+ .
+ Of course, the developer can choose to use only a subset of the "core" return
+ values. The only problem is the folks who use "exit 0" and "exit 1" as
+ reflexive means of leaving the code. (Similarly with the Perl "or die" folks.
+ No test should call "or die". It should always be "or exit(specific_value)".)
+
+Verbosity part II (recommendations for output):
+ - Output should be targeted towards the user. This means that obscure issues
+   should be worded that the user can either understand or at least have
+   clarity on how or who to address for resolution.
+   BAD ===> ERROR: The kernel meta-bit is bad.
+   GOOD ==> ERROR: The kernel meta-bit is 0, should be 1. Contact admin oncall.
+ - When analizing *multiple* items the results should not be a stream of
+   errors of broken items, but instead have one error message, but instead
+   have a table of success/failure and a single (conditional) error message.
+   BAD ===> ERROR: /root is not sized correctly.
+            ERROR: /opt is not sized correctly.
+            ERROR: /home is not sized correctly.
+   GOOD ==> Mount   DesiredSz   ActualSz   State
+            /root   1024        512        FAIL
+            /usr    4096        4096       Ok
+            /opt    2048        1024       FAIL
+            /home   4096        1024       FAIL
+            ERROR: Some file systems are not properly sized. Run remediation.
+ - As seen in the previous example, the individual results are not worded
+   the same. This is by intent. The inclination is to use PASS|FAIL|WARN-like
+   output where the font and spacing are similar or equal. The more appropriate
+   is to use "disruptive" failure output that is *clearly* different from
+   success. This makes identifying failure easier when scanning large sections
+   of text. See next point on ANSI colors.
+ - ANSI colors are for terminal emulation - where there is a means to interpret
+   the ANSI codes to represent the colors. This is a great means of showing
+   differences when it is *known* that the user will be on a terminal. For
+   example - the CL wrapper can display summary results in ANSI colors, but
+   the tests cannot verbosely use the same colors because the text will be
+   going to a file. (Note: This is not meant to dissuade the use of ANSI
+   colours in verbose output - it is just that the verbose functions need to
+   scrub the colour codes off when saving the results to a file.)
+   
+Minor dribbling notes:
+ - I called Bash, but tend to use Korn conventions. I am trying to recognize
+   the native shell, but only have a developed Korn skillset. I have made
+   attempts to systematically scrub the Korn out of the Bash - but some may
+   remain. The primary struggles in this area (so far) have been scoping
+   issues and the lack of compound variables (and pass by reference).
+ - The functions in the functions file would require proper definition headers
+   that are consistent with the coding guidelines. These do not exist at this
+   time. 
+ - IsRunFromBL() is hacked (as I do not know the calling process from BL). I
+   have not validated that this will work - I expect that it will.
+ - The format for the global run config will be consistent for all test
+   modules. C and Perl implementations would need to *parse* rather than source
+   this file. The expectation is that the large number of tests would be
+   implemented in shell (and not Perl/C). The format for the .policy file is
+   implementation dependent - but ideally would have a provision for comments.
+   Frequently this data is tabular, sometimes it is in var=value pairs. In 
+   either case, filtering for leading "#" should be trivial in each case.
+ - I comment all strings for syntax highlighting pourposes. See the Scripting
+   Standards document.
+ - I have tended to use a larger set of return codes - primarily because it 
+   seems like it might be difficult to debug items via BL. The thinking is that
+   the user can opt for the richer return codes to help with development and
+   debuggery.
+ - The output is NOT in ANSI color. This was not a stated requirement, but I
+   think it tends to be useful. This could/should (?) be an output option / 
+   consideration.
+
+Possible shortcommings:
+ - Policy is separable from the code... but is NOT in BL. Policy *could* be
+   stored in BL, and then pushed as a .policy file as a (regular) job. Policy
+   could be stored in git.... This docuemnt does not really address *where*
+   policy is stored, but notes (agrees with) the general design consideration
+   that policy is independent of code - when possible.
+
+Discussion:
+ Q. Why on earth whould you write all this?
+ A. To facilitate a solid standard for this QC process. The intent here is
+    not necessarily to *write* the framework, but to flush out all the
+    potential issues associated with the current design goals.
+ Q. Fine, what did you find?
+ A. Lots... you gotta read this document (I have tried to distill it down) as
+    well as the code (much more commentary there)... but the key take-aways
+    are probably that:
+    - I think a pure extended object approach is the most advantageous method
+    - I think the "always verbose" approach is the best design for visibility
+      by people not having a BL login (system owners) as well as debugging
+      the problems encountered
+    - I think the grouping approach used has some potentially good options
+      as well as some drawbacks (Groups are good, the approach used is very
+      good for Unix users, the in-the-code encoding is potentially problematic
+      when using a pure-BL approach.)
+ Q. Why did you break "convention" on the very first policy file you created?
+ A. I think, more than anything, it was to make the point that the convention
+    (of item=value) is really unsustainable. In short, I think the convention
+    is just too restrictive. This opens up a new problem - that the policy
+    files have different formats, and that format is not specified in any
+    one location ---> There is no data definition (DTD) for the profile. It
+    may be appropriate to create a corresponding ".dtd" file for each ".policy"
+    file. (DTD may not be the most appropriate extension as it implies XML.)
+ Q. Can I run a test completely independent of the framework?
+ A. Yes... but... whenever a module is built against a framweork there is a
+    set of explicit dependencies between the two. The good news here is that
+    the large majority of the logic has been pushed down into the tests (or
+    more specifically, the functions library). This means that the dependencies
+    are not as tight. So, a test *can* run outside of the framework... provided
+    that the (minimalist) parts of the framework dependencies are satisfied.
+    So, for example, if you called the test you would need to create a global
+    config file, and specify /dev/null as your log file. (This is not the full
+    requirement list, just a partial example.)
+ Q. Are there reserved test numbers?
+ A. Yes. 000 and 999 are reserved - do not use these for "tests". At this time
+    there is no other reserved number (such as always included in every group,
+    cannot be overridden, etc...).
+ Q. Why do you call "GroupCheck always" if you will always run?
+ A. Good question... Why call an exclusiory function with an all-inclusive
+    paramater? Because it is consistent, because it is self-documenting code,
+    and because it could be leveraged elsewhere - for things as simple as
+    greping out what all the group memberships are.
+
+
+Additional commentary is found in the reference implementation.

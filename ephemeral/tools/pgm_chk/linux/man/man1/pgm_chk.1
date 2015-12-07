@@ -1,0 +1,166 @@
+.\" The text here wraps. This is an issue
+.TH pgm_chk 1 "01 Dec 2013" "0.6" "BB Manpage" pgm_chk
+
+.SH NAME
+.B pgm_chk
+\-  A tool for monitoring and checking PGM interfaces
+
+.SH SYNOPSIS
+.B pgm_chk
+<options>
+
+.SH DESCRIPTION
+.B pgm_chk
+is a problem determination tool to help SA to display current PGM devices, configurations, tuning parameters.
+
+Because PGM (Multicast UDP) traffic 
+.SH OPTIONS
+With no options
+.B pgm_chk
+shows netstat UPD statistics by default.
+
+.TP
+\fB\-h\fR  
+Help, provide online help
+
+.TP
+\fB\-d\fR
+Show device information 
+
+\fI\ output example\fR
+  Device  Driver     Bus_Info       Version   FW_Version                      
+  eth0    tg3        0000:03:00.0   3.122     5719-v1.24...
+  eth1    tg3        0000:03:00.1   3.122     5719-v1.24...
+  eth2    tg3        0000:03:00.2   3.122     5719-v1.24...
+  eth3    tg3        0000:03:00.3   3.122     5719-v1.24...
+  bond0   
+  bond1   
+  + eth4  mlx4_en    0000:07:00.0   2.1.8 (Nov 22 2013)...
+  + eth5  mlx4_en    0000:07:00.0   2.1.8 (Nov 22 2013)...
+
+.TP
+\fB\-f\fR
+Show FIFO information for the Rx and Tx ring buffers for the devices
+
+\fI\ output example\fR
+
+  Device       RX        Mini         Jumbo       TX
+  eth0     2047/2047      0/0         0/0       511/511  
+  eth1      200/2047      0/0         0/0       511/511  
+  eth2      200/2047      0/0         0/0       511/511  
+  eth3      200/2047      0/0         0/0       511/511  
+  bond0   
+  bond1   
+  + eth4   8192/8192      0/0         0/0      1024/8192 
+  + eth5   8192/8192      0/0         0/0      1024/8192 
+
+.TP
+\fB\-l\fR
+Show for each ethernet device the type received and transmit packets, errors or drops, LACP balance and the device tree
+
+\fI\ output example\fR
+
+IFace   Type     RxPack   TxPack RxDrop TxDrop  RxBytes  TxBytes
+ eth0    PRI   48137577  4513581      0      0    4.6 G  477.4 M
+ bond1   STOR   6294548  2219023      0      0  518.9 M  237.9 M
+  + eth4        3018231  1352378      0      0  241.3 M  135.9 M
+  + eth5        3276317   866645      0      0  277.6 M  102.0 M
+
+.TP
+\fB\-m\fR
+Show multicast address report for each interface and per-interface statistic
+
+\fI\ output example\fR
+
+  Multicast_addresses_______________________________________
+  IFace             Mcast IP                      Mcast MAC
+   eth0          224.0.0.251              01:00:5e:00:00:fb
+   eth0            224.0.0.1              01:00:5e:00:00:01
+  bond1          224.0.0.251              01:00:5e:00:00:fb
+  bond1            224.0.0.1              01:00:5e:00:00:01
+   eth4            224.0.0.1              01:00:5e:00:00:01
+   eth5            224.0.0.1              01:00:5e:00:00:01
+  _Per-interface_statistics__________________________________
+  IFace Count
+  bond1     1
+   eth0     1
+   eth4     0
+   eth5     0
+
+.TP
+\fB\-q\fR
+Check for non-0 socket queues, compatible with -v option providing verbose output
+
+\fI\ output example for -qv option\fR
+
+   Recv-Q   Send-Q    Local Address              Foreign Address
+        0       12   localhost:59528          remote-sys1:syslog
+.\"      ...      ...    .........:.....          ...........:......
+  --------------------------------------------------------------
+  Total: 9        Pass: 9        Fail: 0
+
+.TP
+\fB\-r\fR
+Reset UPD statistic counters from a specific point in time for debug purposes only
+
+\fI\ output example\fR
+
+  Reset time: 1386006729
+  netstat_udp_pr: 3599356
+  netstat_udp_upr: 1147
+  netstat_udp_pre: 0
+  netstat_udp_ps: 3627739
+
+.TP
+\fB\-s\fR
+Show UDP statistic for the machine since the last reset if any
+
+\fI\ output example\fR
+  UDP
+  -------------------------------------------------------------
+    Packets received      : 169
+    Packets without a port: 0
+    Packet errors         : 0
+    Packets sent          : 173
+
+.TP
+\fB\-t\fR
+Check for sysctl tunable [PASS/FAIL] for each critical parameter
+
+\fI\ output example\fR
+  [PASS]  net.ipv4.conf.default.arp_announce = 2
+  [PASS]  net.ipv4.tcp_tw_reuse = 1
+  [FAIL]  net.core.optmem_max = 4194304
+  [PASS]  net.ipv4.tcp_max_syn_backlog = 4096
+  [PASS]  net.ipv4.tcp_mem = 2097152    2097152 16777216
+  [FAIL]  net.ipv4.tcp_rmem = 4096      87380   4194304
+  [FAIL]  net.ipv4.tcp_wmem = 4096      65536   4194304
+
+.TP
+\fB\-g\fR, \fB\-g DD\fR
+Check for frame drops on the interface from sar sysstat, output the time stamp of the drops the amount and the related traffic at that time. The option accept also the DD previous day of the month if available.
+
+\fI\ output example\fR
+
+  Checking /var/log/sa/sa02
+  Event drop count: 6
+  Time range of drops 02:59:36 08:05:39
+  02:59:36  IFACE  rxerr/s  txerr/s  coll/s  rxdrop/s...
+  03:00:36  bond1  1.00     0.00     0.00    0.00    ...
+  03:00:36  eth4   1.00     0.00     0.00    0.00    ...
+  05:30:59  bond1  1.00     0.00     0.00    0.00    ...
+
+.TP
+\fB\-v\fR
+Verbose modifier (compatible with: -q)
+
+.TP
+\fB\-z\fR
+Check for some useful logs in /var/log/messages, hplog, dmesg
+
+.SH SEE ALSO
+ethtool(1), sar(1), netstat(1) 
+.SH BUGS
+No known bugs. For any issue DRQS to gr-325
+.SH AUTHORS
+W. Favorite (wfavorite@bloomberg.net), G. Rucher (grucher@bloomberg.net)

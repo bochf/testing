@@ -1,0 +1,256 @@
+#!/bin/ksh93
+
+# -----------------------------------------------------------------------------
+function spinfunc
+{
+    typeset -i sv=0
+    trap 'printf "\b\b...Done.\n"' EXIT
+
+    printf "-"
+
+    while :
+    do
+        printf "\b"
+
+        case ${sv} in
+            0) sv=1 ; printf "\\" ;;
+            1) sv=2 ; printf "|" ;;
+            2) sv=3 ; printf "/" ;;
+            3) sv=0 ; printf "-" ;;
+        esac
+
+        sleep 1
+    done
+}
+
+# -----------------------------------------------------------------------------
+function dotfunc
+{
+    typeset -i stime=${1:-1}
+    typeset -i sv=0
+    trap 'printf "Done.\n"' EXIT
+
+    while :
+    do
+        printf "."
+
+        sleep ${stime}
+    done
+}
+
+
+typeset -i CLEAN_DROPPINGS=1
+
+# -----------------------------------------------------------------------------
+# Check where we are.
+printf "Looking to see if called from where expected..."
+if [[ ! -d bin ]] # Almost stupid check
+then
+    printf "Failed.\n"
+    printf "ERROR: Solaris 11 build script called from unknown location.\n" >&2
+    exit 1
+fi
+printf "."
+if [[ ! -x bin/buildit_11 ]] # Look in the mirror
+then
+    printf "Failed.\n"
+    printf "ERROR: Solaris 11 build script called from unknown location.\n" >&2
+    exit 1
+fi
+printf "."
+if [[ ! -d ROOT ]] # Should have been staged by our parent
+then
+    printf "Failed.\n"
+    printf "ERROR: Solaris 11 build script called from unknown location.\n" >&2
+    exit 1
+fi
+printf "Good.\n"
+
+# -----------------------------------------------------------------------------
+printf "Looking for the binary version..."
+VERSIONSTRING=$( ROOT/usr/local/bin/cpub -a | grep Version 2>/dev/null)
+VERSIONSTRING=${VERSIONSTRING##*Version: }
+if [[ ${VERSIONSTRING} != +([0-9]).+([0-9]).+([0-9]) ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: The version string does not match an expected pattern.\n" >&2
+    exit 1
+fi
+printf "${VERSIONSTRING}.\n"
+
+# ------------------------------
+printf "Generating the manifest (files)..."
+rm -f pkgsend.generate.stderr
+if ! pkgsend generate ROOT > pkgsend.stdout 2> pkgsend.generate.stderr
+then
+    printf "Failed.\n"
+    printf "ERROR: pkgsend generate failed. See pkgsend.generate.stderr.\n" >&2
+    exit 1
+fi
+printf "."
+rm -f pkgsend.generate.stderr
+printf "Done.\n"
+
+# ------------------------------
+printf "Formatting the manifest..."
+rm -f pkgfmt.stderr
+if ! cat pkgsend.stdout | pkgfmt > pkgsend.pkgfmt 2> pkgfmt.stderr
+then
+    printf "Failed.\n"
+    printf "ERROR: pkgfmt failed. See pkgfmt.stderr.\n" >&2
+    exit 1
+fi
+printf "."
+(( CLEAN_DROPPINGS )) && rm -f pkgsend.stdout
+rm -f pkgfmt.stderr
+printf "Done.\n"
+
+# ------------------------------
+printf "Adding metadata to the manifest..."
+rm -f pkgmogrify.stderr
+pkgmogrify -DARCH=$(uname -p) -DVERSION=${VERSIONSTRING} pkgsend.pkgfmt package.mog > pkgmogrify.stdout 2> pkgmogrify.stderr
+if (( $? > 1 )) # 0=ok 1=anticipated error
+then
+    printf "Failed.\n"
+    printf "ERROR: pkgmogrify failed. See pkgmogrify.stderr.\n" >&2
+    exit 1
+fi
+printf "."
+(( CLEAN_DROPPINGS )) && rm -f pkgsend.pkgfmt
+rm -f pkgmogrify.stderr
+printf "Done.\n"
+
+# ------------------------------
+printf "Formatting the manifest..."
+rm -f pkgfmt.stderr
+if ! cat pkgmogrify.stdout | pkgfmt > pkgmogrify.pkgfmt 2> pkgfmt.stderr
+then
+    printf "Failed.\n"
+    printf "ERROR: pkgfmt failed. See pkgfmt.stderr.\n" >&2
+    exit 1
+fi
+printf "."
+(( CLEAN_DROPPINGS )) && rm -f pkgmogrify.stdout
+rm -f pkgfmt.stderr
+printf "Done.\n"
+
+# ------------------------------
+printf "Generating manifest dependencies..."
+rm -f pkgdepend.generate.stderr
+if ! pkgdepend generate -md ROOT pkgmogrify.pkgfmt > pkgdepend.generate.stdout 2> pkgdepend.generate.stderr
+then
+    printf "Failed.\n"
+    printf "ERROR: pkgdepend generate failed. See pkgdepend.generate.stderr.\n" >&2
+    exit 1
+fi
+printf "."
+(( CLEAN_DROPPINGS )) && rm -f pkgmogrify.pkgfmt
+rm -f pkgdepend.generate.stderr
+printf "Done.\n"
+
+# ------------------------------
+printf "Formatting the manifest..."
+rm -f pkgfmt.stderr
+if ! cat pkgdepend.generate.stdout | pkgfmt > pkgdepend.generate.pkgfmt 2> pkgfmt.stderr
+then
+    printf "Failed.\n"
+    printf "ERROR: pkgfmt failed. See pkgfmt.stderr.\n" >&2
+    exit 1
+fi
+printf "."
+(( CLEAN_DROPPINGS )) && rm -f pkgdepend.generate.stdout
+rm -f pkgfmt.stderr
+printf "Done.\n"
+
+
+
+# ------------------------------
+printf "Resolving manifest dependencies..."
+spinfunc &
+spinfunc_pid=$!
+rm -f pkgdepend.resolve.stderr
+rm -f pkgdepend.resolve.stdout
+rm -f pkgdepend.generate.pkgfmt.res
+mv pkgdepend.generate.pkgfmt BBcpubcore.p5m
+if ! pkgdepend resolve -m BBcpubcore.p5m > pkgdepend.resolve.stdout 2> pkgdepend.resolve.stderr
+then
+    printf "Failed.\n"
+    printf "ERROR: pkgdepend resolve failed. See pkgdepend.resolve.stderr.\n" >&2
+    exit 1
+fi
+(( CLEAN_DROPPINGS )) && rm -f BBcpubcore.p5m
+rm -f pkgdepend.resolve.stderr pkgdepend.resolve.stdout
+if [[ $(ps -p ${spinfunc_pid} -o comm=) == *ksh* ]]
+then
+    kill ${spinfunc_pid}
+fi
+
+# Discussion: Technically we should restart svc:/application/man-index:default
+#      This causes our man pages to be indexed. The command to do this would be
+#      inserted at this point 
+#
+#      <transform dir file link hardlink path=opt/.+/man(/.+)? -> \
+#         default facet.doc.man true>
+#      <transform file path=opt/.+/man(/.+)? -> \
+#         add restart_fmri svc:/application/man-index:default>
+#                                    |   |   |   |
+#                                    V   V   V   V
+#      pkgmogrify BBcpubcore.p5m.res transform.txt | pkgfmt > BBcpubcore.p5m.X.res
+
+# Optional: Run pkglint
+
+# ------------------------------
+printf "Creating and publishing to temporary repo..."
+rm -rf temprepo
+rm -rf pkgsend.publish
+printf "."
+pkgrepo create temprepo
+printf "."
+pkgrepo -s temprepo set publisher/prefix=Bloomberg
+printf "."
+if ! pkgsend -s temprepo publish -d ROOT BBcpubcore.p5m.res > pkgsend.publish.out 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: See pkgsend.publish.out for failure issue.\n" >&2
+    exit 1
+fi
+printf "."
+(( CLEAN_DROPPINGS )) && rm -f pkgsend.publish
+(( CLEAN_DROPPINGS )) && rm -f BBcpubcore.p5m.res
+printf "Done.\n"
+
+# Optional: Run pkgrepo verify -s temprepo
+
+# Optional: Run pkgrepo info -s temprepo
+
+# Optional: Run pkgrepo list -s temprepo
+
+
+printf "Creating package archive..."
+rm -f BBcpubcore.${VERSIONSTRING}.p5p
+printf "."
+if ! pkgrecv -s temprepo -a -d BBcpubcore.${VERSIONSTRING}.p5p BBcpubcore > pkgrecv.out 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: pkgdepend resolve failed. See pkgrecv.out.\n" >&2
+    exit 1
+fi
+(( CLEAN_DROPPINGS )) && rm  -f pkgrecv.out
+(( CLEAN_DROPPINGS )) && rm -rf temprepo
+printf "Done.\n"
+
+
+if [[ -f BBcpubcore.${VERSIONSTRING}.p5p ]]
+then
+    printf "PACKAGE ==> %s\n" BBcpubcore.${VERSIONSTRING}.p5p
+fi
+
+
+
+
+
+
+
+
+
+

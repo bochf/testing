@@ -1,0 +1,10 @@
+set name=pkg.fmri value=BBcpubcore@$(VERSION)
+set name=pkg.summary value="The core cpub binary and support tools"
+set name=pkg.description value="This is the core binary package for the cpub framework. It includes cpub and \
+man pages. Specific .cpub files are packaged separately."
+set name=variant.arch value=$(ARCH)
+set name=info.classification \
+value=org.opensolaris.category.2008:Applications/Accessories
+link path=usr/share/man/index.d/mysoftware target=/opt/mysoftware/man
+<transform dir path=opt$->drop>
+<transform file path=usr/local/bin/ebcd -> set pkg.depend.bypass-generate .*/python>

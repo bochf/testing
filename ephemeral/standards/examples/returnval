@@ -1,0 +1,33 @@
+#!/bin/ksh
+
+
+
+function noreturnval
+{
+    :
+}
+
+function falsereturnval
+{
+    false
+}
+
+function truereturnval
+{
+    true
+}
+
+
+
+
+noreturnval
+echo noreturnval = $?
+
+falsereturnval
+echo falsereturnval = $?
+
+truereturnval
+echo truereturnval = $?
+
+./returnscript
+echo returnscript = $?

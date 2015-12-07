@@ -1,0 +1,111 @@
+#!/bin/bash
+
+# This is effectively a documentation method, more so than a tool
+
+
+# -----------------------------------------------------------------------------
+MkDir()
+{
+    if [[ -z ${1} ]]
+    then
+        echo "ERROR: MkDir called with no paramater." >&2
+        exit 1
+    fi
+
+    echo -n "Creating directory ${1}..."
+
+    if [[ -d ${1} ]]
+    then
+        echo "Failed."
+        echo "ERROR: Directory already exists." >&2
+        exit 1
+    fi
+
+    if ! mkdir -p ${1} > /dev/null 2>&1
+    then
+        echo "Failed."
+        echo "ERROR: Failed to create directory." >&2
+        exit 1
+    fi
+
+    echo "Done."
+}
+
+### main() --------------------------------------------------------------------
+
+if [[ -z ${1} ]]
+then
+    echo "ERROR: No base directory supplied." >&2
+    exit 1
+fi
+
+base_dir=${1}
+
+
+MkDir ${base_dir}/RPMS
+MkDir ${base_dir}/SPECS
+MkDir ${base_dir}/BUILD
+MkDir ${base_dir}/SOURCES
+
+echo -n "Creating sample .spec file..."
+cat > ${base_dir}/SPECS/bb.tools.${base_dir}.spec <<SPECEOF
+Summary: Sample spec file EDIT ME
+Name: bb-tools-${base_dir}
+Version: 0.1.0
+Release: 1
+License: None
+Group: BB/Tools
+Vendor: Bloomberg LLP
+Packager: William Favorite <wfavorite2@bloomberg.net>
+BuildArch: noarch
+Buildroot: %{_tmppath}/%{name}-root
+
+%description
+This is a BB RPM for EDIT ME EDIT ME EDIT ME EDIT ME EDIT ME EDIT ME EDIT ME 
+EDIT ME EDIT ME EDIT ME EDIT ME EDIT ME EDIT ME EDIT ME EDIT ME EDIT ME EDIT ME
+EDIT ME EDIT ME EDIT ME EDIT ME EDIT ME EDIT ME EDIT ME EDIT ME EDIT ME EDIT ME
+
+%prep
+#EDIT ME - Things to do prior to build (unpacking source typically)
+
+%build
+#EDIT ME - How to build (make typically)
+
+%install
+#EDIT ME - Copy built source into BUILD ROOT directory
+rm -rf \$RPM_BUILD_ROOT
+mkdir -p \$RPM_BUILD_ROOT
+cp \$RPM_BUILD_DIR \$RPM_BUILD_ROOT
+
+%clean
+rm -rf \$RPM_BUILD_ROOT
+
+%files
+%defattr(644,root,root)  <-------------------- Default attributes for a file
+%dir /bb/pm/bin          <-------------------- This dir is part of this package
+%dir /bb/pm/etc          <-------------------- This dir is part of this package
+%config /bb/pm/etc/*     <-------------------- Files in this dir are volitale
+%attr(755,root,root) /bb/pm/bin/somefile <---- File with different attributes
+
+%pre
+
+%postun
+
+SPECEOF
+echo "Done."
+
+echo -n "Creating buildit.conf file..."
+cat > ${base_dir}/buildit.conf <<CONFEOF
+# This is a buildit.conf file. It will be sourced through a shell script, so
+# it has shell environmental variable setting requirements (no spaces)
+
+# SPEC_FILE - The name of the spec file. No leading path info
+#           - This file should exist in the SPECS directory
+SPEC_FILE=bb.tools.${base_dir}.spec
+
+
+# DESTAGE_FILE - Should the rpm file be copied out?
+#              - This will kill the RPMS directory on each invocation
+DESTAGE_FILE=true
+CONFEOF
+echo "Done."

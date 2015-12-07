@@ -1,0 +1,162 @@
+#!/bin/ksh
+
+#
+# bbhelp - A tool finding tool
+#
+# Version: 0.3.0
+#
+# F. A. Hayek <fhayek@austrian.edu>
+# Michael Clarkson <mclarkson1@bloomberg.net>
+# William Favorite <wfavorite2@bloomberg.net>
+#
+# Notes:
+#  - The input is not validated in disp_tool_list() so when the selected
+#    item is passed to disp_tool_item() it is passed to bbhelpq where it
+#    is wrong. I think these issues are fixed... somewhat... but problems
+#    potentially still lurk in the exceptions.
+
+
+
+# Where to find bbhelpq
+BBHELPQ=/usr/local/bin/bbhelpq
+
+# !!! DEBUG !!!
+BBHELPQ=./bbhelpq
+BBHELPDIR=BBHELPDIR
+export BBHELPDIR
+
+
+
+# A "crafty" method of wrapping the banner
+# This is *intentionally* a multi-line entry 
+PS3="
+===============================================================================
+> "
+
+# The default ANSI settings for UL=UnderLine and NT=NormalText
+ANSI_UL="[4m"
+ANSI_NT="[0m"
+
+# =============================================================================
+disp_tool_item()
+{
+    clear
+    print "==============================================================================="
+    echo ""
+    ${BBHELPQ} -t ${1}
+    echo ""
+    select DTI_CHOICE in "Back"
+    do
+        break
+    done
+}
+
+# =============================================================================
+disp_tool_list()
+{
+    clear
+    print "==============================================================================="
+    print " ${ANSI_UL}${DMM_CHOICE} Tool Listing${ANSI_NT}"
+    echo ""
+    select DTL_CHOICE in $(${BBHELPQ} -l name -k ${1}) Back
+    do
+        if [[ ${DTL_CHOICE} == "Back" ]] ; then break ; fi
+        if [[ ${DTL_CHOICE} == "" ]] ; then break ; fi
+
+        disp_tool_item ${DTL_CHOICE}
+        break
+    done
+
+}
+
+# =============================================================================
+disp_description_list()
+{
+    clear
+    print "==============================================================================="
+    print " ${ANSI_UL}$DSM_CHOICE Summary Listing${ANSI_NT}"
+    echo ""
+    ${BBHELPQ} -l description -k ${DSM_CHOICE} 
+    echo ""
+    select DSI_CHOICE in "Back"
+    do
+        break
+    done
+
+}
+
+# =============================================================================
+disp_summary_menu()
+{
+	 while true
+	 do
+		  clear
+        print "==============================================================================="
+		  print " ${ANSI_UL}bbhelp Summary Menu Catagories${ANSI_NT}"
+        echo ""
+		  select DSM_CHOICE in $(${BBHELPQ} -l keys) Back
+        do
+           if [[ ${DSM_CHOICE} == "Back" ]] ; then break ; fi
+           if [[ ${DSM_CHOICE} == "" ]] ; then break ; fi
+
+           disp_description_list ${DSM_CHOICE}
+		     break
+	     done
+	     if [[ ${DSM_CHOICE} == "Back" ]] ; then break ;fi
+	     if [[ ${DSM_CHOICE} == "" ]] ; then break ;fi
+	 done
+}
+
+# =============================================================================
+disp_main_menu()
+{
+    clear
+    print "==============================================================================="
+    print " ${ANSI_UL}bbhelp Main Menu Command Catagories${ANSI_NT}"
+    echo ""
+    select DMM_CHOICE in $(${BBHELPQ} -l keys) Summary Exit
+    do
+        if [[ ${DMM_CHOICE} == "Exit" || ${DMM_CHOICE} == "" ]]
+		  then
+            exit 0
+        elif [[ ${DMM_CHOICE} == "Summary" ]] 
+		  then
+			   disp_summary_menu
+			   break
+	     fi
+	     disp_tool_list ${DMM_CHOICE}
+        break
+    done
+
+}
+
+# =============================================================================
+#
+# MAIN
+#
+
+# Test for ANSI intent, if not, assume it is desired
+if [[ -z ${BB_COLOR_TOOLS} ]]
+then
+    BB_COLOR_TOOLS=ON
+fi
+
+# Actually turn off ANSI options
+if [[ ${BB_COLOR_TOOLS} != "ON" ]]
+then
+    ANSI_UL=
+    ANSI_NT=
+fi
+
+# This is a brute force test to look for endian mismatches
+# The test *could* be much better
+if ! ${BBHELPQ} -l keys > /dev/null 2>&1
+then
+    echo "ERROR: bbhelpq was unable to parse the database." >&2
+    exit 1
+fi
+
+while true
+do
+    disp_main_menu
+done

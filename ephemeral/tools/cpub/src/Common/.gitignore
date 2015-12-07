@@ -1,0 +1,4 @@
+libcmnprov.a
+libbuild.out
+*.o
+*~

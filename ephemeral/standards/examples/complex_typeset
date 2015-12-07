@@ -1,0 +1,5 @@
+#!/bin/ksh
+
+typeset -ir BYTES_PER_PAGE=4096
+
+echo ${BYTES_PER_PAGE}

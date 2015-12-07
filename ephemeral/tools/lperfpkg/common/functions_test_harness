@@ -1,0 +1,20 @@
+#!/bin/bash
+
+echo -n "Sourcing the functions file..."
+if [[ ! -f functions.bash ]]
+then
+    echo "Failed."
+    echo "ERROR: Failed to find the functions file." >&2
+    exit 1
+else
+    . ./functions.bash
+    echo "Done."
+fi
+
+echo -n "Checking the LOP function..."
+if system_is_lop
+then
+    echo "Is LoP."
+else
+    echo "Is NOT LoP."
+fi

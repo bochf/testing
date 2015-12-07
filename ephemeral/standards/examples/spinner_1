@@ -1,0 +1,31 @@
+#!/bin/ksh93
+
+function spinfunc
+{
+    typeset -i sv=0
+    printf "Running -"
+
+    while :
+    do
+        printf "\b"
+
+        case ${sv} in
+            0) sv=1 ; printf "\\" ;;
+            1) sv=2 ; printf "|" ;;
+            2) sv=3 ; printf "/" ;;
+            3) sv=0 ; printf "-" ;;
+        esac
+            
+        sleep 1
+    done
+}
+
+spinfunc &
+
+spinfunc_pid=$!
+
+sleep 7
+
+kill ${spinfunc_pid}
+printf "\b\b...Done.\n"
+

@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!---
+    CONRPrimer.html - A non-perm (read: non-saved) CONR term Primer
+
+    Authors:
+       William Favorite - Primary contact for errors.
+       Eric Kaiser - Significant contributions
+       Don Link - Significant contributions and assistance in 
+                  facilitating the effort.
+-->
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <style type="text/css">
+      body
+      {
+      font-size: 12px;
+      background-color: #FAFAFA;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      }
+
+      .arttitle
+      {
+      font-size: 28px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      .artstitle
+      {
+      font-size: 12px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      .artsstitle
+      {
+      font-size: 10px;
+      text-align:center;
+      }
+
+
+      .defblock
+      {
+      padding-left: 50px;
+      padding-right: 30px;
+      text-indent: -20px;
+      text-align:justify;
+      }
+
+      .subdef
+      {
+      padding-left: 80px;
+      padding-right: 40px;
+      text-indent: -20px;
+      text-align:justify;
+      }
+
+      .debug
+      {
+      color: red;
+      }
+
+      .oscmd
+      {
+      font-family: Monaco, monospace;
+      font-weight:bold;
+      color: #333300;
+      }
+      
+      .bbtermcmd
+      {
+      font-family: Monaco, monospace;
+      font-weight:bold;
+      color: orange;
+      background-color: black;
+      padding:0px 2px 0px 2px;
+      }
+      
+      .subjhead
+      {
+      font-size: 12px;
+      margin-left: 20px;
+      font-weight:bold;
+      }
+
+      .subjsect
+      {
+      margin-left: 50px;
+      font-weight:bold;
+      }
+
+      .subjcont
+      {
+      margin-left: 50px;
+      margin-right: 20px;
+      }
+      
+      .footnote
+      {
+      font-size: 10px;
+      margin-left: 70px;
+      margin-right: 70px;
+      text-align:justify;
+      }
+      
+      .exponent
+      {
+      font-size: 8;
+      position:relative;
+      top:-5px;
+      }
+
+      .thintable
+      {
+      margin-left: 55px;
+      margin-right: 40px;
+      border-collapse: collapse;
+      }
+
+      .thintd
+      {
+      padding: 5px;
+      border: 1px solid black;
+      }
+
+      .textit { font-style:italic; }
+      .texttt { font-family: Monaco, monospace; }
+      .textbf { font-weight:bold; }
+      .underline { text-decoration: underline; }
+
+      a:link { text-decoration: underline; color: #aa00aa; }
+      a:visited { text-decoration: underline; color: #aa00aa; }
+      /* Active is more like "visited" than immediate feedback. */
+      a:active { text-decoration: underline; color: #aa00aa; }
+      a:hover { text-decoration: underline; color: #aa00aa; }
+    </style>
+
+    <title>A Short Primer on CONR Terminology</title>
+  </head>
+  <body>
+
+    <p class="arttitle">A Short Primer on CONR Terminology</p>
+    <p class="artstitle">for system administrators and non-developers</p>
+
+    <p class="artsstitle">Version: 1.1.0</p>
+
+    <p class="footnote"><span class="textbf">Note:</span> Some of the terms are used as concepts, operational processes, and commands. I have tried to differentiate the usage when possible. But the distinctions are sometimes elusive as the terminology is frequently reused in multiple contexts.</p>
+
+    <p class="defblock"><span class="textbf">backend</span> (console room) - For Trading Systems backend is a process that prepares an individual client or pricing number for the next business day. There are many components of backend. Some jobs are run depending upon how the firm is set up such as a buyside client or sellside, and other jobs run if certain packages have been added to the pricing number.</p>
+
+    <p class="defblock"><span class="textbf oscmd">dbdwn</span> - This brings the Bloomberg environment down. This is called by <span class="oscmd">restore</span> during a full turnaround.</p>
+
+    <p class="defblock"><span class="textbf oscmd">endofday</span> - This is part of a system turnaround that cleans up the system.</p>
+
+    <p class="defblock"><span class="textbf">Full Turn (FT)</span> - A full restart of the Bloomberg environment with the end of day processing specific to a host. Specifically; we <span class="oscmd">rtcpu</span> / <span class="oscmd">restore</span>(<span class="oscmd">dbdwn</span>) / <span class="oscmd">strtday</span>(<span class="oscmd">rstrt</span>) / <span class="oscmd">rescpu</span> contained within <span class="oscmd">restore</span> / <span class="oscmd">strtday</span> are things done at the end of a business day for maintenance, roll logs, init files, advance dates, copy databases &amp; move in software.</p>
+
+    <p class="defblock"><span class="bbtermcmd">GEST</span> - Information specific to the load and state of User systems. <span class="bbtermcmd">PWHO GEST</span> (General Notes - <span class="bbtermcmd">4 &lt;GO&gt;</span>) tells the differing zones that the sub-options to <span class="bbtermcmd">GEST</span> cover. For example, <span class="bbtermcmd">GEST 313</span> will display all user systems for the America's region. The columns are the following:</p>
+
+    <table class="thintable">
+      <tr>
+        <th class="thintd">MACH</th>
+        <td class="thintd">The user machine hostname</td>
+      </tr>
+      <tr>
+        <th class="thintd">TK</th>
+        <td class="thintd">The ticker node ID for that user machine</td>
+      </tr>
+      <tr>
+        <th class="thintd">USR</th>
+        <td class="thintd">The LUWs currently on that system</td>
+      </tr>
+      <tr>
+        <th class="thintd"><span class="textit">x</span>BIG</th>
+        <td class="thintd">Two columns of data for each type of BIGs on that system. The first column is the current number of waits, the second is the average waits since the environment was brought up. The BIG types are: IBIG (Mainline BIG), NBIG (News BIG), TSBIG (Trading Systems BIG), &amp; PBIG (Portfolio BIG).</td>
+      </tr>
+</table>
+    <p class="defblock"><span class="bbtermcmd">LUME</span> - (Live User Machine Environment) This is effectively the <span class="textit">opposite</span> of <span class="bbtermcmd">VSAT8</span>. It lists the (user) systems that are online, by quad and systype.</p>
+    
+    <p class="defblock"><span class="textbf">mark busy</span> - This is a method to limit new users/<span class="bbtermcmd">LOGI</span>ns to a (User) system. To mark a (user) system busy means to limit <span class="bbtermcmd">!PCUL</span> (a metric visible in<span class="bbtermcmd">CPUA</span>). This will have an effect of limiting "workstation 0" <span class="bbtermcmd">LOGI</span>ns, but will continue new LUWs (visible as <span class="bbtermcmd">LDNU</span> in <span class="bbtermcmd">CPUA</span>) for items such as launchpad and <span class="bbtermcmd">FIFW</span>. The net effect is that users can continue to spawn new LUWs on the system, but new users will be directed to other user machines at login.</p>
+
+    <p class="defblock"><span class="textbf">msgmon</span> - This is the process that monitors <span class="oscmd">act.log</span> for specific strings that are indicative of key status changes on watched applications. <span class="bbtermcmd">ALMN</span>s can be generated off of these patterns and uses the msgmon engine to get the data.</p>
+
+    <p class="defblock"><span class="textbf">procmgr</span> - This is the parent process of the majority of the Bloomberg environment. This process launches, restarts, and kills processes in the Bloomberg. The TEAM page provides more detail here: <a href="http://cms.prod.bloomberg.com/team/display/sysi/procmgr">http://cms.prod.bloomberg.com/team/display/sysi/procmgr</a></p>
+
+    <p class="defblock"><span class="textbf">Quick Turn (QT)</span> - This is a minimal or no restart of the Bloomberg environment (<span class="oscmd">rtcpu</span>/<span class="oscmd">rescpu</span> is an option based on the machine owner's discretion). The script <span class="oscmd">turnaround</span> runs and may require a source machine to sync certain files &amp; databases from. Turnaround will also roll logs, init files, advance dates and copy databases. The bbenv for the most part remains up but depending on the machine machine may come offline during turnaround based upon what the owners require. Most &quot;BIG&quot; machines that run quick turnaround do move software in during this time and are taken offline for the duration of quick turnaround. </p>
+
+    <p class="defblock"><span class="textbf oscmd">rescpu</span> - This is the command to allow application requests to a specific host. Rescpu is the method used to tell machines that a machine is online and that all database and function requests should be directed back to this machine. <span class="oscmd">rescpu</span> will take any number of parameters, each of which must be the node number of the machine(s). For each machine listed, <span class="oscmd">rescpu</span> will issue the command <span class="oscmd">rescript</span> with the node number. An alternate naming convention for this action is &quot;put online&quot;. A rescpu'd or online host is considered able to service application data and requests.</p>
+
+    <p class="defblock"><span class="textbf oscmd">restore</span> - This script is used to bring down a machine during a full turnaround - specifically by calling <span class="oscmd">dbdwn</span>.</p>
+
+    <p class="defblock"><span class="textbf oscmd">rstrt</span> - This script is used to bring up the Bloomberg environment. This is called by <span class="oscmd">strtday</span> during a full turnaround.</p>
+
+    <p class="defblock"><span class="textbf oscmd">rtcpu</span> - This is the command to restrict application requests to a specific host. Rtcpu is the method used to tell the machines that a machine is offline and that all database and function requests should be directed to alternate destinations. <span class="oscmd">rtcpu</span> will take any number of parameters, each of which must be the node number of the machine(s). For each machine listed, <span class="oscmd">rtcpu</span> will issue the command <span class="oscmd">rtscript</span> with the node number.</p>
+
+    <p class="defblock"><span class="textbf oscmd">satoff</span> - This command removes the current users off a running user system. The users will need to re-login and be directed to another user system. <span class="oscmd">satoff</span> is specific to user systems. You would not simply route people away from a user system via <span class="oscmd">rtcpu</span>, but would instead use <span class="oscmd">satoff</span> in conjunction with <span class="oscmd">rtcpu</span> to mark such a system offline.</p>
+
+    <p class="defblock"><span class="textbf oscmd">strtday</span> - This script is used to bring up a machine during a full turnaround - specifically by calling <span class="oscmd">rstrt</span>.</p>
+
+    <p class="defblock"><span class="textbf">syschk</span> - A (generic reference to a) process that watches to insure that certain key programs are up and running. The list for any system can be found in <span class="oscmd">/bb/data/syschk.cmd</span>. Individual programs can be temporarily excluded from syschk. There are many variations of syschk by application as well as standard syschk: Examples: <span class="oscmd">fitchk</span>, <span class="oscmd">cdb2chk</span>, <span class="oscmd">dbvarchk</span>, <span class="oscmd">aechk</span>, <span class="oscmd">btchk</span>, &amp; <span class="oscmd">tssyschk</span>.</p>
+
+    <p class="defblock"><span class="textbf">Turn (around)</span> - The is a generic form of the more specific turn types done on various types of systems. During turn, software can be installed (bigs updated), databases copied, and/or logs rolled. The Bloomberg environment <span class="textit">may</span> be restarted - depending upon the turn type.</p>
+
+    <p class="defblock"><span class="textbf oscmd">turnaround</span> - The command for a quick turn - this does not call <span class="oscmd">dbdwn</span>.</p>
+
+    <p class="defblock"><span class="bbtermcmd">VSAT8</span> - This listing denotes systems that are rtcpu'd. A <span class="oscmd">rescpu</span> removes a node ID from this list. <span class="bbtermcmd">VSAT8</span> (without arguments) will display a list of all rtcpu'd nodes. <span class="bbtermcmd">VSAT8 &lt;node_id&gt;</span> will display a two-line with information on just that node. <span class="bbtermcmd">VSAT8 &lt;bbcpu group&gt;</span> is another common tail used to check if machines in a specific group are offline or online.</p>
+
+    <p class="defblock"><span class="textbf">zero-byte markers</span> - These are files that are dropped by some of the processes or tasks listed here. They have extensions such as <span class="oscmd">.done</span> (finished), <span class="oscmd">.lock</span> (running), <span class="oscmd">.run</span> (the job started - but does not have a clear end), &amp; <span class="oscmd">.trap</span> (DB or task is completely started/up) as some. You may see references to these files in tickets to denote progress during a system state change.</p>
+
+    <!-- <hr width="65%" /> -->
+
+    <p class="defblock">Resources:</p><!-- defblock is not the most appropriate, but it works here -->
+    <ul style="padding-left: 60px;">
+      <li><a href="https://cms.prod.bloomberg.com/team/display/csrm/FAQ">https://cms.prod.bloomberg.com/team/display/csrm/FAQ</a></li>
+      <li><a href="https://cms.prod.bloomberg.com/team/display/csrm/CR+Intro+to+the+Bigs">https://cms.prod.bloomberg.com/team/display/csrm/CR+Intro+to+the+Bigs</a></li>
+      <li><span class="bbtermcmd">BP CONSOLE ROOM OPERATIONS&lt;GO&gt;</span></li>
+    </ul>
+
+  </body>
+</html>

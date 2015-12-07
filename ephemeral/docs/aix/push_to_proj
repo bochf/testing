@@ -1,0 +1,28 @@
+#!/bin/ksh
+
+if [[ -d ../../../../proj/aix_shm_examples ]]
+then
+    print "Found aix_shm_examples."
+    print "Removing the old...\c"
+
+    if rm -rf ../../../../proj/aix_shm_examples > /dev/null 2>&1
+    then
+        print "Done."
+    else
+        print "Failed."
+        print -n2 "ERROR: Unable to remove directory."
+        exit 1
+    fi
+fi
+
+print "Copying examples to proj...\c"
+if cp -r examples ../../../../proj/aix_shm_examples > /dev/null 2>&1
+then
+    print "Done."
+else
+    print "Failed."
+    print -n2 "ERROR: Failed to copy examples to proj."
+    exit 1
+fi
+
+exit 0

@@ -1,0 +1,214 @@
+#!/bin/ksh93
+
+# This is the root of cpub in the git repo, where source, docs, and package
+# build happens. From the root of the perf/ephemeral git repo it should be:
+# [perf/ephemeral]/tools/cpub
+# Lots of directories are based off of this.
+# DO NOT SET THIS. It will be set later.
+typeset CPUB_ROOT=
+
+# This is where the package is built
+# DO NOT SET THIS. It will be set later.
+typeset BUILD_BASE=
+
+# This is where the source code is. It is the base of the make tree for cpub. 
+typeset SOURCE_BASE=
+
+
+
+echo "Running Solaris-specific build."
+
+# -----------------------------------------------------------------------------
+printf "Determing the root of the cpub directory."
+
+CPUB_ROOT=$(pwd)
+
+printf "."
+
+if [[ ${CPUB_ROOT} != *cpub ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to find the root directory.\n" >&2
+    exit 1
+fi
+
+printf "."
+
+if [[ ! -d ${CPUB_ROOT}/src ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to find the root directory.\n" >&2
+    exit 1
+fi
+
+printf "."
+
+if [[ ! -d ${CPUB_ROOT}/Build ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to find the root directory.\n" >&2
+    exit 1
+fi
+
+printf "Done.\nUsing: ${CPUB_ROOT}\n"
+
+# -----------------------------------------------------------------------------
+printf "Checking for the (code) source directory..."
+SOURCE_BASE=${CPUB_ROOT}/src
+if [[ ! -d ${SOURCE_BASE} ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to find the source directory.\n" >&2
+    exit 1
+fi
+printf "Found.\n"
+
+# -----------------------------------------------------------------------------
+printf "Running make clean.\n"
+cd ${SOURCE_BASE}
+if ! make clean
+then
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+printf "Running make (default target).\n"
+cd ${SOURCE_BASE}
+if ! make
+then
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+printf "Checking for the (man) source directories..."
+MAN_SOURCE=${CPUB_ROOT}/man
+if [[ ! -d ${MAN_SOURCE}/man1 ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to find the man1 directory.\n" >&2
+    exit 1
+fi
+printf "."
+if [[ ! -d ${MAN_SOURCE}/man5 ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to find the man5 directory.\n" >&2
+    exit 1
+fi
+printf "Found.\n"
+
+# -----------------------------------------------------------------------------
+printf "Running make clean.\n"
+cd ${MAN_SOURCE}/man1
+if ! make clean
+then
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+printf "Running make (default target).\n"
+cd ${MAN_SOURCE}/man1
+if ! make solaris
+then
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+printf "Checking for the package build directory..."
+if [[ -z ${CPUB_ROOT} ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: CPUB_ROOT is NULL.\n" >&2
+    exit 1
+fi
+BUILD_BASE=${CPUB_ROOT}/Build/SunOS
+if [[ ! -d ${BUILD_BASE} ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to find the build directory.\n" >&2
+    exit 1
+fi
+printf "Found.\n"
+
+# -----------------------------------------------------------------------------
+printf "Freshening the package build directory..."
+if [[ ! -d ${BUILD_BASE}/ROOT ]]
+then
+    printf "."
+    if ! rm -rf ${BUILD_BASE}/ROOT > /dev/null 2>&1
+    then
+        printf "Failed.\n"
+        printf "ERROR: Unable to find the build directory.\n" >&2
+        exit 1
+    fi
+fi
+printf "."
+if ! mkdir -p ${BUILD_BASE}/ROOT/usr/local/bin > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to create package build (bin) directory structure.\n" >&2
+    exit 1
+fi
+printf "."
+if ! mkdir -p ${BUILD_BASE}/ROOT/usr/share/man/man1 > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to create package build (man1) directory structure.\n" >&2
+    exit 1
+fi
+printf "."
+if ! mkdir -p ${BUILD_BASE}/ROOT/usr/share/man/man5 > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to create package build (man5) directory structure.\n" >&2
+    exit 1
+fi
+printf "Done.\n"
+
+# -----------------------------------------------------------------------------
+printf "Copying binaries into package build tree."
+if ! cp ${SOURCE_BASE}/cpub ${BUILD_BASE}/ROOT/usr/local/bin/cpub > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to copy cpub into packing dir.\n"
+    exit 1
+fi
+printf "."
+if ! sed -e "s|#!/opt/swt/bin/python|#!/usr/bin/python2.6|" ${SOURCE_BASE}/ebcd ${BUILD_BASE}/ROOT/usr/local/bin/ebcd > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to copy ebcd into packing dir.\n"
+    exit 1
+fi
+printf "."
+printf "Done.\n"
+
+# -----------------------------------------------------------------------------
+printf "Copying man pages into package build tree..."
+if ! cp ${MAN_SOURCE}/man1/cpub.1 ${BUILD_BASE}/ROOT/usr/share/man/man1/cpub.1 > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to copy man1 page into packing dir.\n"
+    exit 1
+fi
+printf "."
+if ! cp ${MAN_SOURCE}/man5/cpub.5 ${BUILD_BASE}/ROOT/usr/share/man/man5/cpub.5 > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to copy man5 page into packing dir.\n"
+    exit 1
+fi
+printf "Done.\n"
+
+# -----------------------------------------------------------------------------
+# Ok. Everything is in place, the code could be inline... but I have decided
+# to call out to a version-specific script at this point to finish the job.
+# This is in *anticipation* of differences between Sol10 and Sol11. The end-
+# result may vary from this approach.
+# -----------------------------------------------------------------------------
+printf "Running OS-version specific package build..."
+cd ${BUILD_BASE}
+OSVER=$(uname -r)
+OSVER=${OSVER#5.}
+printf "buildit_${OSVER}.\n"
+exec bin/buildit_${OSVER}

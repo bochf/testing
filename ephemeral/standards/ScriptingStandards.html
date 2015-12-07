@@ -1,0 +1,2057 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!-- 
+     ######################################################################
+     Shell Scripting Guidelines - A set of recommendations on how to 
+                                  best write scripts for maintainability
+                                  and robustness of use.
+     Stanislav Petrov <doic@oko.su>
+     William Favorite <wfavorite2@bloomberg.net>
+     Jose R Escalera  <jescalera1@bloomberg.net>
+     Gordon Marler    <gmarler@bloomberg.net>
+     Felix E Sanchez  <fsanchez18@bloomberg.net>
+     Eugene Schulman  <eschulman6@bloomberg.net>
+
+     Notes:
+     - Not much to state here, the document should be self-explanatory.
+       Do note that there are notes throughout the document.
+     - ToDos are at the *end* of the document!
+
+     Version History:
+      0.9.0   9/27/13 - First documented version
+      0.10.0  9/30/13 - Cleanup, movement towards release
+      0.11.0  9/30/13 - Previous edition was passed around after minor
+                        revisions. This version continues changes made
+                        in the previous.
+      0.12.0  10/1/13 - Continued edits
+                      - Added "DoThIs" items to comments. Actual pattern
+                        is in all caps (for grep match). These labels are
+                        for to dos in the document
+                      - Brought the ToDos into the comments.
+      0.13.0  10/3/13 - Approaching review-ready state (Meaning: It can
+                        be published for review/comments. I think this
+                        is a rough equivelant of an RFC - technically a
+                        request for comments, but in practice the final
+                        authorative release - until a major revision comes
+                        much later.)
+      0.14.0  10/6/13 - Syntax & spell check
+                      - Cleanup of some of the text
+                      - Removal of remaining debug items
+      0.15.0  10/7/13 - Doh! I added a sub-section to the Overview section
+                        but did not include the actual text.
+      0.16.0  10/8/13 - Changes at the recommendation of Michael Clarkson
+      0.16.1  10/8/13 - Minor spelling and language foible fixes
+      0.17.0  10/9/13 - Implemented Gordon's modified spinner code
+      0.18.0 10/23/13 - Cleanup, updates, resolved (a few) todos
+      0.19.0 10/31/13 - Gene's revisions not versioned (here)
+                      - Non-standard HTML conversion
+                      - Minor content addition
+      0.20.0  11/1/13 - Managed some formatting issues
+                      - Moved the "Design" section to top (awaiting new
+                        content that is more appropriate to the section
+                        title).
+                      - Intermediate versions have a 0.19.x version as I
+                        am checking stuff in fairly regularly and do not
+                        wish to commit to the newer (full) version yet
+      0.21.0  11/4/13 - Laid in Felix's design section
+      0.22.0  11/4/13 - Finished remainder of document style conflicts with
+                        Gene's additions. (All code is now consistent in
+			               how it is represented in the document.)
+      0.23.0  11/6/13 - Minor (transitional) change to Design section
+                      - Added Jose's recommendation for pathing binaries
+      0.23.1  11/6/13 - Typo fix
+      0.23.2 11/11/13 - Sections on unnecessary compute avoidance &
+                        dead code elimination
+      0.23.3 11/12/13 - Passes xhtml language compliance (validates xhtml)
+      0.24.0 11/12/13 - Additional comments to/on new code
+                      - Formatting / style changes to new code
+                      - I tried to ASCII-escape the 4-letter word in the
+                        Steve Jobs quote (it tripps up any attempt to email
+                        the document). ==> Our filter renders the document
+                        before doing any search for profanity. It is possible
+                        that I could use CSS or JS to cause the word to render
+                        only when in a *real* browser... but for this word
+                        (weighed against the effort) is is not worth it.
+                        And I am keeping the quote (if I am keeping any of
+                        them).
+     0.25.0  11/12/13 - Minor (last minute) comment addition
+     0.26.0  11/12/13 - Added proper attribution at the end (about) section.
+                      - Walkthrough / fix of some minor errors, readability,
+                        and clarifications.
+     0.27.0  11/13/13 - Implementation recommendations
+                      - Spell check
+     ######################################################################
+-->
+
+
+  <!-- **********************************************************************
+       This is what an inline comment looks like.
+       ********************************************************************** -->
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+  <style type="text/css">
+  <!--
+  body, table { 
+               font-family: "Times", serif;
+               font-size: 10pt;
+               background-color: #fafafa; 
+               }
+ 
+  a:link { text-decoration: none; color: #000000; }
+  a:visited { text-decoration: none; color: #000000; }
+  /* Active is more like "visited" than immediate feedback. */
+  a:active { text-decoration: none; color: #000000; }
+  a:hover { text-decoration: none; color: #aa00aa; }
+
+  .thintable {
+               margin-left:25px;
+               margin-right: 5px;
+               border-style: solid;
+               border-collapse:collapse;
+               border-width:1px;
+               border-color: #888888;
+             }
+  .thintr {
+           border-style: solid;
+           border-width:1px;
+           border-collapse:collapse;
+          }
+
+  .thintd {
+            border-style: solid;
+            border-width:1px;
+            border-collapse:collapse;       
+            padding: 5px;
+          }
+
+  .invisitable {
+                margin-left:20px;
+                border-style: none;
+             }
+  .invisitr {
+             border-style: none;
+            }
+
+  .invisitd {
+            border-style: none;
+            text-align: left;
+            vertical-align:text-top;
+            }
+        
+  .sectiontitle {
+               font-weight: bold;
+               font-size: 14pt;
+               text-decoration:underline;
+               background-color: #cccccc;
+                 }
+  
+  .sectionhead {
+               font-weight: bold;
+               font-size: 10pt;
+               margin-left: 10px;
+               background-color: #e8e8e8;
+                }
+
+  .sectiontext { margin-left:20px; }
+
+  .bartlettext {
+               padding-top: 2px;
+               padding-bottom: 2px;
+               padding-right: 20px;
+               padding-left: 20px;
+               border-style: solid;
+               border-color: #777777;
+               border-width: 1px;
+               margin-left: 30px;
+               margin-right: 30px;
+               font-style:italic;
+               }
+
+  .bartlettbody {
+                text-align: justify;
+                }
+  .bartlettauth {
+                text-align: right;
+                }
+
+
+  .oscmd { font-family: "Courier New", "Lucida Console", Monospace; color: green; }
+
+  .osword { font-family: "Courier New", "Lucida Console", Monospace; color: #990033; }
+
+  @media screen,print
+  {
+     .codeblock
+     {
+          padding-top: 2px;
+          padding-bottom: 2px;
+          padding-right: 16px;
+          padding-left: 16px;
+
+          font-family: "Courier New", "Lucida Console", Monospace;
+          font-size: 9pt;
+          margin-left: 25px;
+          /* margin-right: 15px; */
+          width: 50em;
+          color: #00cc00;
+          background-color: black;
+          border-style: solid;
+          border-color: #777777;
+          border-width: 2px;
+          font-weight: bold;
+      }
+
+      .codenote { color: #aaaadd; }
+  }
+
+  /* These are LaTeX concepts */
+  .textit { font-style: italic; }
+  .textbf { font-weight: bold; }
+  .texttt { font-family: "Courier New", "Lucida Console", Monospace; }
+  .underline { text-decoration:underline }
+
+  .debug { font-weight: bold; color: red; }
+
+  .linkcontent { margin-left: 10px; }
+
+  .footnote { margin-left: 30px; margin-right: 30px; font-size: 9pt; }
+ 
+ @-webkit-keyframes cursorbl
+ { 
+     from { opacity: 1.0; } to { opacity: 0.2; }
+ }
+ .cursor {
+    -webkit-animation-name: cursorbl;
+    -webkit-animation-iteration-count: infinite;
+    -webkit-animation-timing-function: cubic-bezier(1.0,0,0,1.0);
+    -webkit-animation-duration: .75s;
+    }
+  -->
+  </style>
+
+<title>Bloomberg Shell Scripting Guidelines for SAs</title>
+</head>
+
+<body>
+  <div style="border-bottom:thick solid #aaaaaa; width:95%; text-align:center; margin-right: auto; margin-left: auto;">
+  <p style="text-align:center; font-size:20pt; font-weight:bold">Bloomberg Shell Scripting Guidelines for SAs</p>
+  </div>
+
+  <p />
+  <p style="text-align:center; font-size:9pt;">Ver: 0.27.0</p>
+  <p />
+  <p />
+
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">Overview</p>
+
+  <div class="bartlettext"><p class="bartlettbody">&quot;The best programs are written so that computing machines can perform them quickly and so that human beings can understand them clearly. A programmer is ideally an essayist who works with traditional aesthetic and literary forms as well as mathematical concepts, to communicate the way that an algorithm works and to convince a reader that the results will be correct.&quot;</p>
+<p class="bartlettauth">- Donald E. Knuth, Selected Papers on Computer Science</p></div>
+
+  <p class="sectionhead">Purpose of this document</p>
+
+  <p class="sectiontext">Quite directly, the goal of this document is to provide a sane default method of scripting such that the resulting tools will best serve the user, be supportable by other engineers, and least likely to cause future maintenance issues.</p>
+
+  <p class="sectiontext">This document is not a directed <span class="textit">mandate</span> on every minutiae of script development, but an attempt to point out and avoid some of the common pitfalls that frequently plague many scripting projects.</p>
+
+  <p class="sectiontext">Scripting projects are by their nature, software <span class="textit">development</span> projects. As a consequence, they are bound by all the design, development, and maintenance issues that are seen on any software development exercise. This document is an attempt to bring some of the well established software development principles to the process of script creation by system administrators.</p>
+
+  <p class="sectiontext">Finally, if the reader makes a conscious effort to ignore the best practices points described herein, at least he will be aware of why his peers have chosen to write scripts in a manner different than theirs.</p>
+ 
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Reserved Words</p>
+
+  <p class="sectiontext">The following &quot;reserved words&quot; are used:</p>
+  
+  <table class="invisitable">
+     <tr class="invisitr">
+      <td class="invisitd"><span class="textbf">suggested</span></td>
+       <td class="invisitd">Suggestions are points to be taken in the absence of any other imperative or preference. These are typically elements of style that help to provide some consistency between one person and another. The ideas denoted as a suggestion run only the risk of breaking a consistent style and have no other impact on application suitability or use.</td>
+      </tr>
+     <tr class="invisitr">
+      <td class="invisitd"><span class="textbf">recommended/discouraged</span></td>
+       <td class="invisitd">Recommendations speak to maintainability, supportability, and general usability of the script. To disregard a recommendation will likely result in inconvenience for fellow script maintainers and users. At a minimum, the result is a loss of productivity.</td>
+      </tr>
+     <tr class="invisitr">
+       <td class="invisitd"><span class="textbf">should/should&nbsp;not</span></td>
+        <td class="invisitd">This is a strong caution that generally denotes a portability or performance issue. Disregarding a point using this phrase will likely result in something that may appear to work, but may fail in unexpected ways, or sometimes produce unexpected results.</td>
+    </tr>
+    <tr class="invisitr">
+       <td class="invisitd"><span class="textbf">must/must&nbsp;not</span></td>
+        <td class="invisitd">This is a fundamental requirement that goes beyond a caution. Violations of these points will likely result in code that simply does not work as intended or causes other un-intended side effects that are clearly detrimental to the behavior of the script, or even the system.</td>
+    </tr>
+   </table>
+
+  <!-- **********************************************************************
+       wfavorit:
+       It may be best to set the tiers up like this:
+       - encouraged/discouraged
+       - recommended/disuade(?) <== the negative here is an issue
+       - should/should not
+       - must/must not
+       ********************************************************************** -->
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Why to script - Why <span class="textit">not</span> to script</p>
+
+  <p class="sectiontext">Admins are encouraged to script solutions for:</p>
+  <ul>
+    <li>problem determination - Quickly find problems on a system</li>
+    <li>consistent results - Scripts capture a series of commands and execute them consistently</li>
+    <li>levaraging knowledge - Subject matter experts can write scripts to handle esoteric issues and exceptions</li>
+    <li>delegation - Complex tasks can be handed off to other teams</li>
+  </ul>
+
+  <p class="sectiontext">Scripts are a great way of acting on a system - using a lightweight language / environment to quickly develop a solution. Scripts should <span class="textit">not</span> be seen as a development platform for all your needs. Daemons, long running collection processes, and fork-heavy scripts should not run on performance sensitive systems.</p>
+
+  <!-- **********************************************************************
+       wfavorit:
+       I really don't like the verbiage here. The point is that long running
+       daemon-like processes should be fork-less binaries and not fork-happy
+       shell scripts. I think a better / more succinct argument could be made.
+       ********************************************************************** -->
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Notes</p>
+
+  <p class="sectiontext">Code examples are included for illustrative purposes only. The code has been tested, but may not be the ideal choice for cut-n-paste drop into production tools. Much of the exception handling has been stripped away to convey the key points without burdening the examples with the overhead of <a href="http://en.wikipedia.org/wiki/Defensive_programming">defensive programming</a>.</p>
+
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">Design</p>
+
+  <div class="bartlettext"><p class="bartlettbody">&quot;I am enthusiastic over humanity's extraordinary and sometimes very timely ingenuity. If you are in a shipwreck and all the boats are gone, a piano top buoyant enough to keep you afloat that comes along makes a fortuitous life preserver. But this is not to say that the best way to design a life preserver is in the form of a piano top. I think that we are clinging to a great many piano tops in accepting yesterday's fortuitous contrivings as constituting the only means for solving a given problem.&quot;</p>
+<p class="bartlettauth">- Richard Buckminster Fuller</p></div>
+
+  <p class="sectiontext"></p>
+
+  <p class="sectionhead">Coding Prerequisites</p>
+
+  <p class="sectiontext">Before coding starts it is important to ensure that all necessary prerequisites have been completed (or have at least progressed far enough to provide a solid foundation for coding). If the various prerequisites are not satisfied then the software is likely to be unsatisfactory, even if it is completed.</p>
+
+  <p class="sectiontext">From Meek and Heath*: &quot;What happens before one gets to the coding stage is often of crucial importance to the success of the project.&quot;</p>
+
+  <p class="footnote">[* Meek, Brian; Heath, Patricia (1980), Guide to Good Programming Practice, Ellis Horwood, Wiley, p. 14 ]</p>
+
+  <p class="sectiontext">The prerequisites outlined below cover such subjects as:</p>
+
+  <ul>
+    <li>What is the software meant to do? (requirements)</li>
+    <li>The overall structure of the software system (architecture)</li>
+  </ul>
+
+  <p class="sectiontext">For small simple projects involving only one person it may be feasible to combine architecture with design and adopt a very simple life cycle.</p>
+
+  <p class="sectionhead">Software Design Requirements</p>
+
+  <p class="sectiontext">Software design requirements refer to the process of formulating, documenting and maintaining software requirements.</p>
+
+  <p class="sectiontext">Software design may also refer to either &quot;all the activities involved in conceptualizing, framing, implementing, commissioning, and ultimately modifying complex systems&quot; or &quot;the activity following requirements specification before programming&quot;.</p>
+
+  <p class="sectiontext">McConnell states*: &quot;The first prerequisite you need to fulfill before beginning coding is a clear statement of the problem the system is supposed to solve.&quot;</p>
+
+  <p class="footnote">[* McConnell, Steve (2004). Code Complete (Second ed.). Microsoft Press. p. 36 ]</p>
+
+  <p class="sectiontext">Meek and Heath emphasize* that a clear, complete, precise, and unambiguous written specification is the target to aim for.  Note that it may not be possible to achieve this target, and the target is likely to change as implementation or requirements change.</p>
+
+  <p class="footnote">[* Meek, Brian; Heath, Patricia (1980), Guide to Good Programming Practice, Ellis Horwood, Wiley, p. 15 ]</p>
+
+  <p class="sectiontext">It is worth to notice a distinction between functional requirements (e.g. update a record) and non-functional requirements (e.g. response time must be less than 1 second).</p>
+
+  <p class="sectiontext">There are many aspects to consider in the design of a piece of software. The importance of each should reflect the goals the software is trying to achieve. Some of these aspects are:</p>
+
+  <ul>
+    <li>Compatibility - The software is able to operate with other products that are designed for interoperability with another product. For example, a piece of software may be backward-compatible with an older version of itself.</li>
+    <li>Extensibility - New capabilities can be added to the software without major changes to the underlying architecture.</li>
+    <li>Fault-tolerant - The software is resistant to and able to recover from component failure.</li>
+    <li>Maintainability - A measure of how easily bug fixes or functional modifications can be accomplished. High maintainability can be the product of modularity and extensibility.</li>
+    <li>Modularity - The resulting software comprises well defined, independent components. That leads to better maintainability. The components could be then implemented and tested in isolation before being integrated to form a desired software system. This allows division of work in a software development project. A good example of this are Perl Modules (PM) or subroutines and/or functions in other scripting languages.</li>
+    <li>Reliability - The software is able to perform a required function under stated conditions for a specified period of time.</li>
+    <li>Reusability - The software is able to add further features and modification with slight or no modification. Some of the functions can be reuse in other projects with minimum or non effort.</li>
+    <li>Robustness - The software is able to operate under stress or tolerate unpredictable or invalid input. For example, it can be designed with a resilience to low memory conditions.</li>
+    <li>Security - The software is able to withstand hostile acts and influences.</li>
+    <li>Usability - The software user interface must be usable for its target user/audience. Default values for the parameters must be chosen so that they are a good choice for the majority of the users.</li>
+    <li>Performance - The software performs its tasks within a user-acceptable time. The software does not consume too much memory.</li>
+    <li>Scalability - The software adapts well to increasing data or number of users.</li>
+  </ul>
+
+  <p class="sectiontext">A software designer or architect may identify a design problem which has been solved by others before. The reuse of previously designed and implemented components can speed up the software development process and minimize the development cycle.</p>
+
+  <p class="sectionhead">Software Architecture</p>
+
+  <p class="sectiontext">The word software architecture intuitively denotes the high level structure of a software system. The term software architecture also denotes the set of practices used to select, define or design software architecture.</p>
+
+  <p class="sectiontext">Choosing the appropriate architecture for an application is a key step. You have to know what you are building on before you can start a project. Check the architecture of the target. Investigate as much as you can about the ins and outs of the platform and note any pitfalls before the coding starts. It will go a long way to heading off any bugs that might be 'show stoppers' later on.</p>
+
+  <p class="sectiontext">A benefit of software architecture facilitates communication between stakeholders, captures early decisions about the high-level design, and allows reuse of design components between projects.</p>
+
+  <p class="sectionhead">Call the shot</p>
+
+  <p class="sectiontext">Gathering requirements and then the design process should be the developer's first step in the process of building a new, or modifying an existing tool. A solid design process along with the guidelines presented in this document are more likely to result in a successful effort, than simply coding until &quot;it works&quot;. The intent here is to &quot;call the shot&quot; and produce something more than a tool that works, but one that works with the best interests of the problem at hand, and one that is supportable by all.</p> 
+
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">File Conventions</p>
+
+  <div class="bartlettext"><p class="bartlettbody">&quot;I'm not a great programmer; I'm just a good programmer with great habits.&quot;</p>
+    <p class="bartlettauth">- Kent Beck</p></div>
+
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">It is recommended that scripts avoid shell extensions (.sh), unless the extension is for a sourced functions file</p>
+
+  <p class="sectiontext">Users don't care what you wrote the tool in. If they care, they can go look at the magic/interpreter line. Developers looking to source functions do. Similar functions in different languages can be found via the extension.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">File names are recommended to not exceed ten characters</p>
+
+  <p class="sectiontext">By basic convention, names exceeding approximately 10 characters are considered too long. This is primarily by good Unix design, but is also simultaneously enforced* <span class="textit">and</span> alleviated by the <span class="texttt">bbhelp</span>, but also helps users to find their way to more obscure commands.</p>
+
+
+  <p class="footnote">[* The database query tool for <span class="texttt">bbhelp</span> is <span class="texttt">bbhelpq</span>. The database has no (reasonable) limit on size, but one of the display modes has a limitation of 13 characters. The point is not so much that bbhelp is a limiting factor (in its current use, it is not), but both that it is an alternative to exceptionally long names and that it is an indication of the problems associated with names of this size. ]</p>
+
+  <!-- **********************************************************************
+       wfavorit:
+       The bbhelp issue is only during one of the "listing" reports. It shows
+       only 13 characters and the remainder of the line is the description. If
+       the name is truncated, the last character is an "!". The emphasis here
+       is on "how long a name can be" and the reason it is a recommendation
+       rather than suggestion is that it can break in tools like this.
+       ********************************************************************** -->
+
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">Script / Tool Usage Conventions</p>
+
+  <div class="bartlettext"><p class="bartlettbody">&quot;You've baked a really lovely cake, but then you've used dog shit for frosting.&quot;</p>
+<p class="bartlettauth">- Steve Jobs</p></div>
+
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">All scripts should support or catch the <span class="texttt">-h</span> argument</p>
+
+  <p class="sectiontext">The user should expect that a call to the tool with the -h option will not cause the script to execute against a <span class="texttt">-h</span> object. Ideally, calls with the <span class="texttt">-h</span> option should return help/usage information.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Potentially dangerous scripts must be trigger locked</p>
+
+  <p class="sectiontext">A script that will do significant changes and/or damage to the system must have a <span class="textit">trigger lock</span> that will prevent the script from running. This is a broad term but can be simple as printing a warning and exiting if the user did not supply a -F(orce) or -Y(es, I wish to continue) switch as a parameter. Other examples are checking to see if the resource to be modified is in use, if the environment is running, or if the system is in market hours.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">It is recommended that long running scripts give the user feedback on status</p>
+
+  <p class="sectiontext">The user should not feel as though the script has hung. Regular output gives the user positive feedback that the script is continuing to progress against the task at hand.</p>
+
+  <p class="sectiontext">There are many ways to provide feedback. The most basic method is to be verbose about activities. Some other methods are:</p>
+  
+  <ul>
+   <li>Warning the user that the script will appear unresponsive - ideally to include an expected period of wait</li>
+   <li>Printing verbose messages of each activity</li>
+   <li>Printing percentages completed</li>
+   <li>Printing some ASCII animation (dots, hashes, spinners)</li>
+   <li>Tracking the size of results generated (like: how big a results file is)</li>
+  </ul>
+   
+  <p class="sectiontext">The following code is an example of a spinner script that is fork/exec'd from the main script and waits for a signal from the parent script to denote completion. This is a very basic example, there are numerous alternate methods.</p>
+
+  <div class="codeblock">
+    <p>
+      #!/bin/ksh93<br />
+      <br />
+      function spinfunc<br />
+      {<br />
+      &nbsp;&nbsp;&nbsp;typeset -i sv=0<br />
+      &nbsp;&nbsp;&nbsp;trap 'printf &quot;\b\b...Done.\n&quot;' EXIT&nbsp;&nbsp;<span class="codenote">&lt;--- Cleanup on exit</span><br />
+      <br />
+      &nbsp;&nbsp;&nbsp;printf &quot;Running -&quot;<br />
+      <br />
+      &nbsp;&nbsp;&nbsp;while :&nbsp;&nbsp;<span class="codenote">&lt;--- &quot;:&quot; is a builtin, true is not always so</span><br />
+      &nbsp;&nbsp;&nbsp;do<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;printf &quot;\b&quot;<br />
+      <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;case ${sv} in<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0) sv=1 ; printf &quot;\\&quot; ;;<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1) sv=2 ; printf &quot;|&quot; ;;<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2) sv=3 ; printf &quot;/&quot; ;;<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3) sv=0 ; printf &quot;-&quot; ;;<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;esac<br />
+      <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;sleep 1<br />
+      &nbsp;&nbsp;&nbsp;done<br />
+      }<br />
+      <br />
+      spinfunc &amp;&nbsp;&nbsp;<span class="codenote">&lt;--- Start the spinner (in the background)</span><br />
+      <br />
+      spinfunc_pid=$!&nbsp;&nbsp;<span class="codenote">&lt;--- Save the PID for later</span><br />
+      <br />
+      sleep 7&nbsp;&nbsp;<span class="codenote">&lt;--- A &quot;fake&quot; long running process without output</span><br />
+      <br />
+      kill ${spinfunc_pid}&nbsp;&nbsp;<span class="codenote">&lt;--- Stop the spinner function/process</span><br />
+      <!-- &nbsp;printf &quot;\b\b...Done.\n&quot;&nbsp;&nbsp;<span class="codenote">&lt; - - - &quot;Terminate&quot; the output</span><br /> -->
+    </p>
+  </div>
+
+  <p class="sectiontext">Some notes on the previous example:</p>
+  <ul>
+    <li>A production version of this would validate the PID before attempting to kill it.*</li>
+    <li>The example, as presented, may have a race condition on some shells. The script can exit and return to the parent shell before the trap code is executed. The larger point here is that the ASCII animation &quot;cleanup&quot; code is self contained in the called function.</li>
+  </ul> 
+
+  <p class="footnote">[* For example: a wrapped version of kill that takes additional parameters such as the expected binary name or process group ID that must match the PID before the kill will be attempted. ]</p>
+
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">Style &amp; Readability</p>
+
+  <div class="bartlettext"><p class="bartlettbody">&quot;Always code as if the guy who ends up maintaining your code will be a violent psychopath who knows where you live&quot;</p>
+<p class="bartlettauth">- John Woods</p></div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Use function-locals</p>
+
+  <p class="sectiontext">Most shells do not allow function-local variables. (Korn 93 is a notable exception.) This does not mean that one should not define and use locals.</p>
+
+  <p class="sectiontext">The following code block will actually cause <span class="texttt">mf_input</span> to be local in Korn 93, and will have a similar effect in shell implementations that do not support local variables. Note: The variable is prefixed with a unique string based on the function name. This is used to prevent name collisions in shell implementations not supporting local instances of a named variable.</p>
+
+  <div class="codeblock">
+    <p>
+      function my_function<br />
+      {<br />
+      &nbsp;&nbsp;&nbsp;typeset mf_input=${1:/usr}<br />
+      <br />
+      &nbsp;&nbsp;&nbsp;...<br />
+      <br />
+      &nbsp;&nbsp;&nbsp;unset mf_input<br />
+      }
+    </p>
+  </div>
+
+  <p class="sectiontext">This example is designed for <span class="textit">portability</span>. Not all shells behave the same. (Korn 93 implementations do not require the <span class="texttt">unset</span>, and locals will automatically fall out of scope on function exit.) Use what is appropriate.</p>
+
+  <!-- **********************************************************************
+       wfavorit:
+       A test-case for how to determine scoping rules would be of value here.
+       Just check for the variable set outside the function, or if it has
+       collisions with same-named variables in a global scope?
+       DOTHIS: Either write the test-case above, or expand on the concept.
+       ********************************************************************** -->
+  
+  <p class="sectiontext">Data should be passed to and from a function via the <span class="textit">proper</span> interfaces. If data is passed in another manner (via globals or a file) then that should be either documented or referenced. (Global = documented. Filename = referenced.)</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Functions should never modify globals. Functions in libraries must never modify globals*.</p>
+
+  <p class="footnote">[* &quot;globals&quot; does not mean library globals (variables local to the library) that can be used to maintain state between various calls. This is an obscure counter example, but one of the rare noted exceptions to this rule.<br />There is a distinction between &quot;access&quot; and &quot;modify&quot;. To access allows for the use of &quot;define-like&quot; constants, but should not infer an accepted method of passing parameters. To modify denotes a pure avoidance of generally accepted methods of passing parameters. ]</p>
+
+  <p class="sectiontext">Globals make code harder to follow and maintain. Functions should have clearly defined inputs, output, and side effects. The use of globals violates this concept. Furthermore, the use of a global in a function is an assumption that the function is called in an expected order and context. This makes the function very unpredictable in use and effectively <span class="textit">not</span> reusable.</p>
+
+  <p class="sectiontext">The exception to the use of &quot;globals&quot; is when they are used in the <span class="textit">constant</span> context. See the following code snippet:</p>
+
+  <div class="codeblock">
+    <p>
+      typeset -r ACT_LONGLS=1 <span class="codenote">&lt;--- The -r option sets read only</span><br />
+      typeset -r ACT_REG_LS=2&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&quot;readonly&quot; is synonymous with &quot;typeset -r&quot;</span><br />
+      typeset -r ACT_ALL_LS=3<br />
+      ...<br />
+      <br />
+      ...<br />
+      function&nbsp;do_ls<br />
+      {<br />
+      &nbsp;&nbsp;&nbsp;typeset -i my_action=${1}<br />
+      <br />
+      &nbsp;&nbsp;&nbsp;case ${my_action} in<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${ACT_LONGLS}) ls -l ;;<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${ACT_REG_LS}) ls ;;<br /> 
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${ACT_ALL_LS}) ls -a ;;<br /> 
+      &nbsp;&nbsp;&nbsp;esac<br />
+      }<br />
+      ...<br />
+      <br />
+      ...<br />
+      do_ls ${ACT_LONGLS}<br />
+      ...<br />
+      <br />
+    </p>
+  </div>
+
+  <p class="sectiontext">In this example, <span class="texttt">the ACT_*</span> variables are pre-defined actions that act as clearly defined parameters to the function. The ACT_ variables here use the &quot;ALL_CAPS&quot; convention that denotes that they are read only &quot;defines&quot;. Note: This code example has no exception handling for brevity. Ideally, it would handle invalid input. (The code could be tested for unset variables by specifying a <span class="texttt">-u</span> option to the (Korn) interpreter line.)</p>
+
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Spaces are recommended over tabs for whitespace</p>
+
+  <p class="sectiontext">Three spaces makes for a good indent. Tabs tend to be interpreted differently based on the editor and make for inconsistent white space.</p>
+
+  <p class="footnote">[ Apropos: The emacs indent-region command (Esc-x indent-region) can be used to re-flow a selected region of a document. ]</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Readability - Keep it under 80 chars wide</p>
+
+  <p class="sectiontext">Preventing word wrap improves readability. When code becomes so indented that it shifts off the right hand side of the screen, then it is recommended that it be placed into a function.</p>
+
+  <p class="sectiontext">Messages to the user should never wrap in a &quot;standard&quot; sized console. Messages exceeding 80 characters should be formatted to <span class="textit">explicitly</span> wrap where and how the author intends - typically with proper indentation after the wrap to denote the line continuation. (There are several examples of multi-line error messages in this document.)</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Readability - Clump like variable definitions in conventional locations</p>
+
+  <p class="sectiontext">Variable definitions are recommended to be highly localized, and not spread throughout the code. Similar variable definitions are recommended be clumped into a block of definitions (such as &quot;define&quot;-ing* all the possible return values for the script). It is recommended that all &quot;define&quot;-ed inputs to a function be localized to the function definition.</p>
+
+  <p class="footnote">[* The concept of &quot;define&quot; is used here as <span class="textit">borrowed</span> from the C context. A &quot;C define&quot; is a name that is assigned a constant value. By convention, it is in all caps. The shell equivalent is to <span class="texttt">typeset -r</span> (or &quot;<span class="texttt">readonly</span>&quot;) a variable. ]</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">RCS should not be used. RCS $Log$ entries should not be used.</p>
+
+  <p class="sectiontext">Modern source control tools maintain a much better means to determine exactly what was changed by who, and when. RCS headers fill the source file with $Log$ entries that frequently dwarf the actual content of the file.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Code is recommended to follow a consistent indentation scheme.</p>
+
+  <p class="sectiontext">Many styles exist. Pick one, be consistent.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Use CR and whitespace to improve readability</p>
+
+  <p class="sectiontext">Various styles exist in shell scripting just like in C. Either style is appropriate provided that they are consistent throughout the code.</p>
+
+  <p class="sectiontext">Styles represented here are more intended for C and syntactically similar languages. Shell does not directly map to these styles. As a result, the styles here are represented as a <span class="textit">reference</span> style, not one that absolutely defines each case.</p>
+  
+  <div class="codeblock">
+    <p>
+      # K&amp;R / Berkeley Style<br />
+      if [[ ${X} == ${Y} ]] ; then<br />
+      &nbsp;&nbsp;&nbsp;do_something<br />
+      fi<br />
+      <br />
+      # GNU Style<br />
+      if [[ ${X} == ${Y} ]]<br />
+      then<br />
+      &nbsp;&nbsp;&nbsp;do_something<br />
+      fi
+    </p>
+  </div>
+
+  <p class="footnote">[ Note: It is the <span class="textit">author's</span> contention that the requirement for the &quot;;&quot; character in the &quot;K&amp;R&quot; style above violates the whitespace rule, and because it requires special handling to work, is not natural for the scripting language. The belief here that the GNU style is inherently more readable. That said, this document wishes to emphasize consistency (throughout a script) in this case rather than a hard standard.<br />
+  An exception to the this example is when one-line if-then statements improve readability. ]</p>
+
+  <p class="sectiontext">Whitespace between individual operations improves readability. Conversely, the lack thereof is a clear indication of strong relationships between operations.</p>
+
+  <div class="codeblock">
+    <p>
+      i=0 <span class="codenote">&lt;---&nbsp;No space strongly suggests i is closely related to the while loop</span><br />
+      while (( i == 0 ))<br />
+      do<br />
+      &nbsp;&nbsp;&nbsp;do_something<br />
+      fi<br />
+      <br />
+      initialize_data<br />
+      &nbsp;&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;Space here denotes loosely related actions &amp; assists in readability</span><br />
+      retrieve_data<br />
+      <br />
+      render_data&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;Naming convention maintains relationships</span>
+    </p>
+  </div>
+
+  <p class="footnote">[ Note: Ideally we check for results on ordered / dependent operations. The intent here is to express the value of whitespace without flooding the reader with implementation details. ]</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Readability - Distinguish sections with ASCII art</p>
+
+  <p class="sectiontext">Below are some examples of documentation of <span class="textit">sections</span> of code in a script. The point here is not to explicitly state how to delineate a section, but to give suggestions as to how it might be done. The only recommendation is that it be done, and done consistently.</p>
+
+  <div class="codeblock">
+    <p>
+      # ============================================================================<br />
+      # Name: a_function<br />
+      # Description: A function description<br />
+      # ...<br />
+      <br />
+      ################################################################################<br />
+      ###&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;A&nbsp;Major&nbsp;Section&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;###<br />
+      ################################################################################<br />
+      <br />
+      #####################<br />
+      ###&nbsp;Minor&nbsp;section&nbsp;###<br />
+      #####################<br />
+      <br />
+      ### Task/flow change delimiter<br />
+      <br />
+      # Simple comment discussing a point<br />
+      <br />
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Readability: on wrapping variables in <span class="texttt">${}</span></p>
+
+  <p class="sectiontext">It is not necessary to wrap every variable in <span class="texttt">${}</span>. This document does not take a strong stand on the use of this variable delimiter other than to say that it improves readability and may be helpful in syntax highlighting for some editors. It is suggested that wrapping all variables provides a consistent and readable view of your code. That said, wrapping variables in this way in mathematical formulae* is not only syntactically unnecessary but may be somewhat counter productive in terms of readability.</p>
+
+<p class="footnote">[* The example frequently used here is the increment operation: <span class="texttt">(( i++ ))</span> reads better than <span class="texttt">(( ${i}++ ))</span>. Due to a bug in ksh93t &amp; ksh93u, arrays with multiple indexes must still use ${array_var[x][y]} syntax in an arithmetic context.  Ref: {DRQS 43270926} ]</p>
+
+
+  <!-- **********************************************************************
+       wfavorit:
+       Why? And why use them in math operations if you don't need to. (Actually,
+       while this is convenient, it does make readability a bit harder.) I
+       think the ${} syntax makes the variable clearer, and that is of value.
+       ********************************************************************** -->
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Check uid == 0 (if required)</p>
+
+  <p class="sectiontext">Code is frequently developed as a root user*, and this causes some inherent assumptions about pathing and privilege on the system. As a result, the script should either make explicit tests for these issues (and handle exceptions) or it should validate that the user is the one expected. This is also relevant for scripts that should run as a non-root user (ie: scripts that create files that regular users cannot then access/modify/delete). In this case, the uid should be checked for either non-root or the expected user.</p>
+
+  <p class="footnote">[* Ideally it should be developed and tested as a regular / the expected user.]</p>
+  <!-- <p class="footnote">[** Traditional tests include $LOGNAME or $USER environment variables, or /usr/bin/whoami.  A more exotic, precise substitute test is "kill -0 1", but doesn't work on Solaris zones where init is not at PID 1.]</p> -->
+
+  <!-- **********************************************************************
+       wfavorit:
+       I commented the above line out because $LOGNAME and $USER are unreliable
+       while the kill -0 1 is both unreliable and not really a test of user
+       but user permissions (apart from the fact that it does not work in zones).
+       ********************************************************************** -->
+
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Use case to distinguish variable type</p>
+
+  <p class="sectiontext">Static, read-only, and/or global variables are recommended to be all caps, and local variables be lower case. The case should infer scope - when possible.</p>
+
+  <div class="codeblock">
+    <p>
+      typedef -r PASS_RETURN=0&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;Global-define (all caps)</span><br />
+      typedef -i current_state=0&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;local (lower case)</span><br />
+      (( i++ ))&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;VERY local, loop variable</span><br />
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Variables should be properly typeset</p>
+
+  <p class="sectiontext">Typesetting variables assists with performance as well as readability of the code.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">All scripts and functions should exit/return with defined values</p>
+
+  <p class="sectiontext">Always leave a return value that describes the state of the requested task.* The recommendation is to define a set of potential return values at the top of the script (as read-only typeset values), and <span class="textbf">only</span> exit the script with one of these values.</p>
+
+  <p class="footnote">[* Both functions and scripts will exit with the last return value. In some cases it may be advantageous to simply let the last return value speak for the function/script rather than explicitly capturing that value and returning it. The recommendation here is to document that you are letting the return value &quot;fall through&quot; to be the return value for the function/script. ]</p>
+
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">Documentation / Comments / Readability</p>
+
+  <div class="bartlettext"><p class="bartlettbody">&quot;We conjecture that the barriers to reuse are not on the producer's, side, but on the consumer's side. If a software engineer, a potential consumer of standardized components, perceives it to be more expensive to find a component that meets his needs, and so verify, than to write one anew, a new, duplicative component will be written. Notice that we said perceives above. It does not matter what the true cost of reconstruction is.&quot;</p>
+<p class="bartlettauth">- Van Snyder (Brooks95)</p></div>
+
+
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">The author should take ownership of the script</p>
+
+  <p class="sectiontext">The authors should put their names in the header / manifest of the script. When ownership is transfered, the information should be updated. The authors of significant changes to the flow of the script are recommended* acknowledge so in localized documentation for that change.</p>
+
+  <p class="footnote">[* Scripts that are maintained in a modern revision control system natively maintain this information. It is still worthwhile to denote large deviations in a code base with some recognition of ownership. It provides assistance to the reader of the code, and should cause the person making the change and signing that fact more appreciable of the significance of the change before committing. ]</p>
+
+  <p class="sectiontext">This is not meant to infer a RCS-like $Log$ header of information. Instead, this is a very selective, targeted, acknowledgment primarily of ownership of the tool, but also taking ownership of larger changes to how the tool works. RCS headers are covered elsewhere, but do not denote either ownership of a tool or tie a name to specific changes.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Where to comment in the code</p>
+
+  <p class="sectiontext">Comments are best directed to:</p>
+  <ul>
+    <li>persons not familiar with the task</li>
+    <li>portions of code that are not obvious</li>
+    <li><span class="textit">why</span> you chose the method you did</li>
+  </ul>
+
+  <p class="sectiontext">Gratuitous commenting of obvious items is not helpful.</p>
+
+  <div class="codeblock">
+    <p>
+      &nbsp;&nbsp;<span class="codenote">-- This comment is of no value --</span><br /> 
+      # Increment the value<br />
+      (( i++ ))<br />
+      <br />
+      ...<br />
+      <br />
+      &nbsp;&nbsp;<span class="codenote">-- This comment provides some intent of the operation --</span><br /> 
+      # Increment the value because the index is off by one coming out of the last loop<br />
+      (( i++ ))
+    </p>
+  </div>
+ 
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Verbosity comments are recommended (when appropriate)</p>
+
+  <p class="sectiontext">Verbosity is a good method to comment a script because it also conveys status to the user. NOTE: This style of verbosity is not appropriate for all scripts (such as &quot;reporting&quot; scripts or tools that are written to an audience unconcerned with this level of detail). </p>
+
+  <div class="codeblock">
+    <p>
+      ${ECHO} &quot;Creating flag file...\c&quot;<br />
+      if ! touch ${flag_file} &gt; /dev/null 2&gt;&amp;1<br />
+      then<br />
+      &nbsp;&nbsp;&nbsp;${ECHO} &quot;Failed.&quot;<br />
+      &nbsp;&nbsp;&nbsp;echo &quot;ERROR: Failed to set the flag file. Check directory permissions.&quot; &gt;&amp;2<br />
+      &nbsp;&nbsp;&nbsp;exit ${EXIT_FAIL_NOPERM}<br />
+      fi<br />
+      ${ECHO} &quot;Done.&quot;
+    </p>
+  </div>
+
+  <p class="sectiontext">A few notes on this code:</p>
+  <ul>
+    <li>The <span class="texttt">echo</span> command is encapsulated in a variable. This is a cheap means of making a script go silent by setting <span class="texttt">ECHO=true</span>.</li>
+    <li>The &quot;flag file&quot; is also encapsulated in a variable. This is an effective way to keeping track of what it is.</li>
+    <li>The <span class="texttt">stderr</span> output uses the <span class="textit">actual</span> <span class="texttt">echo</span> command, and is therefore not subject to verbosity options.</li>
+    <li>The above example assumes AIX CR suppression rules. (Use the appropriate method for your platform.)</li>
+    <li>The assumption here is that <span class="texttt">echo</span> is a builtin. That is not necessarily the best assumption. Use what is most appropriate for your platform.</li>
+    <li>The call to <span class="texttt">exit</span> is passed a pre-defined return value for the script that the calling program can check for. </li>
+  </ul>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">API readability is a recommended means of denoting intent</p>
+
+  <p class="sectiontext">By using descriptive function names, the intent of the code is made very clear.</p>
+
+  <div class="codeblock">
+    <p>
+      if system_is_broken&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;A function/test that silently returns a boolean</span><br />
+      then<br />
+      &nbsp;&nbsp;&nbsp;fix_the_system&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;A function to do the work</span><br />
+      fi<br />
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Variables should have meaningful names</p>
+
+  <p class="sectiontext"><a href="http://en.wikipedia.org/wiki/Hungarian_notation">Hungarian notation</a>, descriptive names, and variable name length confer the variables usage to the reader / maintainer of the code.</p>
+
+  <div class="codeblock">
+    <p>
+      return_value=$?&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;A local instance of a saved value</span><br />
+      typeset -i bytes_read=0&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;Valid content range and usage is clear</span><br />
+      typeset -i i=0&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;A local index counter value</span><br />
+      typeset -ir BYTES_PER_PAGE=4096&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;A descriptive &quot;define&quot;</span><br />
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Properly document published functions, (minimally) document local functions</p>
+
+  <div class="codeblock">
+    <p>
+      # =========================================================================<br />
+      # Name: reset_temp_data<br />
+      # Description: A function to re-initialize all temp files to a specific value<br />
+      # Parameters: string  - The directory name of the temp data location<br />
+      #&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;integer - The number to initialize to<br />
+      # Returns: Zero on success, non-zero on failure<br />
+      # Side effects: Data in the supplied directory will be permanently modified<br />
+      # Notes: reset_temp_data() is a generalized implementation of null_temp_data()<br />
+      function&nbsp;reset_temp_data<br />
+      { ...
+    </p>
+  </div>
+
+  <p class="sectiontext">Library functions should have well defined blocks like the example above. They can also have a usage section that shows sample usage and related functions. This avoids the requirement of additional separate documentation of the API.</p>
+
+  <p class="sectiontext">Internal functions (for use in the same file) should have, at a minimum, an ASCII art delimiter that visually separates the function from other code around it. (The &quot;}&quot; character is not sufficient to easily/quickly see where a function ends.)</p>
+  
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">Performance</p>
+
+  <div class="bartlettext"><p class="bartlettbody">&quot;There are 10 kinds of people in the world: those who understand binary numerals, and those who don't.&quot;</p>
+<p class="bartlettauth">- Ian Stewart</p></div>
+
+  <!-- ============================================================================ -->
+  <a id="Externals"></a>
+  <p class="sectionhead">Shell builtins must* be used when they exist</p>
+
+  <p class="footnote">[* This is a solid rule, but exceptions do exist. See the next item for counter examples. ]</p>
+  
+  <p class="sectiontext">Builtins are preferred primarily because they do not cause a fork. It is expensive to spin up an entire new process when the shell can provide the same capability.</p>
+  
+  <p class="sectiontext">The <span class="texttt">whence</span> (Korn) and <span class="texttt">type</span> (Bash/Korn) commands can be used to determine if a command is a builtin:</p>
+
+  <div class="codeblock">
+    <p>
+    $ whence ls<br />
+    /bin/ls&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;The leading path denotes an external command</span><br />
+    $ whence cd<br />
+    cd&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;A builtin has no path</span><br />
+    $ <span class="cursor">_</span><br />
+    &nbsp;&nbsp;-- OR --<br />
+    $ type ls<br />
+    ls is /bin/ls<br />
+    $ type cd<br />
+    cd is a shell builtin<br />
+    $ <span class="cursor">_</span>
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Avoid use of builtins when external binaries are faster</p>
+
+  <p class="sectiontext">This is the corollary of the &quot;Shell builtins must be used when they exist&quot; item. This is not always intuitive, but some external commands are much more optimized for a task than attempting to do the same thing in shell. For example, finding pattern matches in large text files is accomplished much more effectively via tools like grep than reading line by line through the file in shell.   See below section <a href="#Native">&quot;Native ksh93 substitutes for common external shell tools&quot;</a> for some examples.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Avoid &quot;<span class="texttt">echo ${VAR} | grep PATTERN</span>&quot; tests</p>
+
+  <p class="sectiontext">This is a common usage patterns in scripts that results in the creation of a pipe, a fork, and then a test for the resulting return value with a shell test, when the pattern could have just been tested directly by the shell.</p>
+
+  <div class="codeblock">
+    <p>
+      ...<br />
+      # BAD!<br />
+      echo ${myvar} | grep mypattern &gt; /dev/null 2&gt;&amp;1<br />
+      if [ $? -eq 0 ]<br />
+      then<br />
+      &nbsp;&nbsp;&nbsp;...<br />
+      <br />
+      # GOOD!<br />
+      if [[ ${myvar} == mypattern ]]<br />
+      then<br />
+      &nbsp;&nbsp;&nbsp;...<br />
+    </p>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- **********************************************************************
+       eschulma:
+       ********************************************************************** -->
+  <a id="one_pass"></a>
+  <p class="sectionhead">Avoid making more than <span class="underline">one pass</span> over the data</p>
+  
+  <p class="sectiontext">Code iteration over a dataset should minimize the number of times the dataset is read in. By the same token, code iteration should avoid multiple calls to the same external function <a href="#Cache_Ext">(see below)</a>. High-performance code will use a few techniques to achieve speed:</p>
+
+  <ol>
+    <li>Bring the frequently accessed &quot;remote&quot; data as close to the application as possible (by loading into memory)</li>
+    <li>Index the most frequently accessed memory-resident data to reduce lookup time</li>
+    <li>Categorize data elements in an appropriate data structure to eliminate just-in-time parsing delays.</li>
+  </ol>
+
+  <div class="codeblock">
+    <p>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> ----- GOOD -----</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> &gt; Shell builtins</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> &gt; One pass over data</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> &gt; Loads to memory</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> &gt; Creates index</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> &gt; No temp files</span><br />
+      <br />
+      #!/bin/ksh93 <br />
+      <br />
+      typeset -A service_array <br />
+      typeset svc port the_rest _discard <br />
+      <br />
+      while read svc port _discard <br />
+      do <br />
+      &nbsp;&nbsp;&nbsp;[[ "${svc}" == '#'* ]] &amp;&amp; continue <br />
+      &nbsp;&nbsp;&nbsp;service_array[$svc]=&quot;${port}&quot;<br />
+      done  &lt; "/etc/services"<br />
+      <br />
+      while read svc the_rest <br />
+      do <br />
+      &nbsp;&nbsp;&nbsp;print &quot;${service_array[$svc]:-$svc} ${the_rest}&quot;<br />
+      done  &lt; &quot;/etc/inetd.conf&quot;<br />
+      <br />
+      <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> ----- BAD -----</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> &gt; Abuse of External tools</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> &gt; Multiple passes over data</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> &gt; Doesn't cache data</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> &gt; Avoidable temp file</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> &gt; More Complicated</span><br />
+      <br />
+      #!/bin/ksh93 <br />
+      <br />
+      cat /etc/inetd.conf | awk '$0!~/^#/ {print $1}' &gt; /tmp/svcs.$$ <br />
+      <br />
+      for service_array in `cat /tmp/svcs.$$` <br />
+      do <br />
+      &nbsp;&nbsp;&nbsp;print $(grep -w ^${service_array} /etc/services | \<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;awk '{print $2}') $(grep -w ^${service_array} /etc/inetd.conf | \<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;awk '{print $2 &quot; &quot; $3 &quot; &quot; $4}')<br />
+      done <br />
+      rm -f /tmp/svcs.$$
+    </p>
+  </div>
+
+
+  <!-- ============================================================================ -->
+  <a id="Cache_Ext"></a>
+  <p class="sectionhead">Cache results instead of calling expensive commands multiple times</p>
+
+  <p class="sectiontext">Avoid calling a command multiple times and forking to parse individual lines. There are a number of options here; the command can be read into an array or can be read line by line (using <span class="texttt">read</span>) and look for multiple items in the output (using builtin non-forking pattern matching).</p>
+
+  <div class="codeblock">
+    <p>
+      typeset -a cmdresults<br />
+      typeset -i index=0<br />
+      <br />
+      cmdresults=( $(a_command) )<br />
+      <br />
+      # head -2 (show just first two lines)<br />
+      echo &quot;${cmdresults[0]}&quot;<br />
+      echo &quot;${cmdresults[1]}&quot;<br />
+      <br />
+      # Dump the lines with line (index) numbers<br />
+      index=0<br />
+      while (( index &lt; ${#cmdresults[*]} ))<br />
+      do<br />
+      &nbsp;&nbsp;&nbsp;printf &quot;%2d: %s\n&quot; ${index} &quot;${cmdresults[$index]}&quot;<br />
+      &nbsp;&nbsp;&nbsp;(( index++ ))<br />
+      done
+    </p>
+  </div>
+
+  <!-- ========================================================================= -->
+  <!-- **********************************************************************
+       eschulma:
+       ********************************************************************** -->
+
+  <a id="Deterministic"></a>
+  <p class="sectionhead">Deterministic / indexed lookups are faster than searches</p>
+  
+  <p class="sectiontext">Loading data into associative arrays (hash tables), or creating an index allows the program to do deterministic (pin-point) lookups rather than having to search for a value.   It is not enough just to have all of the data in memory.</p>
+  
+
+  <div class="codeblock">
+    <p>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> ----- Deterministic; faster -----</span><br />
+      <br />
+      #!/bin/ksh93<br />
+      <br />
+      typeset -A passwd_tab<br />
+      typeset user<br />
+      typeset pwent<br />
+      <br />
+      # Load and Index<br />
+      while IFS=':' read user pwent <br />
+      do <br />
+      &nbsp;&nbsp;&nbsp;passwd_tab[$user]=&quot;$user:$pwent&quot;<br />
+      done &lt; "/etc/passwd" <br />
+      <br />
+      # Serve getpwent lookups<br />
+      while read user <br />
+      do <br />
+      &nbsp;&nbsp;&nbsp;print "${passwd_tab[$user]}" <br />
+      done<br />
+      <br />
+      <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> ----- Searched; slower -----</span><br />
+      <br />
+      #!/bin/ksh93 <br />
+      set -A passwd_tab<br />
+      typeset user uloop pwent<br />
+      <br />
+      # Load only, no index<br />
+      while IFS='' read pwent <br />
+      do <br />
+      &nbsp;&nbsp;&nbsp;passwd_tab[${#passwd_tab[@]}]="$pwent" <br />
+      done &lt; "/etc/passwd" <br />
+      <br />
+      # Serve getpwent lookups<br />
+      while read user <br />
+      do <br />
+      &nbsp;&nbsp;&nbsp;for uloop in "${passwd_tab[@]}"<br />
+      &nbsp;&nbsp;&nbsp;do <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[[ "${uloop}" == "${user}:"* ]] &amp;&amp; print "${uloop}" &amp;&amp; break <br />
+      &nbsp;&nbsp;&nbsp;done <br />
+      done
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Avoid unnecessary computational work</p>
+
+  <p class="sectiontext">When building the processing logic for an algorithm, care should be taken to avoid unnecessary work.  Work that is unneeded, or where the unit of work cannot commit, should be avoided as early as possible when it is clear from available indicators.  For example:</p>
+
+  <ul>
+    <li>A command-line option indicates that a specific report does not need to be generated. The code should avoid building and printing the report if possible.</li>
+    <li>An error flag (such as opening a report file for writing) may be a reason enough to preempt a complex report generation, because the report cannot be committed to the output.</li>
+  </ul>
+
+  <!-- **********************************************************************
+       wfavorit:
+       See my notes below about "calculating 3000 digits of pi" when you are
+       using a double to store the results. I think something along the lines
+       of long_running_process() would be a bit more clear.
+       Some of the concepts introduced here are good, but tend to obscure
+       the main point of the code block. I have lightly commented them so
+       that they do not 
+       ********************************************************************** -->
+  <br />
+  <div class="codeblock">
+    <p>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> ----- Efficient: Avoids unneeded code &amp; abends early on exceptions -----</span><br />
+      <br />
+      #!/bin/ksh93<br />
+      <br />
+      . ./calculate_pi.ksh <span class="codenote">&nbsp;&nbsp;&lt;----- Load function; assume successful</span><br />
+      <br />
+      if [[ &quot;$1&quot; != &quot;CALC&quot; ]] <br />
+      then <br />
+      &nbsp;&nbsp;&nbsp;print -u2 &quot;PI version 0.2.  Usage $0 [CALC]&quot;  <span class="codenote">&nbsp;&nbsp;&lt;--- -u2 is stderr</span><br />
+      &nbsp;&nbsp;&nbsp;exit 0<br />
+      fi<br />
+      <br />
+      typeset -i outfd<br />
+      if ! exec {outfd}&gt;calc.out <span class="codenote">&nbsp;&nbsp;&lt;--- Open file, save file descriptor in ${outfd}</span><br />
+      then <br />
+      &nbsp;&nbsp;&nbsp;print -u2 &quot;Cannot open calc.out for writing&quot; <br />
+      &nbsp;&nbsp;&nbsp;exit 1 <br />
+      fi <br />
+      <br />
+      typeset -F my_pi<br />
+      calculate_pi my_pi 3000 # digits <span class="codenote">&nbsp;&nbsp;&lt;----- Run 4 hours</span><br />
+      print -u ${outfd} &quot;$my_pi&quot; <br />
+      <br />
+      exec {outfd}&lt;&amp;- <span class="codenote">&nbsp;&nbsp;&lt;--- Close file descriptor in ${outfd}</span><br />
+      <br />
+      <br />
+      <br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> ----- Wasteful: executes the unneeded code -----</span><br />
+      <br />
+      #!/bin/ksh93<br />
+      <br />
+      . ./calculate_pi.ksh <span class="codenote">&nbsp;&nbsp;&lt;----- Load function; assume successful</span><br />
+      <br />
+      typeset -F my_pi<br />
+      calculate_pi my_pi 3000 # digits<span class="codenote">&nbsp;&nbsp;&lt;----- Run 4 hours, but, should have</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">first checked all requirements</span><br />
+      if [[ &quot;$1&quot; != &quot;CALC&quot; ]] <br />
+      then <br />
+      &nbsp;&nbsp;&nbsp;print -u2 &quot;PI version 0.1&quot; <span class="codenote">&nbsp;&nbsp;&lt;----- Hours wasted! Avoidable.</span><br />
+      &nbsp;&nbsp;&nbsp;exit 0 <br />
+      fi <br />
+      <br />
+      typeset -i outfd <br />
+      if ! exec {outfd}&gt;calc.out <br />
+      then &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote"> &lt;----- Hours wasted; workproduct can't be written!</span><br />
+      &nbsp;&nbsp;&nbsp;print -u2 &quot;Cannot open calc.out for writing&quot; <br />
+      &nbsp;&nbsp;&nbsp;exit 1<br />
+      fi <br />
+      <br />
+      print -u ${outfd} &quot;${my_pi}&quot; <br />
+      <br />
+      exec {outfd}&lt;&amp;-
+    </p>
+  </div>
+ 
+  <p class="sectiontext">A few notes about the above code:</p>
+  <ul>
+    <li>The <span class="textt">${outfd}</span> file descriptor (as used) is a Korn 93 concept.</li>
+    <li><span class="texttt">${my_pi}</span> is a (double) floating point variable of default 10 digits of precision. The 3000 digits of &pi; is representative of a long running process (that could possibly be avoided).</li>
+    <li><span class="texttt">${my_pi}</span> is passed by reference to <span class="texttt">calculate_pi()</span>. This is also a Korn 93 concept.</li>
+  </ul>
+  
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Dead code elimination</p>
+
+  <p class="sectiontext">For the sake of keeping code readable and more easily maintainable for others, sections that will go completely unused should be removed.  There are several reasons to do this:</p>
+
+  <ul>
+    <li>Easier for maintainers to identify key lines of code, and not having to sift through dead code sections,</li>
+    <li>Avoid name collisions with the dead code sections,</li>
+    <li>Avoid accidental fall through of valid code into the dead code sections, resulting in unexpected behaviors or data corruption.</li>
+  </ul>
+
+  <p class="sectiontext">It is a judgment call whether commenting out the dead sections, or removing them altogether, is a better approach.  Keep in mind that commented out code still represents a form of noise that needs to be sifted through.  The removed sections can be saved elsewhere if there's perceived value in them.</p>
+  
+  <p class="sectiontext">It may be sensible to leave a reasonable contingent of debug handlers in the code. </p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Unnecessary calls to <span class="texttt">cat</span> should be avoided</p>
+
+  <p class="sectiontext"><span class="texttt">cat</span> is frequently used when the shell or another sub-command can do the same without the fork.</p>
+
+  <div class="codeblock">
+    <p>
+      cat /var/log/messages | grep -i error&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;cat is excessive</span><br />
+      grep -i error /var/log/messages&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;One less fork()/exec()</span><br />
+      <br />
+      error_cnt=$(cat /tmp/errorcnt)&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;cat is excessive</span><br />
+      error_cnt=$(&lt; /tmp/errorcnt)&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;---&nbsp;No fork()/exec()</span><br />
+    </p>
+  </div>
+ 
+  <!-- **********************************************************************
+       wfavorit:
+       Validate the difference associated with the following code:
+       myvar=${&lt; single_line_file} <== No subshell (Korn93)
+       Here is the deal....
+         { cmd ; } <=== Invoke the cmd in the current shell
+         ( cmd ; ) <=== Invoke the cmd in a subshell
+         $( < file ) and ${ < file } are effectively the same (in Korn 93)
+       This is demonstrated by running forkinread_1 in the examples code
+       ********************************************************************** -->
+
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">Reliability &amp; Exception Handling</p>
+
+  <div class="bartlettext"><p class="bartlettbody">&quot;A computer lets you make more mistakes faster than any other invention with the possible exceptions of handguns and Tequila.&quot;</p>
+<p class="bartlettauth">- Mitch Ratcliffe</p></div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">The environment should be cleaned in the top of script</p>
+
+  <p class="sectiontext">A tool cannot control what it inherits from the environment in which it is invoked. The script should (re)set important environmental variables that may adversely influence the behavior of the invocation.</p>
+
+  <p class="sectiontext">Some recommending cleaning/hardening of the environment</p>
+  <ul>
+    <li>Set <span class="texttt">PATH</span> to short/explicit value(s)</li>
+    <li>Unset <span class="texttt">CDPATH</span></li>
+    <li>Set <span class="texttt">TMPDIR</span></li>
+    <li>Set <span class="texttt">CWD</span> (cd) to a safe/expected location</li>
+  </ul>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">trap Ctrl-C when managing temp files or when graceful cleanup is required</p>
+
+  <p class="sectiontext">A user initiated Ctrl-C should not leave the script (results) in an indeterminate state.</p>
+
+  <p class="footnote">[ Note: This is another <span class="textit">acceptable</span> example of the use of globals - as parameters cannot be passed to a trap function. The recommendation here is to clearly define the globals for this purpose, clearly document when they are set / modified, and check for them in the trap code. ]</p>
+  
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Test success/failure for even basic commands that could fail, or explicitly if the failure would result undesired results.</p>
+
+  <p class="sectiontext">Developing a common syntax allows for a more routine use of exception handling.</p>
+
+  <div class="codeblock">
+    <p>
+      if ! cd somedir<br />
+      then<br />
+      &nbsp;&nbsp;&nbsp;echo "ERROR: Failed to change to somedir directory." &gt;&amp;2<br />
+      &nbsp;&nbsp;&nbsp;exit ${EXIT_FAIL_ON_CD}<br />
+      fi
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Test variable assignment results</p>
+
+  <p class="sectiontext">In the following code example, <span class="texttt">myfunc()</span> returns 0 on success, non-0 on failure. The assignment here insures that the assignment actually happened. The other alternative is to check the contents of <span class="texttt">myvar</span>. In this case, <span class="texttt">myfunc()</span> does that before returning a success value - so we only need to check the return value, not the assigned value.</p>
+    
+  <div class="codeblock">
+    <p>
+      if ! myvar=$(myfunc)<br />
+      then<br />
+      &nbsp;&nbsp;&nbsp;echo "ERROR: myvar was not set by myfunc()." &gt;&amp;2<br />
+      &nbsp;&nbsp;&nbsp;exit ${EXIT_FAIL_ON_MYFUNC}<br />
+      fi
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Library functions should have some sort of test harness.</p>
+
+  <p class="sectiontext">Either a test harness or at a minimum, a reference implementation, is desirable for shell library functions that are to be sourced and used by others.</p>
+  
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">Shell Features</p>
+
+  <div class="bartlettext"><p class="bartlettbody">&quot;I knew that Microsoft had licensed a number of tools from MKS so I came to the microphone to tell the speaker that this was not the 'real' Korn Shell and that MKS was not even compatible with ksh88. I had no intention of embarrassing him and thought that he would explain the compromises that Microsoft had to make in choosing MKS Korn Shell. Instead, he insisted that I was wrong and that Microsoft had indeed chosen a 'real' Korn Shell. After a couple of exchanges, I shut up and let him dig himself in deeper. Finally someone in the audience stood up and told him what almost everyone in the audience knew, that I had written the 'real' Korn Shell. I think that this is symbolic about the way the company works.&quot;</p>
+<p class="bartlettauth">- David Korn</p></div>
+
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">The desired shell should be specified as the <span class="texttt">#!</span> interpreter</p>
+
+  <p class="sectiontext">Explicitly specifying the shell insures that features are consistent between development and runtime.</p>
+
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Use Korn style functions</p>
+
+  <p class="sectiontext">There are two syntactically correct methods of declaring functions in the Korn shell. The recommendation is to use the Korn style declaration instead of the older Bourne style.</p>
+
+  <div class="codeblock">
+    <p>
+      function korn_style_function<br />
+      {<br />
+      &nbsp;&nbsp;&nbsp;...<br />
+      }<br />
+      <br />
+      bourne_style_function ()<br />
+      {<br />
+      &nbsp;&nbsp;&nbsp;...<br />
+      }<br />
+    </p>
+  </div>
+
+  <p class="sectiontext">Functions declared using the more modern Korn style will run under the more feature-rich behavior designed in the later shells.</p>
+  
+  <!-- **********************************************************************
+       wfavorit:
+       This is VERY incomplete. A real argument needs to be made here.
+       DOTHIS: Make a real argument for Korn style functions
+       ********************************************************************** -->
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Shell math</p>
+  
+  <p class="sectiontext">A fork()/exec() call for <span class="texttt">bc</span> is significantly more expensive than just doing the math in the shell. Korn 93 supports both floating point math as well as the C math library functions.</p>
+
+  <div class="codeblock">
+    <p>
+      x=$(( x + 1 )) <span class="codenote">&lt;---&nbsp;Direct assignment via math operation</span><br />
+      <br />
+      ...<br />
+      <br />
+      (( x++ )) <span class="codenote">&lt;---&nbsp;Side effect via test operation</span><br />
+    </p>
+  </div>
+
+  <p class="sectiontext">The shell is also capable of</p>
+  <ul>
+    <li>base conversion (such as hex to dec)</li>
+    <li>floating point math (Korn 93)</li>
+    <li>libm type floating point operations (Korn 93)</li>
+    <li>bitwise mask operations (such as calculating IP networks/broadcast addresses)</li>
+  </ul>
+
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Use <span class="texttt">[[</span> instead of <span class="texttt">[</span></p>
+
+  <p class="sectiontext">The <span class="texttt">[[</span> syntax is used by modern shells and treats the test condition as both a built-in as well as a proper expansion of the variables in the test. This allows for simple variable tests such as:</p>
+
+  <div class="codeblock">
+    <p>
+      if [[ -z ${1} ]] <span class="codenote">&lt;---&nbsp;This will work even when ${1} is unset</span><br />
+      then<br />
+      &nbsp;&nbsp;&nbsp;echo &quot;ERROR: No parameter specified.&quot; &gt;&amp;2<br />
+      &nbsp;&nbsp;&nbsp;return 1<br />
+      fi<br />
+      <br />
+      if [ -z ${1} ] &nbsp;<span class="codenote">&lt;---&nbsp;This test will fail when ${1} is unset</span><br />
+      then<br />
+      &nbsp;&nbsp;&nbsp;echo &quot;ERROR: No parameter specified.&quot; &gt;&amp;2<br />
+      &nbsp;&nbsp;&nbsp;return 1<br />
+      fi
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Modern <span class="texttt">$()</span> are recommended over <span class="texttt">``</span></p>
+
+  <p class="sectiontext">The more modern <span class="texttt">$()</span> syntax simplifies quoting and escaping requirements.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">The <span class="texttt">==</span> syntax is recommended over older comparison operators</p>
+
+  <p class="sectiontext">This makes [[string]] and ((numeric)) compares similar and does not contrast poorly with Perl operators.</p>
+
+  <div class="codeblock">
+    <p>
+      if [[ ${string_var} == &quot;pattern&quot; ]] <span class="codenote">&lt;--- String compare</span><br />
+      then<br />
+      &nbsp;&nbsp;&nbsp;...<br />
+      <br />
+      if (( ${int_var} == 7 )) <span class="codenote">&lt;--- Numeric compare</span><br />
+      then<br />
+      &nbsp;&nbsp;&nbsp;...<br />
+      <br />
+      mynum=$(( a + b )) <span class="codenote">&lt;--- Numeric operation (for contrast / comparison)</span><br />
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">It is recommended that development target the highest (latest/most featured) shell possible</p>
+
+  <table class="thintable">
+    <tr class="thintr">
+      <td class="thintd">&nbsp;</td>
+      <td class="thintd">Complex data types</td>
+      <td class="thintd">Floating point math</td>
+      <td class="thintd">Ubiquity</td>
+      <td class="thintd">Notes</td>
+    </tr>
+    <tr class="thintr">
+      <td class="thintd">Bourne</td>
+      <td class="thintd">Minimal</td>
+      <td class="thintd">No</td>
+      <td class="thintd">Average*</td>
+      <td class="thintd">Should not be targeted</td>
+    </tr>
+    <tr class="thintr">
+      <td class="thintd">Korn 88</td>
+      <td class="thintd">Average</td>
+      <td class="thintd">No</td>
+      <td class="thintd">High</td>
+      <td class="thintd">Lowest common shell across platforms**</td>
+    </tr>
+    <tr class="thintr">
+      <td class="thintd">Korn 93</td>
+      <td class="thintd">High</td>
+      <td class="thintd">Yes</td>
+      <td class="thintd">Average</td>
+      <td class="thintd">Ideal target shell</td>
+    </tr>
+    <tr class="thintr">
+      <td class="thintd">Bash</td>
+      <td class="thintd">Average</td>
+      <td class="thintd">No</td>
+      <td class="thintd">Minimal</td>
+      <td class="thintd">Not on most platforms</td>
+    </tr>
+  </table>
+
+  <p class="footnote">[* Bourne is /bin/bsh on AIX. /bin/sh is actually Korn 88 on that platform. ]</p>
+
+  <p class="footnote">[** Bourne is technically the lowest common language, but Korn 88 is the lowest one should target. ]</p>
+
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">Script Output</p>
+
+  <div class="bartlettext"><p class="bartlettbody">&quot;Things that are complex are not useful, Things that are useful are simple.&quot;</p>
+<p class="bartlettauth">- Michail Kalashnikov</p></div>
+
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Targeted verbosity</p>
+
+  <p class="sectiontext">Reporting tools should avoid verbosity or should have verbosity that can be toggled but defaults to off. Internal commands (not published to other groups) that perform lots of risky / failure-prone operations can be naturally more verbose.</p>
+
+  <p class="sectiontext">Debug level, or even verbose, messages that do not help the user should be directed to an alternate destination. This is not really applicable to common commands, but system modifying processes that have been engineered by one group for another should send that debug verbosity to a &quot;lastrun&quot; file where it can be referred to if/when necessary. This additional verbosity tends to overwhelm external users with information they cannot use.</p> 
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Tools should not auto-write <span class="texttt">usage()</span> / <span class="texttt">-h</span> to stdout on input error</p>
+
+  <p class="sectiontext">Users may wrap your command (such as running on multiple systems and collecting output). If they call your command incorrectly, you should not provide data via stdout that they may be attempting to parse. The ideal method is to write all error messages to stderr, exit with a non-zero value, and leave stdout completely empty.</p>
+
+  <p class="sectiontext">The user should check for your return value (see the following code snippets). If the user ignores the return value, then getting no data is better than bad data.</p>
+
+  <!-- **********************************************************************
+       wfavorit:
+       The three following code examples are a bit tangential to the original
+       point. I think they have value nonetheless - and I am keeping them for
+       that reason.
+       ********************************************************************** -->
+
+  <p class="sectiontext">The following example conditionally creates the file on success. The <span class="texttt">if</span> here is really about the error message and controlled exit.</p>
+
+  <div class="codeblock">
+    <p>
+      printf &quot;Retrieving data to a file...&quot;<br />
+      if ! getdata 1&gt;;results.out 2&gt;/dev/null <span class="codenote">&lt;--- &quot;&gt;;&quot; conditionally creates the file</span><br />
+      then<br />
+      &nbsp;&nbsp;&nbsp;printf &quot;Failed.\n&quot;<br />
+      &nbsp;&nbsp;&nbsp;exit 1<br />
+      fi<br />
+      printf &quot;Done.\n&quot;
+    </p>
+  </div>
+
+  <p class="sectiontext">This example is much like the last, but here the data is (conditionally) appended to the file. Note: If the author of <span class="texttt">getdata</span> were to dump usage info, it would be appended to the file. The <span class="textit">safe</span> way to prevent this would be to dump to an intermediate source, then append on success.</p>
+
+  <div class="codeblock">
+    <p>
+      printf &quot;Retrieving data to a file...&quot;<br />
+      if ! getdata 1&gt;&gt;results.out 2&gt;/dev/null <span class="codenote">&lt;--- &quot;&gt;&gt;&quot; Appends to existing file</span><br />
+      then<br />
+      &nbsp;&nbsp;&nbsp;printf &quot;Failed.\n&quot;<br />
+      &nbsp;&nbsp;&nbsp;exit 1<br />
+      fi<br />
+      printf &quot;Done.\n&quot;
+    </p>
+  </div>
+
+  <p class="sectiontext">This example relies on the return value to see if the variable is set. It is conceivable that the value could be NULL <span class="textbf">and</span> valid. Incidentally, this code example is an interview question for the AIX team.</p>
+
+  <div class="codeblock">
+    <p>
+      printf &quot;Retrieving data to a variable...&quot;<br />
+      if ! gotval=$(getdata 2&gt; /dev/null)<br />
+      then<br />
+      &nbsp;&nbsp;&nbsp;printf &quot;Failed.\n&quot;<br />
+      &nbsp;&nbsp;&nbsp;exit 1<br />
+      fi<br />
+      printf &quot;Done.\n&quot;
+    </p>
+  </div>
+
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Generic error messages are discouraged</p>
+
+  <p class="sectiontext">Specific error messages help in a number of ways. Primarily they serve to tell the user more meaningful output. If every message is the same then the user cannot know more than <span class="textit">something</span> failed. The secondary effect of a unique message is that the adept user can then search through the code for the unique message and find the failing point (should this level of debugging be required).</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Error messages should give meaningful output</p>
+
+  <p class="sectiontext">Give the user indication of what to do, and/or who to contact in the event of a failure, along with meaningful information about what failed.</p>
+
+  <p class="sectiontext">Target the output to your intended audience. Do not assume your audience has the same level of experience with the problem as you.</p>
+
+  <div class="codeblock">
+    <p>
+      # BAD! <br />
+      echo &quot;ERROR: DB convert uplift failed to zap.&quot;<br />
+      <br />
+      # GOOD! <br />
+      echo &quot;ERROR: Failed to run DB convert operation. Please retry the&quot;&nbsp;&gt;&amp;2<br />
+      echo &quot;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;command. If the command fails on a second attempt, please&quot;&nbsp;&gt;&amp;2<br />
+      echo &quot;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;contact G777 with hostname of failed system.&quot;&nbsp;&gt;&amp;2<br />
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">ANSI escape sequences are suggested for emphasis</p>
+
+  <p class="sectiontext">ANSI bold, underline, and colors draw the users attention to points that you wish to make. Ideally, this serves to get the user to the most important information as quickly and efficiently as possible. Excessive (ie: all colour) output should not be used. Allow for monochrome option/output when the user may wish to capture the results to output.</p>
+
+  <p class="sectiontext">Colour options should be passed both by the command line as well as the environment.</p>
+
+  <div class="codeblock">
+    <p>
+      #&nbsp;export&nbsp;BB_COLOR_TOOLS=ON<br />
+      # <span class="cursor">_</span><br />
+      &nbsp;&nbsp;&nbsp;<span class="codenote">-- OR --</span><br />
+      #&nbsp;export&nbsp;BB_COLOR_TOOLS=OFF<br />
+      # <span class="cursor">_</span>
+    </p>
+  </div>
+
+  <p class="sectiontext">The following function (and &quot;defines&quot;) are an example color print API. Some notes on this example:</p>
+
+  <ul>
+    <li>printf is a builtin in Korn 93. This was written and tested under that shell. Use the appropriate builtin for your shell.</li>
+    <li>The &quot;inline&quot; if statements are designed to make the code more readable. This is not always the case - use with caution.</li>
+    <li>This is a basic boolean test for the value &quot;ON&quot;. OFF, or any other value is ignored - including the case sensitive values of &quot;On&quot;, &quot;on&quot;, etc...</li>
+    <li>This is a minimalist example - there is no input bounds checking, exception handling, etc... This was done to save space in the document. The level of exception handling required is directly proportional to the scope of this API.</li>
+    <li>This example was written in Korn93. The input variable (<span class="texttt">ansi_color</span>) will fall out of scope. It is not necessary (in this case) to explicitly unset it.</li>
+    <li>The quotes on the pattern match are really about consistency and syntax highlighting in an equipped editor, they are not necessary for functionality in this case.</li>
+    <li>This function is designed to be intermixed with regular calls to printf for &quot;normal&quot; text, and then this API for specific &quot;highlighted&quot; text.</li>
+  </ul>
+
+  <div class="codeblock">
+    <p>
+      typeset -r ANSI_GREEN=32<br />
+      typeset -r ANSI_RED=31<br />
+      <br />
+      function cprintf<br />
+      {<br />
+      &nbsp;&nbsp;&nbsp;typeset -i ansi_color=$1<br />
+      <br />
+      &nbsp;&nbsp;&nbsp;shift<br />
+      <br />
+      &nbsp;&nbsp;&nbsp;[[ ${BB_COLOR_TOOLS} == &quot;ON&quot; ]] &amp;&amp; printf &quot;\x1b[%dm&quot; ${ansi_color}<br />
+      <br />
+      &nbsp;&nbsp;&nbsp;printf $*<br />
+      <br />
+      &nbsp;&nbsp;&nbsp;[[ ${BB_COLOR_TOOLS} == &quot;ON&quot; ]] &amp;&amp; printf &quot;\x1b[%dm&quot; 0<br />
+      }
+    </p>
+  </div>
+
+  <!-- **********************************************************************
+       wfavorit:
+       It may be appropriate to write/include set_ansi(x) and unset_ansi(void)
+       ********************************************************************** -->
+
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">BB-Specific</p>
+
+  <div class="bartlettext"><p class="bartlettbody">&quot;Programs must be written for people to read, and only incidentally for machines to execute.&quot;</p>
+<p class="bartlettauth">- Hal Abelson, Structure and Interpretation of Computer Programs</p></div>
+
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Multi-platform scripts should not be used</p>
+
+  <p class="sectiontext">One should use the same name/behavior for each different distribution, or write wrappers similar to the following:</p>
+
+  <div class="codeblock">
+    <p>
+      #!/bin/sh<br />
+      <br />
+      if [[ ! -x /usr/local/bin/dotask.$(uname -s) ]]<br />
+      then<br />
+      &nbsp;&nbsp;&nbsp;echo "ERROR: Missing OS-specific variant of this tool."  &gt;&amp;2<br />
+      &nbsp;&nbsp;&nbsp;exit 1<br />
+      fi<br />
+      <br />
+      exec /usr/local/bin/dotask.$(uname -s) $*<br />
+    </p>
+  </div>
+
+  <p class="sectiontext">Some issues with multi-platform scripts are:</p>
+  <ul>
+    <li>that minor changes for one OS become a major cross-platform testing/checkin task,</li>
+    <li>written in least-modern shells/syntax/features are used to insure compatibility (thus preventing optimizations),</li>
+    <li>typically filled with massive case statements that are really just platform-specific implementations anyways.</li>
+  </ul>
+
+  <p class="sectiontext">It is conceivable that some tools <span class="textit">may</span> be multi-platform. These are rare cases where the code is distinctively simple (like the above wrapper example) or some extraordinarily compelling reason exists.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Cross platform tools must have identical inputs</p>
+
+  <p class="sectiontext">Cross platform here refers to scripts that are either the rare multi-platform case (same code runs everywhere) or more likely have name-equivalents on each platform (same name, but different code implementation).</p>
+
+  <p class="sectiontext">It is imperative that a common tool behave the same on different platforms. For example; a benign command line option on Linux cannot be a destructive option on Solaris or AIX.</p>
+
+  <p class="sectiontext">If the options do not match, then the names of the commands must be made <span class="textit">explicitly</span> different from each other.</p>
+
+  <p class="sectiontext">The LAN, CONR, or application team user should not be expected to know option variations between platforms. The goal is for them to have as much knowledge transfer between platforms as possible. If this is not possible, then they must be <span class="textit">forced</span> to resort to a different tool with different options. This enforcement of rethinking of a new command causes the user to begin a new association of behaviors to each platform.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">All tools should have a man page and bbhelp entry</p>
+
+  <p class="sectiontext">Online man pages provide instant access to help and usage information for the tool. This allows the user to find help close to the source of the problem. Having extensive documentation on an external source is acceptable in some situations, but this does not negate the need for a man page. It is acceptable to write a single man page for multiple tools (typically all the <span class="textit">smaller</span> tools in a package). A link with each tool name should point back to the &quot;common&quot; man page.</p>
+
+  <p class="sectiontext">The <span class="texttt">bbhelp</span> tool is designed to assist the user on finding the <span class="textit">right</span> tool from the large selection of localware tools that are provided. It does not give extensive usage information, but identifies the right tool for the job. Given this information, the user can then use the man page to find more information on the tool.</p>
+
+  <p class="sectiontext">The author of the code is generally the person who documents it. This has a tendency to introduce assumptions about the user's knowledge of the subject material. The safest assumption when documenting and distributing a piece of code is to proceed with the understanding that your audience has no knowledge of the subject. Details that the author takes for granted may be details of extreme value for the reader.</p>
+
+  <p class="sectiontext">It is recommended that all documentation be critically reviewed by someone who is <span class="textit">not</span> a subject matter expert on the content. They are not reading for technical accuracy, but to insure that the information relayed is <span class="textit">understandable</span>.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">All public and long running tools must have a PWHO entry</p>
+
+  <p class="sectiontext">When persons responsible for a system find an unexpected tool running, they need to have a means to establish the author and intent of this tool. The header/manifest of the script is one place, but the PHWO entry is the primary, and authoritative means of determining ownership of a tool.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Localware tools installed in the root file systems should be installed via an OS package</p>
+
+  <p class="sectiontext">All SA/localware tools should be:</p>
+  <ul>
+    <li>installed as part of the root/OS volume group at the initial point of provisioning</li>
+    <li>available with or without the application filesystems</li>
+    <li>managed, monitored (validated), and distributed via the native package manger</li>
+  </ul>
+  
+  <!-- ============================================================================ -->
+  <p class="sectionhead">OS packages containing localware should begin with a &quot;BB&quot; prefix</p>
+
+  <p class="sectiontext">This makes a listing of all localware packages immediately discernible via a RegEx either through either the package manger or grep.</p>
+  
+    <!-- ============================================================================ -->
+  <p class="sectionhead">Localware tools not installed to an application-specific location should install to <span class="texttt">/usr/local/bin</span></p>
+
+  <p class="sectiontext"><span class="texttt">/usr/local/bin</span> is not a <span class="textit">hard</span> requirement in the literal sense*. But the concept here is that the directory be:</p>
+  
+  <ul>
+    <li>On the root volume group (available whenever the OS is)</li>
+    <li>Not in an OS maintained directory (such as <span class="texttt">/usr/bin</span>)</li>
+    <li>In root's, or the appropriate user's, <span class="texttt">PATH</span></li>
+  </ul>
+
+  <p class="footnote">[* <span class="texttt">/opt</span> or another <span class="textit">local</span> directory could suffice. <span class="texttt">/usr/local/bin</span> or <span class="texttt">/usr/local/sbin</span> are just the most <span class="textit">obvious</span> locations. ]</p>
+			       
+  <p class="sectiontext">The design consideration is that the tools should not disappear when the mount does. So when doing a cable-swap migration, the tools should not disappear, or worse, revert to an older copy when the back-rev undermount tools reappear during the umount of the remote file systems.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">The output from a reporting command is recommended to fit in a DRQS entry</p>
+
+  <p class="sectiontext">If the output of a command is clear and when it is successful and accepted by the user community, then its output can speak for itself in a ticket.</p>
+
+
+  <!-- ############################################################################ -->
+  <p class="sectiontitle"><a href="http://en.wikipedia.org/wiki/Defensive_programming">Defensive Programming</a></p>
+
+  <div class="bartlettext"><p class="bartlettbody">&quot;Everyone knows that debugging is twice as hard as writing a program in the first place. So if you're as clever as you can be when you write it, how will you ever debug it?&quot;</p>
+<p class="bartlettauth">- Brian W. Kernighan</p></div>
+
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Variable positioning must not be assumed</p>
+
+  <p class="sectiontext">Shell arguments are whitespace delimited. The following code example will cause <span class="texttt">${var2}</span> to be read as the first parameter, and the second parameter will be empty.</p>
+
+  <div class="codeblock">
+    <p>
+      typeset var1=<br />
+      typeset var2=&quot;foo&quot;<br />
+      <br />
+      # BAD!<br />
+      my_func ${var1} ${var2} <span class="codenote">&lt;--- The shell expands this as: my_func foo</span><br />
+      <br />
+      # GOOD!<br />
+      my_func &quot;${var1}&quot; &quot;${var2}&quot; <span class="codenote">&lt;--- The shell expands this as: my_func &lt;NULL&gt; foo</span><br />
+      <br />
+      # GOOD! (Korn 93 - pass by reference alternative) <span class="codenote">&lt;--- This has side effects!</span><br />
+      my_func var1 var2 <span class="codenote">&lt;--- The shell properly passes references for each variable</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">NOTE: The function in this example must be declared with</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">the two parameters as pass by reference, otherwise they</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">will be interpreted as strings, not labels.</span><br />
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Scripts should be targeted as either <span class="textit">brittle</span> or <span class="textit">robust</span></p>
+
+  <p class="sectiontext">A brittle script is one that intentionally breaks when it encounters an exception. It is a type of development used when many exceptions may be encountered and those exceptions might cause significant problems with the continuation of the script. One primary example of this is a QC script. The design of the script is to throw some sort of error on the slightest deviation from expected results. Another example is a script that will make irrevocable changes to the system. It is better to <span class="textit">not</span> make the changes than proceed in the face of an error.</p>
+
+  <p class="sectiontext">Robust scripts, in contrast, are designed to &quot;plow on&quot; despite encountering errors. One example of this is a script that is run in a dire situation that is attempting to salvage the environment. The goal is a &quot;best effort&quot; approach where there is an acceptable percentage of failure or exceptions are expected and continued effort is desirable over quitting.</p>
+
+  <p class="sectiontext">When considering your approach, it should be noted that brittle is the rule, while robust is the exception.</p>
+
+  <!-- **********************************************************************
+       wfavorit:
+       This is a "first pass" at the concept. I think it is supportable but
+       it is not something that is widely advocated elsewhere. It is best
+       exemplified by QC (quality control (qc_conr)) = brittle, PD (problem
+       determination (checksys)) = robust.
+       ********************************************************************** -->
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">The <span class="textit">choice</span> of external binaries should be managed</p>
+
+  <p class="sectiontext">What external tools are used are controlled either through explicit pathing or managing the <span class="texttt">PATH</span> variable. Application mounts frequently have GNU or other variants of similar commands. A script should explicitly manage the <span class="texttt">PATH</span> to avoid directories that are not related to the task. When GNU and vendor supplied versions coexist, the binary should be fully pathed to avoid calling the wrong command.</p>
+
+  <p class="sectiontext">The input/output from an individual tool tends have a consistent interface. Binaries tend to come and go on a system - this is made worse with long and winding <span class="texttt">PATH</span> variables.</p>
+
+  <p class="sectiontext">When multiple differing binaries exist on a system, the script should specify which is to run. When version specific behavior is desired, or multiple binaries with different purpose exist*, the code must explicitly specify the tool to be used.</p>
+
+  <p class="footnote">[* One example is the &quot;<span class="texttt">restore</span>&quot; command. &quot;<span class="texttt">/bb/bin/restore</span>&quot; and &quot;<span class="texttt">/bin/restore</span>&quot; (on AIX) do <span class="textit">very</span> different things. ]</p>
+
+  <div class="codeblock">
+    <p>
+      typeset TAR=/usr/local/bin/tar <span class="codenote">&lt;--- GNU behavior is desired</span><br />
+      typeset RESTORE=/bin/restore <span class="codenote">&lt;--- Un-archive, not bring down the BB environment!</span>
+    </p>
+  </div>
+
+  <!-- ######################################################################### -->
+  <a id="Native"></a>
+  <p class="sectiontitle">Native ksh93 substitutes for common external shell tools</p>
+
+  <!-- **********************************************************************
+       eschulma:
+       ********************************************************************** -->
+
+  <div class="bartlettext"><p class="bartlettbody">&quot;Talk is cheap. Show me the code.&quot;</p>
+<p class="bartlettauth">- Linus Torvalds</p></div>
+
+  <p class="sectiontext">As discussed <a href="#Externals">above</a>, there is a performance penalty incurred in call-outs to external UNIX text tools.  It is very common to find examples in scripts that invoke external tools (or pipelines of external tools).  Many times these are simple tasks which can be done natively, faster and more effectively in the shell (i.e., when the input lists are small).  Here are a few examples of how popular UNIX shell tool primitives can be substituted with shell native equivalents.  At first glance, the code looks a little bit longer for these simple cases when compared to UNIX external tools.   However, the balance shifts sharply in favor of shell native handlers if the application is coded to load, categorize &amp; index the data elements natively on first use.  When the load &amp; indexing steps are done, repeated access is unbeatably fast.</p>
+
+
+  <!-- **********************************************************************
+       wfavorit:
+       There was some editing to the below codeblock. I am not sure that the
+       current is optimal. That much text really belongs outside of the
+       "sample block" and as separate text.
+       ********************************************************************** -->
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Methods to avoid <span class="textit">cat</span></p>
+  <div class="codeblock">
+    <p>
+      #!/usr/bin/ksh93<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">--- This uses a ksh93 accelerator that replaces &quot;cat $input_file&quot;.</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">File Descriptor 9 is assumed unused.  Feel free to select another.</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">EOT is a pattern line. If matched, is triggers the shell to stop</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">copying data. If there is no match, the whole file is printed.</span><br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">EOT will generally not match.</span><br />
+      <br />
+      exec 9&lt; &quot;$input_file&quot;  9&lt;##EOT<br />
+      exec 9&lt;&amp;-<br />
+      <br />
+      &nbsp;&nbsp;&nbsp;<span class="codenote">--- OR ---</span><br />
+      <br />
+      (&lt;##EOT) &lt; &quot;$input_file&quot;
+    </p>
+  </div>
+
+  <br />
+  <div class="codeblock">
+    <p>
+      for element in $(&lt; &quot;$input_file&quot;) <span class="codenote">&lt;--- Replaces: for element in $(cat $input_file)</span><br />
+      do<br />
+      &nbsp;&nbsp;&nbsp;print -- "$element" <span class="codenote"> &lt;--- The &quot;--&quot; prevents print from interpreting items in</span><br />
+      done&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">$element as flags/options to print</span><br />
+    </p>
+  </div>
+
+  <!-- **********************************************************************
+       wfavorit:
+       The following item was un-inlined (the if statement was an inline if)
+       because it allowed me to add individual comments.
+       ********************************************************************** -->
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Methods to avoid <span class="textit">grep</span></p>
+  <div class="codeblock">
+    <p>
+      <span class="codenote">--- Simple case of detecting and handling multiple lines.</span><br />
+      <span class="codenote">&nbsp;&nbsp;&nbsp;&nbsp;Replaces   grep '.*pattern.*' $input_file </span><br />
+      <br />
+      typeset line<br />
+      <br />
+      while IFS='' read line <span class="codenote"> &lt;--- Set IFS in the loop to prevent contaminating IFS globally</span><br />
+      do<br />
+      &nbsp;&nbsp;&nbsp;if [[ &quot;${line}&quot; == *pattern* ]] <span class="codenote"> &lt;--- *pattern* is your shell pattern</span><br />
+      &nbsp;&nbsp;&nbsp;then<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print -- &quot;${line}&quot;<br />
+      &nbsp;&nbsp;&nbsp;fi<br />
+      done  &lt; &quot;$input_file&quot;
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Methods to avoid <span class="textit">sed</span></p>
+  <div class="codeblock">
+    <p>
+      <span class="codenote">--- Simple case of pattern substitution.</span><br />
+      <span class="codenote">&nbsp;&nbsp;&nbsp;&nbsp;Replaces  sed -e 's/OLD/NEW/g' $input_file </span><br />
+      <br />
+      typeset line<br />
+      <br />
+      while IFS='' read line<br />
+      do<br />
+      &nbsp;&nbsp;&nbsp;line=&quot;${line//OLD/NEW}&quot;<br />
+      &nbsp;&nbsp;&nbsp;print -- &quot;$line&quot;<br />
+      done  &lt; &quot;$input_file&quot;
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Methods to avoid <span class="textit">awk</span></p>
+  <div class="codeblock">
+    <p>
+      <span class="codenote">--- Simple case of field splitting.</span><br />
+      <span class="codenote">&nbsp;&nbsp;&nbsp;&nbsp;Replaces  awk '{print $1}' $input_file </span><br />
+      <br />
+      while read -A line_array<br />
+      do<br />
+      &nbsp;&nbsp;&nbsp;print -- &quot;${line_array[0]}&quot;<br />
+      done  &lt; &quot;$input_file&quot;<br />
+      <br />
+      unset line_array<br />
+    </p>
+  </div>
+
+  <br />
+  <div class="codeblock">
+    <p>
+      <span class="codenote">--- Another simple case of field splitting.</span><br />
+      <span class="codenote">&nbsp;&nbsp;&nbsp;&nbsp;Replaces  awk -F: '{print $3 &quot; &quot; $1}' /etc/passwd, listing of UID &amp; username </span><br />
+      <br />
+      while IFS=':' read -A passwd_array<br />
+      do<br />
+      &nbsp;&nbsp;&nbsp;print -- &quot;${passwd_array[2]} ${passwd_array[0]}&quot;<br />
+      done  &lt; &quot;/etc/passwd&quot;<br />
+      <br />
+      unset passwd_array<br />
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Methods to avoid <span class="textit">cut</span></p>
+  <div class="codeblock">
+    <p>
+      <span class="codenote">--- Acquire a character range - Replaces: cut -c5-10 &lt; $input_file </span><br />
+      <br />
+      typeset line<br />
+      <br />
+      while IFS='' read line<br />
+      do<br />
+      <span class="codenote">&nbsp;&nbsp;&nbsp;-&nbsp;cut numbers start at character 1, ksh starts at character 0</span><br />
+      <span class="codenote">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(So in this example, cut -c 5- corresponds to shell parsing starting</span><br />
+      <span class="codenote">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;at character 4)</span><br />
+      <span class="codenote">&nbsp;&nbsp;&nbsp;-&nbsp;cut -c5-10 terminates at fixed character position 10, whereas ksh marks</span><br />
+      <span class="codenote">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;length 6 characters from the start</span><br />
+      <br />
+      &nbsp;&nbsp;&nbsp;line=&quot;${line:4:6}&quot;<br /> 
+      &nbsp;&nbsp;&nbsp;print -- &quot;$line&quot;<br />
+      done &lt; &quot;$input_file&quot;
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Methods to avoid <span class="textit">uniq</span></p>
+  <div class="codeblock">
+    <p>
+      #!/usr/bin/ksh93 <span class="codenote">&lt;--- Uses an associative array (a Korn 93 concept)</span><br />
+      <br />
+      <span class="codenote">--- Replaces: uniq $input_file </span><br />
+      <span class="codenote">&nbsp;&nbsp;&nbsp;&nbsp;And doesn't require pre-sort!</span><br />
+      <br />
+      typeset -A uniq_array<br />
+      typeset line<br />
+      <br />
+      while IFS='' read line<br />
+      do<br />
+      &nbsp;&nbsp;&nbsp;(( uniq_array[$line]++ ))<br /> 
+      done  &lt; &quot;$input_file&quot;<br />
+      <br />
+      for line in "${!uniq_array[@]}"<br />
+      do<br />
+      &nbsp;&nbsp;&nbsp;print -- &quot;$line&quot; <span class="codenote">&lt;--- Replaces: uniq</span><br />
+      &nbsp;&nbsp;&nbsp;#print -- &quot;${uniq_array[$line]} $line&quot; <span class="codenote">&lt;---OR- Replaces: uniq -c</span><br />
+      &nbsp;&nbsp;&nbsp;#(( uniq_array[$line] &gt; 1 )) &amp;&amp; print -- &quot;$line&quot; <span class="codenote">&lt;---OR- Replaces: uniq -d</span><br />
+      done<br />
+      <br />
+      unset uniq_array<br />
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Methods to avoid <span class="textit">sort</span></p>
+  <div class="codeblock">
+    <p>
+      #!/usr/bin/ksh93 <span class="codenote">&lt;--- Uses Korn 93 functionality</span><br />
+      <br />
+      <span class="codenote">--- Replaces sort, for lexicographic ordering of small lists.  Input from $input_file </span><br />
+      <br />
+      set -s -A sort_out $(&lt;&quot;$input_file&quot;) <span class="codenote">&lt;--- set -s is the lexicographic magic </span><br />
+      <br />
+      print "${sort_out[@]}"<br />
+      <br />
+      unset sort_out<br />
+    </p>
+  </div>
+  <br />
+
+  <div class="codeblock">
+    <p>
+      #!/usr/bin/ksh93<br />
+      <span class="codenote">--- Replaces sort -n; hack to sort a list of non-negative integers numerically</span><br />
+      <span class="codenote">&nbsp;&nbsp;&nbsp;&nbsp;(each being 0 &lt; x &lt; 4194304).  Input from $input_file </span><br />
+      <br />
+      set -A value_array<br />
+      typeset -i element<br />
+      <br />
+      while read element<br />
+      do<br />
+      &nbsp;&nbsp;(( value_array[$element]++ ))<br /> 
+      done  &lt; &quot;$input_file&quot;<br />
+      <br />
+      for element in "${!value_array[@]}"  <span class="codenote">&lt;--- Array keys (not hash keys) are</span><br />
+      do&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">automatically sorted numerically by ksh93!</span><br />
+      &nbsp;&nbsp;&nbsp;while (( --value_array[$element] &gt;= 0 ))<br />
+      &nbsp;&nbsp;&nbsp;do<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;print -- "$element"<br />
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;# value_array[$element]=-1 <span class="codenote">&lt;--- Uncomment for sort -nu behavior</span><br />
+      &nbsp;&nbsp;&nbsp;done<br />
+      done<br />
+      <br />
+      unset value_array
+    </p>
+  </div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Methods to avoid <span class="textit">date</span></p>
+  <div class="codeblock">
+    <p>
+      <span class="codenote">--- Replaces date</span><br />
+      <br />
+      printf &quot;My date is: %T\n&quot;<br />
+      <br />
+      printf &quot;Hand-picked date format is %(%Y/%m/%d)T\n&quot;
+    </p>
+  </div>
+
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">Implementing this Guideline</p>
+
+  <div class="bartlettext"><p class="bartlettbody">&quot;Men have become the tools of their tools.&quot;</p>
+<p class="bartlettauth">- Henry David Thoreau</p></div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Code reviews</p>
+
+  <p class="sectiontext">Team leads and peers should review code that is to be pushed into the environment. This is a solid means of both preventing unsupportable or broken changes from entering the code base as well as giving appropriate feedback to those writing the code. Public review is a reminder for the author as well as the participants of the importance of what the team values.</p>
+
+  <p class="sectiontext">Change diffs tell the story of the evolution of the product. These can be used to precisely track <span class="textit">who</span> changed <span class="textit">what</span>. Documentation, comments, and ticket history can tell the <span class="textit">why</span> of the change.</p>
+
+  <p class="sectiontext">Changes should be tied to a DRQS, and that DRQS should be either be in the git branch name (eg: &quot;DRQS/43214321&quot;) or in the commit tag (eg: &quot;DRQS 43214321: Modifications required for new systems&quot;).</p> 
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Code ownership</p>
+
+  <p class="sectiontext">Someone who is an <span class="textit">owner</span> of a product is someone who has a vested interest in the quality of changes to that product. Owners have a tendency to be more mindful of changes they make, and are inclined to be watchful parents of their children.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Debate this document</p>
+
+  <p class="sectiontext">This is a <span class="textit">document</span> that simultaneously refers to itself as a &quot;standard&quot; and a &quot;guideline&quot;. It is, in itself, really only a guideline. It is up to the code owners and team leads to enforce it as a standard.</p>
+
+  <p class="sectiontext">The expectation is that those responsible for the quality of products they produce will review this document, find faults, find solid recommendations, and then come to a standard that they find best suits their needs.</p>
+
+  <p class="sectiontext">The contributors to this document are always interested in recommended changes / arguments that run contrary to what has been presented here.</p>
+
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">Resources</p>
+
+  <div class="bartlettext"><p class="bartlettbody">&quot;People think that computer science is the art of geniuses but the actual reality is the opposite, just many people doing things that build on eachother, like a wall of mini stones.&quot;</p>
+<p class="bartlettauth">- Donald Knuth</p></div>
+
+
+  <ul>
+    <li>Bourne - <a href="http://www.freebsd.org/cgi/man.cgi?query=sh&amp;format=html" target="_blank">http://www.freebsd.org/cgi/man.cgi?query=sh&amp;format=html</a></li>
+    <li>Korn 88    - <a href="http://www.research.att.com/sw/download/man/man1/ksh88.html" target="_blank">http://www.research.att.com/sw/download/man/man1/ksh88.html</a></li>
+    <li>Korn 93    - <a href="http://www.research.att.com/sw/download/man/man1/ksh.html" target="_blank">http://www.research.att.com/sw/download/man/man1/ksh.html</a></li>
+    <li>Bash - <a href="http://www.gnu.org/software/bash/manual/bashref.html" target="_blank">http://www.gnu.org/software/bash/manual/bashref.html</a></li>
+    <li>OpenSolaris scripting standard - <a href="http://www.filibeto.org/~aduritz/truetrue/opensolaris/shellstyle.pdf" target="_blank">http://www.filibeto.org/~aduritz/truetrue/opensolaris/shellstyle.pdf</a></li>
+    <li>QuickSheet - <a href="http://www.tablespace.net/quicksheet/shell-quicksheet.pdf" target="_blank">http://www.tablespace.net/quicksheet/shell-quicksheet.pdf</a></li>
+    </ul>
+   
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">About this document</p>
+
+    <div class="bartlettext"><p class="bartlettbody">&quot;You know... pmp does that for you!&quot;</p>
+<p class="bartlettauth">- William Favorite</p></div>
+
+  <p class="sectiontext">This document is maintained by group 325. Contact one of the members of the group for any issues, questions, or concerns arising from this document.</p>
+
+  <!-- **********************************************************************
+       wfavorit:
+       I wanted to...
+        (1) order based on arbitrary (sort) order
+        (2) have Petrov at the top (that is what I do)
+       so... I orderd by sorting on the email address.
+       ********************************************************************** -->
+
+  <p class="sectiontext">Contributors to this document:</p>
+
+  <ul>
+     <li>Stanislav Petrov &lt;doic@oko.su&gt;</li>
+     <li>Eugene Schulman  &lt;eschulman6@bloomberg.net&gt;</li>
+     <li>Felix E Sanchez  &lt;fsanchez18@bloomberg.net&gt;</li>
+     <li>Gordon Marler    &lt;gmarler@bloomberg.net&gt;</li>
+     <li>Jose R Escalera  &lt;jescalera1@bloomberg.net&gt;</li>
+     <li>William Favorite &lt;wfavorite2@bloomberg.net&gt;</li>
+  </ul>
+
+  <p class="sectiontext">Additional &quot;commentary&quot; can be found in the comments within the (X)HTML of this document. This is a <span class="textit">living</span> and <span class="textit">collaborative</span> document; we continually seek improvements / refinements to the recommendations herein. All feedback is appreciated.</p>
+
+  <!-- ############################################################################ -->
+  <!--
+      ToDos
+
+      [ ] Modular design
+      [ ] Set CSS styles for all "OS Words" and "OS Commands". (The actuall CSS
+          can be refined later)
+      [ ] Define data vs code
+      [ ] The point of re-entrancy in the shell
+      [ ] No mention of variable discipline
+      [_] No mention of pass by reference
+      [ ] No mention of complex variables
+      [_] No mention of array usage
+      [ ] Proposed: When to use "sane"; defaults for parameters, when not to
+      [W] Re-org all the major sections to include name changes
+
+      Done
+
+      [X] How to determine a builtin ==> whence
+      [X] Replace all debug text.
+      [X] Move all items out of the "Unsorted" section.
+      [X] Define brittle vs robust
+      [X] Review OpenSolaris and other project scripting guidelines
+      [X] Create a "print-only" stylesheet for things like the code (that looks
+          bad on a printer)
+      [X] Move the ToDos into the (HTML) comments
+      [X] Develop an inline commentary style
+      [X] Replace the barbaric "here" spinner code with something a bit more
+          modern.
+      [X] Replace all "Lorem ipsum" text.
+  -->
+
+</body>
+</html>

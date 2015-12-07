@@ -1,0 +1,16 @@
+================================================================================
+CPUBUsersGuide.html is the best place to start.
+
+WritingAProvider.html is the next place to go.
+
+Both of these are fairly well maintained.
+
+WritingAWriter.txt is a bit old but should be fairly solid. It will remain as
+a "backwater text file" for the forseeable future as there is not expected to
+be a lot of interest in coding on writers at this time.
+
+The FrameworkDesign.txt document contains "conversations" that go a bit beyond
+what can be found in the comments. I have tried to keep the dicussion in the
+comments with the code, but some are large and require a bit larger treatment,
+so I have broken them out into this file. This file should be read WITH the
+source.

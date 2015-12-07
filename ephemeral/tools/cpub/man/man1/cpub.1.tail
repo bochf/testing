@@ -1,0 +1,23 @@
+.\" Process this file with
+.\" groff -man -Tascii cpub.5
+.\"
+.\"=============================================================================
+
+.SH USAGE
+The config file can use a shebang interpreter magic at the top of the file
+and then set executable to then behave like a command.
+.SH ADDITIONAL INFORMATION
+There are multiple documents on using
+.B CPUB
+such as user and developer guides designed to assist those wishing to have a
+better understanding of the tool.
+.SH BUGS
+Please inform the (second) author below of any bugs.
+.SH AUTHOR
+Ottmar Mergenthaler <etaion.shrdlu@linotype.com>
+.br
+William Favorite <wfavorite2@bloomberg.net>
+.SH "SEE ALSO"
+.BR cpub (5).
+
+

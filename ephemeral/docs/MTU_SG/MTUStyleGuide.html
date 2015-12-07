@@ -1,0 +1,548 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!---
+    MTUStyleGuide.html - A discussion on style in MTU documents
+
+    Authors:
+       James Joyce <ulysses@dubliners.ie>
+       William Favorite <wfavorite2@bloomberg.net>
+-->
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <style type="text/css">
+      /* Soften the background colour and move to a nice serifed fornt */
+      body
+      {
+      font-size: 12px;
+      background-color: #FAFAFA;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      }
+
+      /* This is a title line. Very bold, very large, used once. */
+      .arttitle
+      {
+      font-size: 28px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      /* Subtitle, used to provide a second, smaller block of text */
+      .artstitle
+      {
+      font-size: 12px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      /* Used for the version string */
+      .artsstitle
+      {
+      font-size: 10px;
+      text-align:center;
+      }
+
+      /* def is used for definitions - where the indent is reversed */
+      .defblock
+      {
+      padding-left: 50px;
+      padding-right: 30px;
+      text-indent: -20px;
+      text-align:justify;
+      }
+
+      .subdef
+      {
+      padding-left: 80px;
+      padding-right: 40px;
+      text-indent: -20px;
+      text-align:justify;
+      }
+
+      /* Used as a markup tag - easily identifyable when proofing */
+      .debug
+      {
+      color: red;
+      }
+
+      /* Weighted, colored, and monospace - texttt is an alternate option */
+      .oscmd
+      {
+      font-family: Monaco, monospace;
+      font-weight:bold;
+      color: #333300;
+      }
+      
+      /* Designed to look like the terminal - background is lost when printing */
+      .bbtermcmd
+      {
+      font-family: Monaco, monospace;
+      font-weight:bold;
+      color: orange;
+      background-color: black;
+      padding:0px 2px 0px 2px;
+      }
+      
+      .subjhead
+      {
+      font-size: 12px;
+      margin-left: 20px;
+      font-weight:bold;
+      }
+
+      .subjsect
+      {
+      margin-left: 50px;
+      font-weight:bold;
+      }
+
+      .subjcont
+      {
+      margin-left: 50px;
+      margin-right: 20px;
+      }
+      
+      .footnote
+      {
+      font-size: 10px;
+      margin-left: 70px;
+      margin-right: 70px;
+      text-align:justify;
+      }
+      
+      .reference
+      {
+      font-size: 8px;
+      position:relative;
+      top:-5px;
+      }
+
+      .exponent
+      {
+      font-size: 8px;
+      position:relative;
+      top:-5px;
+      }
+
+      .thintable
+      {
+      margin-left: 55px;
+      margin-right: 40px;
+      border-collapse: collapse;
+      }
+
+      .thintd
+      {
+      padding: 5px;
+      border: 1px solid black;
+      }
+
+      /* List table is like a thin table without borders */
+      .listtable
+      {
+      margin-left: 55px;
+      margin-right: 40px;
+      border-collapse: collapse;
+      }
+
+      .listtd
+      {
+      padding: 4px;
+      vertical-align:text-top;
+      }
+
+      /* Green on black box to put monospace code */
+      .codeblock
+      {
+      padding-top: 2px;
+      padding-bottom: 2px;
+      padding-right: 16px;
+      padding-left: 16px;
+      font-family: "Courier New", "Lucida Console", Monospace;
+      font-size: 9pt;
+      margin-left: 56px;
+      /* margin-right: 15px; */
+      width: 50em;
+      color: #00cc00;
+      background-color: black;
+      border-style: solid;
+      border-color: #777777;
+      border-width: 2px;
+      font-weight: bold;
+      }
+
+      .codenote { color: #aaaadd; }
+
+      /* This sits under a code block (or similar box) with the name of the
+         file or text such as "Figure 1."  */
+      .boxnote
+      {
+      margin-top: 0; /* Pull it in tight with the box above */
+      font-size: 10px;
+      margin-left: 70px;
+      margin-right: 70px;
+      text-align:justify;
+      }
+
+
+      .textit { font-style:italic; }
+      .texttt { font-family: Monaco, monospace; }
+      .textbf { font-weight:bold; }
+      .underline { text-decoration: underline; }
+
+
+      a:link { text-decoration: underline; color: #0000FF }
+      a:visited { text-decoration: underline; color: #0000FF }
+      /* Active is more like "visited" than immediate feedback. */
+      a:active { text-decoration: underline; color: #0000FF }
+      a:hover { text-decoration: underline; color: #0000FF }
+    </style>
+
+    <title>A Simplified Style Guide for MTU Papers</title>
+  </head>
+  <body>
+
+    <p class="arttitle">A Simplified Style Guide for MTU Papers</p>
+    <p class="artstitle">A best practices guide for those tasked with writing a Monthly Technology Update</p>
+
+    <p class="artsstitle">Version: 1.0.0</p>
+
+    <hr width="65%" />
+
+    <p class="subjhead">Introduction</p>
+
+    <p class="subjcont">The <a href="http://cms.prod.bloomberg.com/team/pages/viewpage.action?pageId=308054688">Monthly Technology Update</a> (MTU) is a series of papers written by team leads under Mark Chamberlain's OUT structure. Every TL that reports under Mark will at some time be tasked with writing a paper on a technology specific to, and originated within that group. This is an effort to help TLs write the most optimal paper that best represents themselves, their group, and Mark's organization.</p>
+ 
+    <p class="subjcont">This is a <span class="textit">minimalist</span> style guide that intends to lay out the most basic outlines of style for a MTU or similar paper. The approach here is not to replace a full style or grammar guide, but to assist in the most common issues that MTU writers deal with.</p> 
+
+    <p class="subjcont">The primary value of this paper is to increase effective communication between groups and to foster creative &amp; effective engineering.</p>
+
+    <p class="subjhead">Discussion Points</p>
+
+    <p class="subjsect">What should the paper be about?</p>
+
+    <p class="subjcont">A primary goal of Mark's organization is to engineer solutions that give us a competitive edge and/or advance our capabilities. Any technical design or engineered solution that contributes to this goal are very good candidates for things to discuss.</p>
+
+    <p class="subjsect">When is it due?</p>
+
+    <p class="subjcont">The month's MTU is due on the Monday of the last full work-week in the prior month. So if October ends on a Tuesday, November's paper is due on the second-to-last Monday of October. Parsing the logic can be a bit of a pain, so the schedule and dates for the current rotation can be found on <a href="http://cms.prod.bloomberg.com/team/pages/viewpage.action?pageId=308054688">the MTU page</a>.</p>
+
+
+    <p class="subjcont">The paper is due before the first of the month to allow time for proof reading, posting to TEAM, and the announcement on (or near) the first of the Month.</p>
+
+    <p class="subjsect">What file format should I use?</p>
+
+    <p class="subjcont">The MTU is hosted from a Wiki/TEAM page, but does not designate one format as being <span class="textit">required</span> over another. There are a number of popular formats with each having pros and cons. The three formats that are most appropriate for authoring are HTML, MS Word, and Wiki/TEAM. PDF is included as a <span class="textit">distribution</span> format. LaTeX is included as an authoring/formatting format primarily for comparison, but also because much of the &quot;custom&quot; CSS used in this document is based on LaTeX commands.</p>
+
+    <table class="thintable">
+      <tr>
+        <td class="thintd">Format</td>
+        <td class="thintd">Pros</td>
+        <td class="thintd">Cons</td>
+      </tr>
+      <tr>
+        <td class="thintd">MS Word</td>
+        <td class="thintd">&bull; Highly evolved grammatical and spell checking<br />&bull; Great formatting capabilities<br />&bull; Convenient for encapsulating images into a single document</td>
+        <td class="thintd">&bull; Formatting features can &quot;take over&quot; the document<span class="reference">1</span><br />&bull; Proprietary but ubiquitous</td>
+      </tr>
+      <tr>
+        <td class="thintd">Wiki/TEAM</td>
+        <td class="thintd">&bull; Minimalist spell checking<br />&bull; Works best in Wiki (TEAM) framework<br />&bull; Approachable</td>
+        <td class="thintd">&bull; Limited formatting capabilities<br />&bull; Limited grammar checking<br />&bull; Wiki content lock-in</td>
+      </tr>
+      <tr>
+        <td class="thintd">HTML</td>
+        <td class="thintd">&bull; Most popular format (works <span class="textit">everywhere</span>)<br />&bull; Good formatting control</td>
+        <td class="thintd">&bull; Authors are reliant on editors or knowledge of language<br />&bull; Editor choice can have a large impact on document capabilities</td>
+      </tr>
+      <tr>
+        <td class="thintd">LaTeX</td>
+        <td class="thintd">&bull; Creates <span class="textit">exceptionally</span> well formatted documents with minimal effort<br />&bull; Precise layout geared for technical papers<br />&bull; Convenient for encapsulating images into a single document</td>
+        <td class="thintd">&bull; TeX language is foreign to most users</td>
+      </tr>
+      <tr>
+        <td class="thintd">PDF</td>
+        <td class="thintd">&bull; Great means to lock-in formatting<span class="reference">2</span><br />&bull; Ubiquitous format<br />&bull; Convenient for encapsulating images into a single document</td>
+        <td class="thintd">&bull; Destination, not a source format</td>
+      </tr>
+    </table>
+
+    <p class="footnote">[1. MS Word authors can fall into a common trap of letting Word manage lists and paragraphs. Frequently this causes problems with formatting that obscure the normal flow and intent of a document with less than ideal formatting. This problem is compounded by years of conditioning by the terminal to use Shift-Return rather than a simple Return (Word treats them differently). ]</p>
+
+    <p class="footnote">[2. &quot;Lock-in&quot; here is a <span class="textit">good</span> thing. As an example, the CONR paper was written in HTML, and tested (formatted) for how it renders in Chrome. When the paper was viewed in IE, some of the fine tuned formatting was lost. Instead of trying to control formatting across multiple browser experiences, the paper was printed to PDF and distributed in that format to insure that the best formatting was consistent in all user experiences. ]</p>
+
+    <p class="subjcont">This document was written in XHTML with inline CSS using <span class="texttt">emacs</span> and W3's markup validator (as a Chrome plugin). Spell checking was done through Windows &quot;aspell&quot;. Versioning changes were maintained in the perf/ephemeral repository through the use of <span class="texttt">git</span> on Windows. The CSS used for this document is of course free to use and is available either in the top of the HTML file, or from the author (if you have a PDF version).</p>
+
+    <p class="subjsect">How long should it be?</p>
+
+    <p class="subjcont">It has been argued that a target length should be established before the paper is started. The thinking is that boundaries such as this keep the writer on task and results in a better paper.</p>
+
+    <p class="subjcont">While a technical paper <span class="textit">should</span> have some limits on length, the stronger advice is to use the space (verbiage) required to relate your points as clearly as possible and no more. The primary goal is to relate the technical issues set forth in the task. The secondary goal is to keep the paper short enough so that the reader will likely read it all.</p>
+
+    <p class="subjsect">Who should write it?</p>
+
+    <p class="subjcont">The paper is assigned to TLs, not groups. The paper is therefore a reflection upon the TL. Should the TL delegate it to a team member, it is appropriate for the TL to give proper credit for authorship but also remember that the paper is still a reflection upon the TL it was originally assigned.</p>
+
+    <p class="subjsect">Does the paper require approval from William?</p>
+
+    <p class="subjcont">No. William collects the papers and facilitates publishing. William also offers basic proof reading with the intent of presenting the paper, the TL, the team, and the technology in the best light.</p>
+
+    <p class="subjsect">Who is the target audience?</p>
+
+    <p class="subjcont">Papers should be written to a target audience. Good writing generally appeals to a wide audience. While technical papers cannot appeal to the same wide audiences as fiction, they can similarly benefit from a wider appeal. Here is a sample list of who you should be writing to in your paper:</p>
+
+    <table class="listtable">
+      <tr>
+        <td class="listtd">Yourself (past)</td>
+        <td class="listtd">When you were discovering this subject you struggled with imprecise descriptions, vague definitions, and overly wordy text. You had to weed through lots of poor writing and various sources to finally come to the perfected understanding you now possess. Write the things that you wish you had in the beginning of the journey. If someone said it better, then quote or reference (specifically) the parts that help.</td>
+      </tr>
+      <tr>
+        <td class="listtd">Yourself (future)</td>
+        <td class="listtd">Write to a future you that is likely to forget key details. You understand the subject, but will want to come back for the specifics of a formula or a key piece of info that is harder to get somewhere else. Here you are looking to capture hard points of data that you have recognized as valuable based on your experience. Simply writing that item <span class="textit">X</span> is settable in &quot;the config file&quot; is a <span class="textit">lazy</span> approach that future-you will not readily appreciate. You may wish to relate something like: &quot;X is settable through the <span class="texttt">VALUE_X</span> attribute where X is expressed in thousands of a second (as opposed to the standard percentages used elsewhere). When setting X, we found that the proper baseline was Y, and increments of Z produce the rate of change we desired for this effort.&quot;</td>
+      </tr>
+      <tr>
+        <td class="listtd">Technically familiar</td>
+        <td class="listtd">There are people who understand or have direct experience with most of the concepts of your paper. The paper should not seem remedial or bore them. It has to have appeal (value) to those who have some background in the subject. The primary means of reaching these people is to explain details or insights into the subject that they are likely to have missed. Another is to expound on some of the less-technical design considerations chosen that may differ from one implementation to another.</td>
+      </tr>
+      <tr>
+        <td class="listtd">Technically distant</td>
+        <td class="listtd">Some people will consider your paper very foreign. They will not have substantial experience in your domain. It is important that the paper not make assumptions about what they know. For this reason it is important to properly frame the discussion with a ramping introduction, clear context, and real world examples. Another method to reach these people is to put items in general context. For example to relate context beyond the specific technical data one might include a means for people not as familiar to understand the significance of the stats that might not make immediate sense to them: &quot;The frackulator achieved 300 clecks/second - that represents a 37% improvement in efficiency that saved five minutes off processing time.&quot;.</td>
+      </tr>
+    </table>
+
+    <p class="subjsect">What are some of the common pitfalls?</p>
+
+    <table class="listtable">
+      <tr>
+        <td class="listtd">Lists</td>
+        <td class="listtd">Be mindful of the context of lists. Is the list a way of emphasis of a terms and a conjunction? If so, then the list should have an introduction like a sentence clause and likely not have punctuation (although you can think of each line ending in a comma). Is the list a series of tasks? Then it should be ordered (numbered), be complete sentences, and should have full punctuation.</td>
+      </tr>
+      <tr>
+        <td class="listtd">Grammar</td>
+        <td class="listtd">Bad grammar is simple to fix. MS Word or just a second set of eyes can knock down the most obvious grammatical errors. Excuses should not be made for bad grammar - You are not James Joyce, you are a technical writer trying to best represent yourself and your points.</td>
+      </tr>
+      <tr>
+        <td class="listtd">Voice</td>
+        <td class="listtd">Papers should speak in an active voice.<span class="reference">3</span> Active voice is more about precision, is more engaging to the reader, and more appropriate for a MTU. An example of this might be: &quot;The service was then put into production.&quot;, as opposed to a more active voiced version that says &quot;Our group then placed the service into production.&quot;</td>
+      </tr>
+      <tr>
+        <td class="listtd">Personal pronouns</td>
+        <td class="listtd">Technical papers can have a tendency to waver in the use of personal pronouns. No <span class="textit">absolute</span> position is taken here other than to be consistent and mindful in their usage. That said, considering that the paper is authored by the TL in regards to the team he leads, then first person plural (we, us, our) should, in most cases, be the predominant form in the document.</td>
+      </tr>
+      <tr>
+        <td class="listtd">Consistency</td>
+        <td class="listtd">Many of the &quot;rules&quot; here do not have <span class="textit">absolute</span> answers. What works best, regardless of the side of a style argument you land on is that you consistently apply that style throughout the document. For example; issues like the gender-neutral replacement for &quot;he&quot; can fall into several different camps. In this case it is not as important that one or the other be used, but whatever choice is made be applied consistently.</td>
+      </tr>
+      <tr>
+        <td class="listtd">Terms &amp; acronyms</td>
+        <td class="listtd">When introducing new terms, a description of that term should be included on the first inclusion. This can be inline, via footnote, URL or other means. It is a problem for your reader to continue reading without understanding a term that is used in your presentation. Acronyms should be treated in a similar manner; they should be introduced first in expanded form with the acronym in parens.<span class="reference">4</span> For example: &quot;This document is heavily reliant on Three Letter Acronyms (TLAs).&quot; This is about domain specific, vague, and multi-definition terms. What TCP is about should be understood by most grandmothers at this point. But, by comparison, terms seemingly specific as &quot;cache&quot; could refer to many different things. The usage context of the term may be sufficient to carry the reader, but when in doubt, always include some assistance for your audience.</td>
+      </tr>
+    </table>
+
+    <p class="footnote">[3. See: <a href="http://en.wikipedia.org/wiki/English_passive_voice">http://en.wikipedia.org/wiki/English_passive_voice</a> ]</p>
+
+    <p class="footnote">[4. This is the method espoused in the Chicago Manual of Style. (15th ed. section 15.2) It is considered acceptable for this to be reversed.  ]</p>
+
+    <p class="subjsect">What are some simple wins for adding value?</p>
+    <p class="subjcont">Different people will view your document differently. Each will look for understanding and a final meaning through a different means. If you are only speaking one way, you stand to subtly alienate different types from your desired end-result of satisfied readers.</p>
+
+    <table class="listtable">
+      <tr>
+        <td class="listtd">Logical diagrams</td>
+        <td class="listtd">Diagrams explain relationships between the items you are discussing with representations that visually infer what you say. Many people are <a href="http://en.wikipedia.org/wiki/Visual_thinking">visually/spatially oriented</a> and absorb information better through an accompanying image that speaks more clearly (to them) than words. When used in conjunction with words, you reach a wider audience.</td>
+      </tr>
+       <tr>
+        <td class="listtd">External references</td>
+        <td class="listtd">Others have spent a large amount of time to best relate various concepts, and may have perfected the message more than you can hope to in the time you have allotted. It is not plagiarism or taking an unfair shortcut to reference their work.</td>
+      </tr>
+       <tr>
+        <td class="listtd">Quantitative data</td>
+        <td class="listtd">Managers will want to see items such as: &quot;how much time was saved&quot;, and &quot;how much did this effort cost&quot;. Some of your readers will not be looking at specifics of what was done, but what it <span class="textit">accomplished</span> and in terms that they understand.</td>
+      </tr>
+       <tr>
+        <td class="listtd">Examples</td>
+        <td class="listtd">Like the previously mentioned visual thinkers, some people will want to see how the technology relates to &quot;real world&quot; <span class="textit">process</span>. These people will be looking for how this technology changed a process they know and/or how they can directly use this technology themselves.</td>
+      </tr>
+       <tr>
+        <td class="listtd">Code snippets</td>
+        <td class="listtd">Those comfortable with the concepts may want to peer deeper into implementation details. Those well versed in various languages may wish to just see exactly what was done. In these cases, code speaks louder than words.</td>
+      </tr>
+      <tr>
+        <td class="listtd">BNF</td>
+        <td class="listtd"><a href="http://en.wikipedia.org/wiki/Backus%E2%80%93Naur_Form">BNF</a> (Backus–Naur Form) or its derivatives can be used to definitively relate what might be a fairly complex description if relying upon sentence-paragraph structure alone.</td>
+      </tr>
+      <tr>
+        <td class="listtd">Footnotes</td>
+        <td class="listtd">Footnotes serve multiple purposes. The obvious use in technical papers is to include a reference. But they can also serve as an opportunity to push equivocation off to a side conversation. Your document can use a more flowing conversation without stopping to handle exceptions and nuances that are issues, but not related directly to your point.</td>
+      </tr>
+      <tr>
+        <td class="listtd">Q-n-A</td>
+        <td class="listtd">A question and answer section allows the writer to handle lots of ad-hoc items that may not be as easy to approach in other parts of the document. The writer can use this opportunity to directly address salient points in a direct response format. Successive follow-on question-response exchanges can form a <a href="http://en.wikipedia.org/wiki/Dialectic">dialectic</a> that forms a greater argument.</td>
+      </tr>
+      <tr>
+        <td class="listtd">Glossary</td>
+        <td class="listtd">While it is unlikely that a single paper would contain sufficient content to necessitate a glossary, it is not out of the question that a paper could have one. Combining terms into one section may help to draw a distinction between subtle differences that may be lost in the inline introduction of the terms. Definitions can also be placed inline. For example: individual definitions can be set apart in an indented / boxed style throughout the text where they are most topically relevant.</td>
+      </tr>
+    </table>
+
+    <p class="subjcont">While the above items can each add value to a document, they are not a <span class="textit">checklist</span> of items that <span class="textit">must</span> be included. Each additional input to the effort can have a tendency to add an additional &quot;weight&quot; in terms of value, but also in terms of complexity. The goal should be to balance the value of the additions against their disruptive complexity.</p>
+
+    <p class="subjsect">What are the best ways for including non-text into the document?</p>
+
+    <p class="subjcont">The term &quot;non-text items&quot; refers primarily to diagrams, code blocks, and images, but can also include alternatives such as embedded videos or spreadsheet data. Including this information can provide a quick win in terms of relating a subject to the reader, but it can also wreak havoc on the readability of the document if it becomes too pervasive. Finding a balance and the best way to stylistically include the content is of high importance.</p>
+
+    <p class="subjcont">The following is a sample of code that has been inserted into the document. Including code in HTML can be <span class="textit">unpleasant</span> and time consuming when done by hand. The following example has no syntax highlighting, but has syntactically non-valid comments in a clearly different color. Syntax highlighting would make the code more readable, but subtract from the ability to call out individual lines as is done here. This illustrates a fairly simplistic depiction of code with easily identifiable portions of highlighted code.</p>
+
+    <div class="codeblock">
+      <p>
+      #include &lt;stdio.h&gt;<br />
+      <br />
+      int main(int argc, char *argv[])<br />
+      {<br />
+      &nbsp;&nbsp;&nbsp;printf("Hello World!\n");&nbsp;&nbsp;<span class="codenote">&lt;&mdash;&nbsp;The magic sauce in this app is here</span><br />
+      &nbsp;&nbsp;&nbsp;return(0);<br />
+      }
+      </p>
+    </div>
+    <p class="boxnote">helloworld.c - Inline commentary</p>
+
+    <p class="subjcont">The following is another approach on the same concept using syntax highlighting.<span class="reference">5</span> This example would be too complex with the non-compliable comment inline so the code is line numbered and the text can refer to the lines by a simplistic reference. Here, we would point out the &quot;magic sauce&quot; being on line 5.</p>
+
+    <div class="codeblock">
+      <p>
+      01:&nbsp;<span style="color: #CC00CC">#include</span> <span style="color: #66CCFF">&lt;stdio.h&gt;</span><br />
+      02:&nbsp;<br />
+      03:&nbsp;<span style="color: #6666FF">int</span> main(<span style="color: #6666FF">int</span> argc, <span style="color: #6666FF">char</span> *argv[])<br />
+      04:&nbsp;{<br />
+      05:&nbsp;&nbsp;&nbsp;&nbsp;printf(<span style="color: #66CCFF">&quot;Hello World!\n&quot;</span>);<br />
+      06:&nbsp;&nbsp;&nbsp;&nbsp;return(<span style="color: #66CCFF">0</span>);<br />
+      07:&nbsp;}
+      </p>
+    </div>
+    <p class="boxnote">helloworld.c - Line referenced commentary</p>
+
+    <p class="footnote">[5. The syntax highlighting here is unnecessary, but points to the fact that the previous example was not conducive to more colors when color was the primary method to discern non-comment comments (comments that are not syntactically correct). Syntax highlighting is useful with larger chunks of code and can be facilitated with tools like Google's <a href="https://code.google.com/p/google-code-prettify/">google-code-prettify</a> or <a href="http://alexgorbatchev.com/SyntaxHighlighter/">similar JavaScript tools</a> to include code. Wiki/TEAM has a built in method for syntax highlighting. ]</p>
+
+
+    <p class="subjcont">A hard and fast rule is that code should <span class="textit">never</span> be edited in the document. It should be edited, tested, and then incorporated back into the document to prevent errors from sneaking into your document.<span class="reference">6</span></p>
+
+    <p class="footnote">[6. When using HTML (and doing multiple edits of the code) it is advisable to script the encoding of this content where &quot;script&quot; refers to either a code-to-html automation that happens either inside or outside the document itself. (Inside: using one of the JavaScript based tools mentioned earlier; Outside: using an external tool to convert.) The &lt;pre&gt; tag can be useful but will treat &lt;&gt; bracketed items as markup. The first line of the above code will be missing the &quot;argument&quot; to the <span class="texttt">#include</span> directive. ]</p> <!-- See: ibm4:/home/wfavorit/proj/htmlify -->
+
+    <p class="subjcont">Images can be very useful in relating points. Logical diagrams and screen shots have a tendency to bring the user to understanding faster than trying to relate the same information by words alone. So the recommendation is to use images when they serve to make things clearer.</p>
+
+    <p class="subjcont">When using images, the recommendation is to use them sparingly in your document and use them as a way to reinforce the point of your text. When too many images are included, they have a tendency to <span class="textit">overwhelm</span> the text and make readability more difficult. When a series of images are required, then there are a number of stylistic methods that can be used such as keeping a consistent size and placement for successive images so that they are <span class="textit">less</span> disruptive to the visual flow of the document.</p>
+
+    <p class="subjsect">Does the font matter?</p>
+
+    <p class="subjcont">The fundamental visual appeal of the document <span class="textit">matters</span>. This includes choices as seemingly simple as font choices, but also formatting and page layout options. Serifed fonts improve readability of bodies of text, while sans-serif versions may have issues distinguishing characters such as 1, l, and I.<span class="reference">7</span></p>
+
+    <p class="footnote">[7. See: The Chicago Manual of Style 15th ed. Section 2.11. ]</p>
+
+
+    <p class="subjhead">So you think you are done</p>
+
+    <p class="subjcont">You have written your paper, it <span class="textit">looks</span> good. What should you do now? Turning it in will remove the task from your plate, but is the paper really reflective on how you want to be perceived? Does the paper actually <span class="textit">reach</span> the full audience that it will be sent to? I have included a list of some things that you can do to potentially improve upon the final product.</p>
+
+    <p class="subjsect">Ask yourself: &quot;Was the paper <span class="textit">easy</span> to write?&quot;</p>
+
+    <p class="subjcont">The <span class="textit">effort</span> put into the paper is a fair indicator of the <span class="textit">value</span> of the paper. For example:</p>
+
+    <table class="listtable">
+      <tr>
+        <td class="listtd">&bull;&nbsp;Did you take the time to look up key details? Did you have to go back and look at the code? Writing about items from the top of your memory tends to speak to overview details, and frequently misses specifics.</td>
+      </tr>
+      <tr>
+        <td class="listtd">&bull;&nbsp;Did you take the time to capture the largest possible audience possible? It takes effort to anticipate what different members of your audience are looking for and to try to satisfy those needs.</td>
+      </tr>
+      <tr>
+        <td class="listtd">&bull;&nbsp;Did your content provide more than the outline view? The muscle that hangs off of the skeletal structure (the outline) is the value that makes the document. Without this muscle, the document lacks the appeal you desire.</td>
+      </tr>
+    </table>
+
+    <p class="subjsect">Walk away</p>
+
+    <p class="subjcont">Take a break from the paper, and do something else. Give yourself some distance from the initial effort, and then come back. When you come back, give the paper a critical read. You should look to see if the document flows like you thought it did. You should look to see if the paper provides the impression you thought it did. This is a bit of &quot;future you&quot; looking at your work.</p>
+
+    <p class="subjsect">Have someone proofread your work</p>
+
+    <p class="subjcont">Your paper will be announced to an initial set of about 150 readers but published to all of TEAM. Some of those readers will be your managers, some will be peers, and some will be those that answer to you. These people will be reading with a critical eye. So it <span class="textit">will</span> be read and critiqued. It is in your best interests that you let someone with an equally critical eye read the paper <span class="textit">before</span> you push it to TEAM and a much larger audience.</p>
+
+
+
+    <p class="subjhead">Defining Success</p>
+
+    <p class="subjcont">When the paper is published, you want to hear: &quot;Wow, I did not know that.&quot;</p>
+ 
+    <p class="subjhead">Resources</p>
+
+    <table class="listtable">
+      <tr>
+        <td class="listtd">&bull;</td>
+        <td class="listtd">The Elements of Style - William Strunk</td>
+        <td class="listtd"><a href="http://www.crockford.com/wrrrld/style.html">http://www.crockford.com/wrrrld/style.html</a></td>
+      </tr>
+      <tr>
+        <td class="listtd">&bull;</td>
+        <td class="listtd">Critique of Strunk and White</td>
+        <td class="listtd"><a href="http://chronicle.com/article/50-Years-of-Stupid-Grammar/25497">http://chronicle.com/article/50-Years-of-Stupid-Grammar/25497</a></td>
+      </tr>
+      <tr>
+        <td class="listtd">&bull;</td>
+        <td class="listtd">A discussion on active / passive voice</td>
+        <td class="listtd"><a href="http://grammar.ccc.commnet.edu/grammar/passive.htm">http://grammar.ccc.commnet.edu/grammar/passive.htm</a></td>
+      </tr>
+      <tr>
+        <td class="listtd">&bull;</td>
+        <td class="listtd">English grammar</td>
+        <td class="listtd"><a href="http://en.wikipedia.org/wiki/English_grammar">http://en.wikipedia.org/wiki/English_grammar</a></td>
+      </tr>
+      <tr>
+        <td class="listtd">&bull;</td>
+        <td class="listtd">The Chicago Manual of Style</td>
+        <td class="listtd"><a href="http://www.chicagomanualofstyle.org/">http://www.chicagomanualofstyle.org/</a></td>
+      </tr>
+      <tr>
+        <td class="listtd">&bull;</td>
+        <td class="listtd">Help page style guide</td>
+        <td class="listtd"><span class="bbtermcmd">HPSG&lt;go&gt;</span></td>
+      </tr>
+      <tr>
+        <td class="listtd">&bull;</td>
+        <td class="listtd">James Joyce</td>
+        <td class="listtd"><a href="http://en.wikipedia.org/wiki/James_Joyce">http://en.wikipedia.org/wiki/James_Joyce</a></td>
+      </tr>
+    </table>
+
+
+
+  </body>
+</html>
+
+
+<!--
+
+    Possibly to include later...
+
+    <p class="subjsect">What about metadata?</p>
+
+    <p class="subjcont">Medadata in this context is information about the paper. It includes the obvious; the paper name (that mentions the month of release), and the author. It may also include extended metadata such as an expiration date.
+
+
+At a minimum, a MTU should contain information about the author and the represented group. As the paper represents a group's efforts, it would ideally include some background.</p>
+
+
+
+-->
+
+
+
+
+
+
+
+
+
+

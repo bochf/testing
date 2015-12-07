@@ -1,0 +1,4 @@
+mmapexe
+*.o
+*~
+core

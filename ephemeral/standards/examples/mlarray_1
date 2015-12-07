@@ -1,0 +1,38 @@
+#!/bin/ksh93
+
+
+
+typeset -a cmdresults
+typeset -i index=0
+typeset line=
+
+cmdresults=( $(ls) )
+
+
+
+for line in ${!cmdresults[*]}
+do
+    printf "%2d:%2d: %s\n" ${line} ${index} "${cmdresults[$line]}"
+
+    (( index++ ))
+done
+
+echo 
+
+index=0
+while (( index < ${#cmdresults[*]} ))
+do
+    printf "%2d: %s\n" ${index} "${cmdresults[$index]}"
+    (( index++ ))
+done
+
+
+
+echo
+echo "Retrieved ${#cmdresults[*]} lines of data."
+echo 
+
+echo "First two lines"
+echo "---------------------------------------------"
+echo "${cmdresults[0]}"
+echo "${cmdresults[1]}"

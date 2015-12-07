@@ -1,0 +1,555 @@
+#!/opt/swt/bin/python
+
+VERSION_STRING = "0.3.0"
+ENDIAN = ("big", "little")
+
+SEP_FIXED = 1
+SEP_SPACE = 2
+SEP_CSV   = 3
+
+DTYPE_UNKNOWN   = 0
+DTYPE_INT8      = 3
+DTYPE_UINT8     = 4
+DTYPE_INT16     = 5
+DTYPE_UINT16    = 6
+DTYPE_INT32     = 7
+DTYPE_UINT32    = 8
+DTYPE_INT64     = 9
+DTYPE_UINT64    = 10
+DTYPE_TIMEVAL   = 28
+DTYPE_TIMESPEC  = 29
+DTYPE_STRING    = 30
+
+STFMT_INT8      = 'b'
+STFMT_UINT8     = 'B'
+STFMT_INT16     = 'h'
+STFMT_UINT16    = 'H'
+STFMT_INT32     = 'l'
+STFMT_UINT32    = 'L'
+STFMT_INT64     = 'q'
+STFMT_UINT64    = 'Q'
+
+import sys
+import getopt
+#from ctypes import c_uint8 as uint8
+import struct
+import collections
+#import numpy
+import gzip
+
+# =============================================================================
+# Name: Options
+# Description: 
+# Notes:
+class Options:
+    show_help = False
+    show_version = False
+    show_hdr = False
+    csv_out = False
+    fixed_out = False
+    debug = False
+    output_sep = SEP_SPACE
+    output_separg = " "
+    input_file = None
+    output_file = None
+
+    # =========================================================================
+    # Constructor
+    def __init__(self):
+        try:
+            opts, args = getopt.getopt(sys.argv[1:], "c:df:hHv", ['help', 'version', 'debug'])
+        except getopt.GetoptError as err:
+            print(err)
+            sys.exit(1)
+
+        # Parse all the switch options (in the opts list)
+        for opt, arg in opts:
+            if opt == "-c":
+                self.output_separg = arg
+                self.output_sep = SEP_CSV
+                self.csv_out = True
+            elif opt in ('-h', '--help'):
+                self.show_help = True
+            elif opt in ('-d', '--debug'):
+                self.debug = True
+            elif opt in ('-v', '--version'):
+                self.show_version = True
+            elif opt == "-f":
+                self.output_sep = SEP_FIXED
+                self.output_separg = arg
+                self.fixed_out = True
+            elif opt == "-H":
+                self.show_hdr = True
+            else:
+                assert False, "Unhandled command line option."
+
+        try:
+            self.input_file = args[0]
+        except IndexError:
+            self.input_file = None
+
+        try:
+            self.output_file = args[1]
+        except IndexError:
+            self.output_file = None
+
+
+    # =========================================================================
+    # Validate input
+    def validate(self):
+        if self.show_help or self.show_version:
+            if self.input_file != None or self.output_file != None:
+                sys.stderr.write("ERROR: File paramaters not compatible with -h/v options.\n")
+                sys.exit(1)
+            if self.fixed_out or self.csv_out or self.show_hdr:
+                sys.stderr.write("ERROR: Output paramaters not compatible with -h/v options.\n")
+                sys.exit(1)
+        else:
+            if self.csv_out == True and self.fixed_out == True:
+                sys.stderr.write("ERROR: The -c and -f options are mutually exclusive.")
+                sys.exit(1)
+
+            if self.input_file == None:
+                sys.stderr.write("ERROR: No filename was supplied.\n")
+                sys.exit(1)
+
+        return(0)
+
+    # =========================================================================
+    # Dump options to stdout (for debuggery purposes)
+    def dump_values(self, inprint=None):
+        doprint = inprint or self.debug
+        if doprint:
+            print 'Options:'
+            print '  show_help     = {0}'.format(self.show_help)
+            print '  show_version  = {0}'.format(self.show_version)
+            print '  show_hdr      = {0}'.format(self.show_hdr)
+            print '  csv_out       = {0}'.format(self.csv_out)
+            print '  fixed_out     = {0}'.format(self.fixed_out)
+            print '  debug         = {0}'.format(self.debug)
+            print '  output_sep    = {0}'.format(self.output_sep)
+            print '  output_separg = \"{0}\"'.format(self.output_separg)
+            print '  input_file    = {0}'.format(self.input_file)
+            print '  output_file   = {0}'.format(self.output_file)
+
+
+
+# =============================================================================
+# Name: dbg_print
+# Description: Print a string to stdout (if the first paramater is true)
+# Input: Boolean - To print the string or not
+#        String  - The string to print
+# Returns: None
+# Side effects: May write to stdout, will flush the stream
+# Notes:
+def dbg_print(od, pstr):
+    if od:
+        sys.stdout.write(pstr)
+        sys.stdout.flush()
+
+# =============================================================================
+# Name: bafill
+# Description: STUB
+# Input: 
+# Returns:
+# Side effects:
+# Notes:
+def bafill(fd, ba, sz):
+    i = 0
+    while i < sz:
+        try:
+            ba[i] = fd.read(1)
+        except Exception:
+            return i
+        else:
+            i += 1
+    return i
+
+# =============================================================================
+# Name: ba2list
+# Description: Translate each bit into an array member
+# Input:
+# Returns:
+# Side effects:
+# Notes:
+def ba2list(bl, ba):
+    balen = len(ba)
+    i = 0
+    l = 0
+    
+    while i < balen:
+        j = 0
+        byte = ba[i]
+        while j < 8:
+            bit = byte & 0x80
+            byte = byte << 1
+            if bit:
+                bl[l] = 1
+            else:
+                bl[l] = 0
+            l += 1
+            j += 1
+        i += 1
+
+# =============================================================================
+# Name: mklist
+# Description: Create an empty list cnt items long
+# Input: cnt - The number of items in the list
+# Returns: The list
+# Side effects: Allocates a list object
+# Notes: It is best to pre-allocate a list. Python will add *some* padding
+#        for growth, but the append() is kind of expensive as it is likely that
+#        the entire list will need to be copied on an extend.
+def mklist(cnt):
+    li = [None] * cnt
+    return li
+
+# =============================================================================
+# Name: dump_fixed_line
+# Description: Dump a line of data that has (minimum) fixed size columns
+# Input: fd - The file descriptor of the output file or None for stdout
+#        separg - The minimum size (passed to the format) of each column
+#        dcnt - The count of data items in the data array
+#        data - The array of output items
+# Returns: None
+# Side effects: Will write to stdout, or fd (if not None)
+# Notes: Sibling of dump_csv_line
+#        A space is added to insure that there is always white space between
+#        the column data. It is possible that the separg will be less than
+#        the printed width of the data. The space keeps it apart in this case.
+def dump_fixed_line(fd, separg, dcnt, data):
+    i = 0
+    if fd == None:
+        while i < dcnt:
+            if i > 0:
+                sys.stdout.write(' ')
+            sys.stdout.write('{0:<{1}}'.format(data[i], separg))
+            i += 1
+        sys.stdout.write("\n")
+        sys.stdout.flush() # STUB: Is this necessary?
+    else:
+        while i < dcnt:
+            if i > 0:
+                sys.stdout.write(' ')
+            fd.write('{0:<{1}}'.format(data[i], separg))
+            i += 1
+        fd.write("\n")
+        fd.flush() # STUB: Is this necessary?
+
+# =============================================================================
+# Name: dump_csv_line
+# Description: Dump a line of data that has some kind of field separator
+# Input: fd - The file descriptor of the output file or None for stdout
+#        separg - The character to insert between the columns
+#        dcnt - The count of data items in the data array
+#        data - The array of output items
+# Returns: None
+# Side effects: Will write to stdout, or fd (if not None)
+# Notes: Sibling of dump_fixed_line
+def dump_csv_line(fd, separg, dcnt, data):
+    i = 0
+    if fd == None:
+        while i < dcnt:
+            if i > 0:
+                sys.stdout.write(separg)
+            sys.stdout.write(str(data[i]))
+            i += 1
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+    else:
+        while i < dcnt:
+            # STUB: write to the file descriptor
+            if i > 0:
+                sys.stdout.write(separg)
+            sys.stdout.write(str(data[i]))
+            i += 1
+
+# =============================================================================
+# Name: dump_line
+# Description: Switch function for dump_XXXX_line() functions
+# Input: fd - The file descriptor of output file, or None for stdout
+#        o - Options class
+#        dcnt - The count of data items in the data array
+#        data - The array of output items
+# Returns: Return value from dump_XXXX_line() that is called
+# Side effects: See dump_XXXXX_line()
+# Notes:
+def dump_line(fd, o, dcnt, data):
+    if o.output_sep == SEP_FIXED:
+        return(dump_fixed_line(fd, o.output_separg, dcnt, data))
+    elif o.output_sep == SEP_SPACE:
+        return(dump_csv_line(fd, " ", dcnt, data))
+    elif o.output_sep == SEP_CSV:
+        return(dump_csv_line(fd, o.output_separg, dcnt, data))
+    else:
+        return(1)
+
+# =============================================================================
+# Name: read_datatype
+# Description: Read in a (the next) data type
+# Input: fd - File descriptor
+#        dt - Data type
+#        dl - Data length (unused at this time)
+#        fe - File endianness (0 = big; 1 = little)
+# Returns: The data read
+# Side effects: Advances the file pointer
+# Notes:
+def read_datatype(fd, dt, dl, fe):
+    gotval = None
+
+    format_type = None
+    data_length = None
+    format_string = None
+    endianess_str = '='
+
+    # Handle the string case first
+    if dt == DTYPE_STRING:
+        gotval = fd.read(1)                   # gotval is string
+        gotval = struct.unpack('B', gotval)   # gotval is tuple
+        gotval = gotval[0]                    # gotval is integer
+        gotval = fd.read(gotval)              # gotval is string
+        return(gotval)
+
+    # Here we simply use the file-endianess. Python will determine if the
+    #  byteswaps should happen or not
+    if fe == 0:
+        endianess_str = '>'
+    else:
+        endianess_str = '<'
+
+    # STUB: Some types not supported at this time
+    if dt == DTYPE_INT8:
+        format_type = 'b'
+        data_length = 1
+    elif dt == DTYPE_UINT8:
+        format_type = 'B'
+        data_length = 1
+    elif dt == DTYPE_INT16:
+        format_type = 'h'
+        data_length = 2
+    elif dt == DTYPE_UINT16:
+        format_type = 'H'
+        data_length = 2
+    elif dt == DTYPE_INT32:
+        format_type = 'l'
+        data_length = 4
+    elif dt == DTYPE_UINT32:
+        format_type = 'L'
+        data_length = 4
+    elif dt == DTYPE_INT64:
+        format_type = 'q'
+        data_length = 8
+    elif dt == DTYPE_UINT64:
+        format_type = 'Q'
+        data_length = 8
+
+    format_string = endianess_str + format_type
+    gotval = fd.read(dl)
+    gotval = struct.unpack(format_string, gotval)
+    gotval = gotval[0] # Detupleize it
+
+    return(gotval)
+
+# =============================================================================
+# Name: read_iteration
+# Description: STUB
+# Input:
+# Returns:
+# Side effects:
+# Notes:
+def read_iteration(fd, idat):
+    if bafill(fd, idat['ba'], idat['balen']) != idat['balen']:
+        return(False)
+
+    ba2list(idat['gnv'], idat['ba'])
+
+    gnvlist = idat['gnv']
+    pval = idat['pvall']
+    plen = idat['dsizel']
+    ptype = idat['dtype']
+
+    i = 0
+    while i < idat['pcnt']:
+        if gnvlist[i] == 0:
+            pval[i] = read_datatype(fd, ptype[i], plen[i], idat['endianess'])
+
+        i += 1
+
+    return(True)
+
+
+#idat = {'pvall':pitem_value, 'dsizel':pitem_size, 'gnv':pitem_gnv, 'ba':ba, 'balen':cbyte_count, 'pcnt':pitem_count}
+
+
+
+# =============================================================================
+# main()
+
+# Create an Options object
+o = Options()
+o.validate()
+o.dump_values()
+
+
+# Handle -h
+if o.show_help:
+    print "ebcd - Expand cpub compressed data"
+    print "   Version: %s" % VERSION_STRING
+    print "   Usage: ebcd <options> <filename>"
+    print "   Options:"
+    print "    -c X   Seperate output columms by the X char"
+    print "    -f X   Seperate output columns by X spaces"
+    print "    -H     Display column headers"
+    print "    -h     Show this help"
+    print "    -v     Show version info (and exit)"
+    sys.exit(0)
+
+# Handle -v
+# Handle help first because if the user supplies -v and -h then -h will 
+#  satisfy both requests and the v request will be ignored.
+if o.show_version:
+    print VERSION_STRING
+    sys.exit(0)
+
+# ------------------------------
+dbg_print(o.debug, "Using \"" + o.input_file + "\" as source data.\n")
+
+# ------------------------------
+# Peek into the file and see if it is gzip'd data
+fh = None
+try:
+    dbg_print(o.debug, "Opening file...")
+    fh = open(o.input_file, "rb")
+    magic = fh.read(2)
+    magic = struct.unpack('2B', magic)
+    if magic[0] == 0x1f and magic[1] == 0x8b:
+        fh.close()
+        dbg_print(o.debug, "...as gzip data...")
+        fh = gzip.open(o.input_file, "rb")
+    else:
+        fh.seek(0)
+except EnvironmentError as err:
+    dbg_print(o.debug, "Failed.\n")
+    sys.stderr.write("ERROR: Unable to open input file. (" + err[0] + ")\n")
+    sys.exit(1)
+except Exception as err:
+    dbg_print(o.debug, "Failed.\n")
+    sys.stderr.write("ERROR: Unknown error opening input file. (" + err[0] + ")\n")
+    sys.exit(1)
+else:
+    dbg_print(o.debug, "Done.\n")
+
+# ------------------------------
+try:
+    dbg_print(o.debug, "Reading header.")
+    magic = fh.read(4)
+    if magic != "CBCD":
+        dbg_print(o.debug, "Failed.\n")
+        sys.stderr.write("ERROR: This is not a cpub compressed output file. (Bad magic)\n")
+        sys.exit(1)
+    dbg_print(o.debug, ".")
+    fheader = struct.Struct("4B")
+    fheader_data = fh.read(fheader.size)
+    fversion = fheader.unpack(fheader_data)[0] 
+    if fversion != 1:
+        dbg_print(o.debug, "Failed.\n")
+        sys.stderr.write("ERROR: This is not a known format. (Unknown version)\n")
+        sys.exit(1)
+    fendianness = fheader.unpack(fheader_data)[1]
+    hi_cnt = fheader.unpack(fheader_data)[2]
+    lo_cnt = fheader.unpack(fheader_data)[3]
+except Exception as err:
+    dbg_print(o.debug, "Failed.\n")
+    print(err)
+    #sys.stderr.write("ERROR: Unable to read file header. (" + str(err) + ")\n")
+    sys.exit(1)
+else:
+    dbg_print(o.debug, "Done.\n");
+
+dbg_print(o.debug, "Input file version is " + str(fversion) + ".\n")
+dbg_print(o.debug, "Input file endianness is " + ENDIAN[fendianness] + ".\n")
+fpitem_count = (hi_cnt * 256) + lo_cnt
+dbg_print(o.debug, "Header pitem count is " + str(fpitem_count) + ".\n")
+
+# ------------------------------
+get_another = 1
+PItem = collections.namedtuple("PItem", "data_type data_size header")
+pitems = []
+pitem_count = 0
+while get_another:
+    try:
+        dheader = struct.Struct("3B")
+        dheader_data = fh.read(dheader.size)
+        data_type = dheader.unpack(dheader_data)[0]
+        data_len = dheader.unpack(dheader_data)[1]
+        header_len = dheader.unpack(dheader_data)[2]
+        #sys.stderr.write("type={0} dlen={1} hlen={2} ".format(data_type, data_len, header_len))
+        header = ""
+        if data_type != 0 and data_len != 0 and header_len != 0:
+            header = fh.read(header_len)
+            #sys.stderr.write("header=\"" + header + "\"\n")
+            pitems.append(PItem(data_type, data_len, header))
+            pitem_count += 1
+        else:
+            #sys.stderr.write("header=None\n")
+            get_another = 0
+    except Exception as err:
+        sys.stderr.write("ERROR: Problems reading in data item list.\n")
+        print(err)
+        sys.exit(1)
+
+dbg_print(o.debug, "Retrieved pitem count is " + str(pitem_count) + ".\n")
+
+if pitem_count != fpitem_count:
+    sys.stderr.write("ERROR: The header stated items and counted items do not match.\n")
+    sys.exit(1)
+
+pitem_count = len(pitems)
+dbg_print(o.debug, "Retrieved " + str(pitem_count) + " data items.\n")
+
+cbyte_count = pitem_count / 8
+if pitem_count % 8:
+    cbyte_count = cbyte_count + 1
+
+dbg_print(o.debug, "Compression bytes per line: " + str(cbyte_count) + "\n")
+
+
+
+# ------------------------------
+# Here is the thinking: Use only the current value. In an iteration
+# each item in the array is filled. If it is not, then the previous
+# value is preserved.   There is no need to "save off" the previous
+# value.
+pitem_value = mklist(pitem_count)
+pitem_dtype = mklist(pitem_count)
+pitem_size = mklist(pitem_count)
+pitem_gnv = mklist(pitem_count + 7) # Add seven because of byte processing
+header_list = mklist(pitem_count)
+ba = bytearray(cbyte_count)
+i = 0
+for pitem in pitems:
+    header_list[i] = pitem.header
+    pitem_size[i] = pitem.data_size
+    pitem_dtype[i] = pitem.data_type
+    i += 1
+
+# ------------------------------
+# Print the header items
+if o.show_hdr == True:
+    dump_line(None, o, pitem_count, header_list)
+
+# Iteration Data (id)
+idat = {'pvall':pitem_value, 'dsizel':pitem_size, 'dtype':pitem_dtype, 'gnv':pitem_gnv, 'ba':ba, 'balen':cbyte_count, 'pcnt':pitem_count, 'endianess':fendianness}
+
+while read_iteration(fh, idat):
+    dump_line(None, o, idat['pcnt'], idat['pvall'])
+
+
+# ------------------------------
+sys.exit(0)
+
+
+
+
+
+

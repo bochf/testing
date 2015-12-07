@@ -1,0 +1,10 @@
+*.o
+*~
+core
+cpub
+Junk
+Samples
+DELETE_ME
+DELETE_ME_NOW
+alarm.out
+ruler

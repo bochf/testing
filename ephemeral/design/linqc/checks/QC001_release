@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# ABOUT BLOCK BEGIN____________________________________________________________
+# Number: 001
+# Name: RedHat-release
+# Description: Check the contents of /etc/redhat-release
+# Severity: WP
+# Quality: Good
+# Notes:
+# ABOUT BLOCK END______________________________________________________________
+
+# DEBUG: Temp hack for BL pathing issues.
+#cd /opt/linqc
+
+# Source our functions
+# NOTE: The path is obviously wrong. This would be a pre-determined location,
+#       likely one that is fully, not relatively pathed.
+if [[ -e lib/qcfunctions.bash ]]
+then
+    . lib/qcfunctions.bash
+fi
+
+# Validate that the sourcing was successfull
+if [[ ! ${was_successfully_sourced} ]]
+then
+    # Not much we can do here. No telling what is going on. Exit with the
+    # most appropriate error value and message for both BL and CL environment.
+    echo "ERROR: Failed to source functions." >&2
+    exit 1
+fi
+
+# Pull in the global config
+SourceGlobalConfig
+
+# Print the header for the test
+VPrintHeader "Redhat release file"
+
+# See if we should run or not
+GroupCheck online daily weekly
+
+# Check for overrides
+OverrideCheck
+
+# The verbiage here is not really good. It is not an easy parse for the user.
+VPrint -n "Validating that this is not SuSE..."
+if [[ -e /etc/suse-release ]]
+then
+    VPrint "it is."
+    VPrint "Skipping test because we are on a SuSE system."
+    QCExit ${QCRV_SKIP}
+fi
+VPrint "done."
+
+# We have to check for it, it is in a grep in the following test. That will
+# hang if it does not exist.
+VPrint -n "Validating that a release file exists..."
+if [[ ! -e /etc/redhat-release ]]
+then
+    VPrint "none found."
+    VPrint "ERROR: The expected release file does not exist."
+    QCExit ${QCRV_FAIL}
+fi
+VPrint "good."
+
+# NOTE: This *could* (somehow) be functionized (?)
+VPrint -n "Looking for the policy file..."
+if [[ ! -e policy/QC001_release.policy ]]
+then
+    VPrint "missing!"
+    VPrint "ERROR: The test policy file does not exist."
+    QCExit ${QCRV_NOPF}
+fi
+VPrint "good."
+
+VPrint -n "Validating policy file format..."
+expected_string=$( < policy/QC001_release.policy )
+if [[ -z ${expected_string} ]]
+then
+    VPrint "wrong!"
+    VPrint "ERROR: The test policy file is empty."
+    QCExit ${QCRV_BADP}
+fi
+
+if [[ ${expected_string} != "("*")" ]]
+then
+    VPrint "wrong!"
+    VPrint "ERROR: The test policy file has invalid contents."
+    QCExit ${QCRV_BADP}
+fi
+VPrint "good."
+
+VPrint -n "Checking release..."
+if grep ${expected_string} /etc/redhat-release > /dev/null 2>&1
+then
+    VPrint "Good."
+    QCExit ${QCRV_PASS}
+else
+    VPrint "FAIL."
+    QCExit ${QCRV_FAIL}
+fi
+
+# This is unreachable code
+QCExit ${QCRV_IERR}

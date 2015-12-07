@@ -1,0 +1,4 @@
+libbuild.out
+libwriters.a
+*.o
+*~

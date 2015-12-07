@@ -1,0 +1,289 @@
+#!/bin/ksh93
+
+# I am an OS-specific script. I handle the Linux-specific implementation of
+# the twho requirements.
+
+# twho - trace who - Determine what trace programs are running
+#
+#  Ronald Opus <jumpshot@caseclosed.com>
+#  William Favorite <wfavorite2@bloomberg.net>
+#
+
+# Defines for environment state
+typeset -ir ES_ERR=-1
+typeset -ir ES_NA=0
+typeset -ir ES_RUN=1
+typeset -ir ES_OFF=2
+
+# Globals
+typeset -i g_vue_line_cnt=0   # Used for linecount and conditional header display
+
+# -----------------------------------------------------------------------------
+function print_env_state
+{
+    typeset -i pes_state=${ES_ERR}
+
+    # I am doing this because I am explicitly casting to integer
+    if [[ -n ${1} ]]
+    then
+        pes_state=${1}
+    fi
+
+    case ${pes_state} in
+        ${ES_NA})   printf "N/A" ;;
+        ${ES_RUN})  printf "\033[91mRunning\033[0m" ;;
+        ${ES_OFF})  printf "\033[92mOff\033[0m" ;;
+        *)          printf "\033[91mERROR\033[0m" 
+                    return 1 ;;
+    esac
+
+    return 0
+}
+
+# -----------------------------------------------------------------------------
+function get_vue_script_name
+{
+    gvsn_pid=${1}
+
+    typeset -a gvsn_args=( $(ps -o args= -p ${gvsn_pid}) )
+    typeset gvsn_script=UNK
+
+    for gvsn_arg in ${gvsn_args[*]}
+    do
+        #DEBUG printf "===>[%s]\n" "${gvsn_arg}"
+
+        if [[ ${gvsn_arg} == *probevue ]] ; then continue ; fi       # The command
+        if [[ ${gvsn_arg} == "-"* ]] ; then continue ; fi            # A switch option
+        if [[ ${gdsn_arg} == ?(-)+([0-9]) ]] ; then continue ; fi    # A numeric option
+
+
+        gvsn_script=${gvsn_arg}
+    done
+
+
+
+    echo ${gvsn_script}
+    return 0
+}
+
+# -----------------------------------------------------------------------------
+function fill_script_data
+{
+    typeset -n fsd_data=${1}     # Reference to the compund data item
+    typeset fsd_dir=             # Local used to walk through the path
+
+    # Derive the base-name
+    fsd_data.base=$( basename ${fsd_data.script} )
+    
+    # Set a default for the user/owner
+    fsd_data.owner=$( ps -o "ruser=" -p ${fsd_data.pid} 2>/dev/null )
+
+    # Can we find the script by full path name?
+    if [[ -f ${fsd_data.script} ]]
+    then
+
+        if fsd_line=$( grep "^# Owner:" ${fsd_data.script} 2>/dev/null )
+        then
+            fsd_line=${fsd_line##*Owner:}
+            fsd_data.owner=${fsd_line##[[:space:]]}
+        fi
+
+        if fsd_line=$( grep "^# Severity:" ${fsd_data.script} 2>/dev/null )
+        then
+            fsd_line=${fsd_line##*Severity:}
+            fsd_data.severity=${fsd_line##[[:space:]]}
+        else
+            fsd_data.severity=UNK
+        fi
+
+        if fsd_line=$( grep "^# Description:" ${fsd_data.script} 2>/dev/null )
+        then
+            fsd_line=${fsd_line##*Description:}
+            fsd_data.desc=${fsd_line##[[:space:]]}
+        else
+            fsd_data.desc=UNK
+        fi
+
+        #return 0 # STUB: Commented out to fall-through DEBUG ONLY
+    fi
+
+    # The script was not found by full path name. Start looking
+    # STUB: The '.' is not a permenant member of the path! DEBUG ONLY
+    for fsd_dir in "/usr/share/vue/bin" "/bb/pm" "/bb/pm/bin" "."
+    do
+        if [[ -e ${fsd_dir}/${fsd_data.base} ]]
+        then
+
+            if fsd_line=$( grep "^# Owner:" ${fsd_dir}/${fsd_data.base} 2>/dev/null )
+            then
+                fsd_line=${fsd_line##*Owner:}
+                fsd_data.owner=${fsd_line##[[:space:]]}
+            fi
+                
+            if fsd_line=$( grep "^# Severity:" ${fsd_dir}/${fsd_data.base} 2>/dev/null )
+            then
+                fsd_line=${fsd_line##*Severity:}
+                fsd_data.severity=${fsd_line##[[:space:]]}
+            else
+                fsd_data.severity=UNK
+            fi
+
+            if fsd_line=$( grep "^# Description:" ${fsd_dir}/${fsd_data.base} 2>/dev/null )
+            then
+                fsd_line=${fsd_line##*Description:}
+                fsd_data.desc=${fsd_line##[[:space:]]}
+            else
+                fsd_data.desc=UNK
+            fi
+
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+# -----------------------------------------------------------------------------
+function vue_line_header
+{
+    typeset -i vlh_long=${1}  # This is the -l option as passed by the user
+
+    # NOTE: We rely on a global here to keep state. It is a simple counter
+    #       that (if non-zero) means the header has been displayed.
+    (( g_vue_line_cnt++ ))
+
+    if (( g_vue_line_cnt > 1 )) ; then return ; fi
+
+    # If we are here, print the header
+    printf "-------------------------------------------------\n"
+
+    if (( vlh_long ))
+    then
+        printf " %-8s %-8s %-16s %-8s %s\n" "PID" "Owner" "Script" "Severity" "Description"
+    else
+        printf " %-8s %-8s %-16s %-8s\n" "PID" "Owner" "Script" "Severity"
+    fi
+}
+
+# -----------------------------------------------------------------------------
+function vue_line_by_pid
+{
+    typeset -i vlbp_pid=${1}
+    typeset -i vlbp_long=${2}
+
+    # pid    - The PID of the running / instantiated script interpreter
+    # base   - The scirpt name, minus the path
+    # script - The (potentially) full path of the script (raw from command line)
+    # owner  - Either the script author or who is running it
+    # severity - String describing potential impact
+    # desc   - A <= 60 char description of the script
+    vlbp_sdata=( pid= base= script= owner= severity= desc= )
+
+    # Fill in the known data (Called function might use this)
+    vlbp_sdata.pid=${vlbp_pid}
+    vlbp_sdata.script=$(get_vue_script_name ${vlbp_pid})
+
+    if ! fill_script_data vlbp_sdata
+    then
+        vlbp_sdata.base="UNKNOWN"
+        vlbp_sdata.owner="UNKNOWN" # This can be derived from PID through ps!
+        vlbp_sdata.severity="UNKNOWN"
+        vlbp_sdata.desc=
+    fi
+
+
+    # Before we print, make sure the header has been printed
+    vue_line_header ${vlbp_long}
+
+    if (( vlbp_long ))
+    then
+        printf " %-8s %-8s %-16s %-8s %s\n" \
+               ${vlbp_sdata.pid}            \
+               ${vlbp_sdata.owner}          \
+               ${vlbp_sdata.base}           \
+               ${vlbp_sdata.severity}       \
+               "${vlbp_sdata.desc}"
+    else
+        printf " %-8s %-8s %-16s %-8s\n"    \
+               ${vlbp_sdata.pid}            \
+               ${vlbp_sdata.owner}          \
+               ${vlbp_sdata.base}           \
+               ${vlbp_sdata.severity}
+    fi
+}
+
+
+
+# -----------------------------------------------------------------------------
+# main()
+# -----------------------------------------------------------------------------
+
+# User pased options
+typeset -i o_long=0
+typeset -i o_help=0
+
+# Parse user options
+while getopts ":hl" OPTS
+do
+   case ${OPTS} in
+       h) o_help=1      ;;
+       l) o_long=1      ;;
+       ?) echo "ERROR: ${OPTARG} was not understood." >&2
+           exit 1
+           ;;
+       *) echo "ERROR: Error parsing getopts arguments. Contact script author." >&2
+           exit 1
+           ;;
+   esac
+done
+
+# Look for key tools running
+typeset trace_state=${ES_NA}
+if ps -eo comm | grep "^trace$" >/dev/null 2>&1
+then
+    trace_state=${ES_RUN}
+else
+    trace_state=${ES_OFF}
+fi
+
+typeset kdb_state=${ES_NA}
+if ps -eo comm | grep "^kdb$" >/dev/null 2>&1
+then
+    kdb_state=${ES_RUN}
+else
+    kdb_state=${ES_OFF}
+fi
+
+typeset vue_state=${ES_NA}
+if ps -eo comm | grep "^probevue$" >/dev/null 2>&1
+then
+    vue_state=${ES_RUN}
+else
+    vue_state=${ES_OFF}
+fi
+
+# Print out results of findings for key tools
+printf "\033[1mtrace\033[0m is     : "
+print_env_state ${trace_state}
+printf "\n"
+
+printf "\033[1mkdb\033[0m is       : "
+print_env_state ${kdb_state}
+printf "\n"
+
+printf "\033[1mVue\033[0m is       : "
+print_env_state ${vue_state}
+printf "\n"
+
+# If we found vue, then try to determine what is running
+if (( vue_state == ES_RUN ))
+then
+
+    ps -eo pid,comm | while read pid comm
+    do
+        if [[ ${comm} == probevue ]]
+        then
+            vue_line_by_pid ${pid} ${o_long}
+        fi
+    done
+fi

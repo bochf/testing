@@ -1,0 +1,11 @@
+.\" Process this file with
+.\" groff -man -Tascii cpub.5
+.\"
+.\"=============================================================================
+.SH SOLARIS PROVIDERS
+.IP "kstat"
+The
+.B kstat
+provider is still a proposed provider. It is under development at this time.
+
+

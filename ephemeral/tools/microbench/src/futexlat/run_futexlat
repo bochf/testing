@@ -1,0 +1,10 @@
+#!./futexlat
+
+
+set PING_CPU=1
+set PONG_CPU=10
+
+set N=100
+set VERBOSITY=true
+
+go

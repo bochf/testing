@@ -1,0 +1,9 @@
+PKG=BBcpubcore
+NAME=BB-cpub-core
+DESC=BB cpub performance monitoring framework
+ARCH=sparc
+SUNW_ISA=sparcv9
+VERSION=VERSIONSTRING
+CATEGORY=application
+VENDOR=Bloomberg LLP
+EMAIL=wfavorite2@bloomberg.net

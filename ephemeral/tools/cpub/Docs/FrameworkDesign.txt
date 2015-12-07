@@ -1,0 +1,68 @@
+This is a document to capture some of the design considerations that are not
+drawn out in the code. It was added after the change to writer argument parsing.
+So it is an initial stab at capturing that.
+
+
+
+
+WRITER ARGUMENTS (to the quad):
+ - Writer arguments are not really parsed by the writer. They are parsed by
+   the config file.
+ - As a result, the config file needs to be aware of all the different writer
+   arguments.
+ - This kind of wrecks modularity of the writer code.
+ - But the provider needs to see the args (as they might be relevant to the
+   provider).
+ - The args need to be tied to the pitem because a provider *could* spawn
+   more than one pitem per quad line in the config file.
+ - How this is handled:
+   - main() tells code in configfile.c to parse config file. The returned
+     data is a struct config.... but more explicitly, a linked list of 
+     struct prov_name items. (These are the "quad lines" from the config file)
+     The prov_name items have the writer arguments (to the quad) parsed
+     into struct members.
+   - main() then calls EnableDataPoint() from providers.h/c and passes the
+     prov_name to EnableDataPoint().
+   - EnableDataPoint() - out of a lack of foresight --or-- out of an attempt
+     to have a common interface - converts the prov_name into a qparts struct.
+     This conversion dumbs down the data.... but to save this situation, a
+     pointer is updated to point the the prov_name that created the (was the
+     source for the) quad.
+   - EnableDataPoint() calls the provider function pointer for enablepitem().
+     This is now in provider-specific code... BUT... the provider goes back
+     to the "base class" to create a pitem with NewPItem(). Because NewPItem()
+     and EnableDataPoint() are from the same "base class" (one internal /
+     private and the other external / public) they are close enough to
+     piggy-back that prov_name reference on the quargs struct.
+   - So NewPItem() pulls off the prov_name reference and uses that data to 
+     update the pitem with the writer arguments.
+   - Due to "legacy issues" the writer argument is still parsed as a
+     munge_flag item by the writers. But that is ok, because it was set
+     (conditionally) by the NewPItem() function.
+   - Summary: The bad news - this part of the framework is not as modular.
+     The good news - It all basically sits on one (or just a few) place(s).
+   
+ON MEMORY LEAKS (or what seams to be):
+ - There is not a regular allocation of memory in the framework. The only
+   memory allocations are on startup and data item registration. There are
+   no *true* leaks - just some sloppy exception handling that does not try
+   to clean up on failures. No attempts are made at cleanup because the
+   errors are terminal. So, when a function malloc()s memory, then returns
+   a NULL without free()ing the memory - that is because the framework will
+   exit() once that function returns a NULL.
+
+ERROR MESSAGES (or lack thereof):
+ - As a general rule errors are reported at the point of the error. They
+   tend not to be rolled up into larger exceptions. For example, if a function
+   to read a config file fails it reports that it cannot find the config
+   file, it cannot allocate memory, or the syntax is broken... as opposed
+   to letting the calling function see that the config file read failed and
+   then print a generic message.
+ - Most malloc()s print a specific message on failure. Some do not. If you
+   are failing on a malloc with this application then you have bigger issues
+   and should not be concerned with these tediously expensive (to write)
+   messages. So, it is possible a few have been omitted.
+ - The error_msg() function should be used to write error messages. It is 
+   designed to always know where the errors go - including when running as a
+   daemon. Additionally... as new error message destinations arise, they can
+   all be folded into this single method.

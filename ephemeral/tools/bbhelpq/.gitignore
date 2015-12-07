@@ -1,0 +1,5 @@
+*.o
+core
+# This is a debug dir for local development/testing purposes
+#BBHELPDIR
+bbhelpq

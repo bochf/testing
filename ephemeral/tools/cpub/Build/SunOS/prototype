@@ -1,0 +1,14 @@
+i pkginfo
+!default 0755 root bin
+d none /usr=ROOT/usr
+d none /usr/local=ROOT/usr/local
+d none /usr/local/bin=ROOT/usr/local/bin
+f none /usr/local/bin/cpub=ROOT/usr/local/bin/cpub
+f none /usr/local/bin/ebcd=ROOT/usr/local/bin/ebcd
+d none /usr/share=ROOT/usr/share
+d none /usr/share/man=ROOT/usr/share/man
+d none /usr/share/man/man1=ROOT/usr/share/man/man1
+d none /usr/share/man/man5=ROOT/usr/share/man/man5
+!default 0644 root root
+f none /usr/share/man/man1/cpub.1=ROOT/usr/share/man/man1/cpub.1
+f none /usr/share/man/man5/cpub.5=ROOT/usr/share/man/man5/cpub.5

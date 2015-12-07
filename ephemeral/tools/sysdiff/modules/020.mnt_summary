@@ -1,0 +1,28 @@
+#!/bin/ksh
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+### This reads in whatever paramaters may have been passed on command line
+shift
+while [[ -n ${1} ]]
+do
+    eval ${1}
+    shift
+done
+
+dot
+printf "df #         : %s\n" $(df | wc -l) >> ${outfile}
+dot
+printf "mount #      : %s\n" $(mount | wc -l) >> ${outfile}
+dot
+
+

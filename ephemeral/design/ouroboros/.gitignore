@@ -1,0 +1,6 @@
+core
+*.o
+*~
+ob
+DUMMY
+dummy

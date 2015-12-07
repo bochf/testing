@@ -1,0 +1,58 @@
+#!/bin/ksh
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+### This reads in whatever paramaters may have been passed on command line
+shift
+while [[ -n ${1} ]]
+do
+    eval ${1}
+    shift
+done
+
+dot 
+
+fwversion1=UNK
+fwversion2=
+
+case $(uname -s)
+in
+    AIX)
+        fwversion1=$(lsattr -El sys0 -a fwversion -F value)
+        fwversion1=${fwversion1#IBM,}
+        ;;
+    SunOS)
+        fwversion1="Feature not supported yet"
+        ;;
+    Linux)
+        ddt0=$(dmidecode -t0 2>/dev/null)
+        vendor=$(print -- "${ddt0}" | grep Vendor)
+        vendor=${vendor#*or: }
+        version=$(print -- "${ddt0}" | grep Version:)
+        version=${version#*on: }
+        date=$(print -- "${ddt0}" | grep Date:)
+        date=${date#*ate: }
+        fwversion1=${vendor}" - "${version}" - "${date}
+        fwversion2=$(print -- "${ddt0}" | grep Revision:)
+        fwversion2=${fwversion2#*Revision: }
+        ;;
+esac
+
+echo "Firmware     : "${fwversion1} >> ${outfile}
+dot
+if [[ -n ${fwversion2} ]]
+then
+    echo "Firmware     : "${fwversion2} >> ${outfile}
+    dot
+fi
+
+

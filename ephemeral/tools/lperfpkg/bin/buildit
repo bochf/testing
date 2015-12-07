@@ -1,0 +1,229 @@
+#!/bin/bash
+
+# buildit (for Linux)
+#
+# Version History:
+#  0.1.0   5/2/13 - Original creation
+#  0.2.0  6/17/13 - Added support for DEPENDENT_DIR buildit.conf variable
+#                   This currently only recognizes the "common" directory.
+#                   It will do a make clean, and then a make to insure that
+#                   the library is built against the latest source.
+
+# =============================================================================
+printf "Checking my environment.."
+if [[ $(uname -s) != "Linux" ]]
+then
+    echo "Failed."
+    echo "ERROR: This is not a Linux system. Exiting." >&2
+    exit 1
+fi
+# We are on Linux, change over to the -n EOL suppression method
+echo -n "."
+if [[ $(pwd) == */bin ]]
+then
+    echo "Failed."
+    echo "ERROR: We are running from the bin directory. Exiting." >&2
+    exit 1
+fi
+echo -n "."
+
+if [[ ! -d SPECS ]]
+then
+    echo "Failed."
+    echo "ERROR: Missing the SPEC file directory. Exiting." >&2
+    exit 1
+fi
+echo "Good."
+
+# =============================================================================
+echo "Checking for expected directories."
+typeset -i kindly_exit=0
+for dir_name in RPMS SPECS SRPMS BUILD SOURCES
+do
+    exists=UNK
+    xtramsg=
+
+    if [[ -d ${dir_name} ]]
+    then
+        exists=GOOD
+    else
+        case ${dir_name} in
+            SRPMS)
+                exists=WARN
+                xtramsg="- Continuing without this directory"
+                ;;
+            BUILD)
+                if mkdir BUILD > /dev/null 2>&1
+                then
+                    exists=FIXD
+                    xtramsg="- Created this directory"
+                else
+                    exists=FAIL
+                    xtramsg="- Unable to create directory"
+                fi
+                ;;
+            RPMS)
+                exists=WARN
+                xtramsg="- Missing. Continuing without."
+                ;;
+            SOURCES)
+                exists=WARN
+                xtramsg="- Missing. Assuming unused."
+                ;;
+            *)
+                exists=FAIL
+                kindly_exit=1
+                ;;
+        esac
+    fi
+
+    printf "  %-7s  %-4s   %-s\n" ${dir_name} ${exists} "${xtramsg}"
+done
+if (( kindly_exit ))
+then
+    echo "ERROR: Missing one or more required directories."
+fi
+
+# =============================================================================
+echo "Setting up RPM environment."
+rpmdef_topdir=$(pwd)
+printf "  %-12s %-s\n" "_topdir" ${rpmdef_topdir}
+
+# =============================================================================
+echo -n "Sourcing config file..."
+if [[ ! -e buildit.conf ]]
+then
+    echo "Failed."
+    echo "ERROR: Unable to source the buildit.conf config file." >&2
+    exit 1
+else
+    . ./buildit.conf
+fi
+echo "Done."
+
+# =============================================================================
+# Do we have dependencies?
+echo -n "Looking for dependencies/library requirements..."
+if [[ ! -z ${DEPENDENT_DIR} ]]
+then
+    echo "Found \"${DEPENDENT_DIR}\"".
+    if [[ ${DEPENDENT_DIR} == "common" ]]
+    then
+        echo "Building dependencies in the \"common\" directory."
+        if ! cd ../common/procperf
+        then
+            echo "ERROR: Unable to change directories. I have lost track of where I am." >&2
+            exit 1
+        fi
+
+        if ! make clean
+        then
+            exit 1
+        fi
+        if ! make
+        then
+            exit 1
+        fi
+        if ! cd - > /dev/null 2>&1
+        then
+            echo "ERROR: Unable to change directories. I have lost track of where I am." >&2
+            exit 1
+        else
+            echo "Done building common dependencies."
+        fi
+    else
+        echo "ERROR: The dependency \"${DEPENDENT_DIR}\" is unknown. Exiting." >&2
+        exit 1
+    fi
+else
+    echo "None."
+fi
+
+# =============================================================================
+echo "Checking/managing config options."
+# SPEC_FILE _____________________
+echo -n "  SPEC_FILE      "
+if [[ -z ${SPEC_FILE} ]]
+then
+    echo "Missing."
+    echo "ERROR: Missing required buildit.conf SPEC_FILE paramater."
+    exit 1
+fi
+# Clean off any leading pathing noise 
+SPEC_FILE=${SPEC_FILE##*/}
+echo ${SPEC_FILE}
+
+# DESTAGE_FILE __________________
+echo -n "  DESTAGE_FILE   "
+if [[ -z ${DESTAGE_FILE} ]]
+then
+    echo "Not found. Defaulting to \"no\"."
+    DESTAGE_FILE=no
+else
+    if [[ ${DESTAGE_FILE} == [Nn][Oo] ]] ; then DESTAGE_FILE=no ; fi
+    if [[ ${DESTAGE_FILE} == [Yy][Ee][Ss] ]] ; then DESTAGE_FILE=yes ; fi
+    if [[ ${DESTAGE_FILE} == 0 ]] ; then DESTAGE_FILE=no ; fi
+    if [[ ${DESTAGE_FILE} == 1 ]] ; then DESTAGE_FILE=yes ; fi
+    if [[ ${DESTAGE_FILE} == [Ff][Aa][Ll][Ss][Ee] ]] ; then DESTAGE_FILE=no ; fi
+    if [[ ${DESTAGE_FILE} == [Tt][Rr][Uu][Ee] ]] ; then DESTAGE_FILE=yes ; fi
+
+    if [[ ${DESTAGE_FILE} != no && ${DESTAGE_FILE} != yes ]]
+    then
+        echo "Not parsed. Defaulting to \"no\"."
+        DESTAGE_FILE=no
+    else
+        echo ${DESTAGE_FILE}
+    fi
+fi
+
+# =============================================================================
+if [[ ${DESTAGE_FILE} == yes ]]
+then
+    echo -n "Refreshing the RPMS directory.."
+    if ! rm -rf RPMS
+    then
+        echo "Failed."
+        echo "ERROR: Unable to clean the RPMS directory."
+        exit 1
+    fi
+    echo -n "."
+    if ! mkdir RPMS
+    then
+        echo "Failed."
+        echo "ERROR: Unable to recreate the RPMS directory."
+        exit 1
+    fi
+    echo "Done."
+fi
+
+# =============================================================================
+echo -n "Building package..."
+if ! rpmbuild --define "_topdir ${rpmdef_topdir}" -bb SPECS/${SPEC_FILE} > rpmbuild.status 2>&1
+then
+    echo "Failed."
+    echo "ERROR: rpmbuild failed. Debug info is in rpmbuild.status."
+
+    # Quietly clean up
+    if [[ ${DESTAGE_FILE} == yes ]]
+    then
+        rm -rf RPMS
+    fi
+    exit 1
+fi
+echo "Done."
+
+# =============================================================================
+pkgname=$(find RPMS | grep .rpm$ 2>/dev/null)
+if [[ ${DESTAGE_FILE} == yes ]]
+then
+    echo -n "De-staging the built RPM file..."
+    if ! cp ${pkgname} .
+    then
+        echo "Failed."
+        echo "ERROR: Failed to copy out rpm." >&2
+        exit 1
+    fi
+    echo -n "."
+    rm -rf RPMS
+    echo "Done."
+fi

@@ -1,0 +1,321 @@
+#!/bin/bash
+
+# What is going on here!?!?
+# - I do the build and copy-in from a script, not the SPEC file. I do this
+#   for a couple of reasons:
+#   1. I dont want to link or copy the source into the SOURCES or BUILD
+#      directory. No to link because I dont want to tempt fate with a
+#      repo that frequently moves to Windows. No to copy because I don't
+#      want to move ALL that stuff around to do a build.
+#   2. The script here allows a bit of exception hanldling that the spec
+#      file/script does not.
+#   3. Version of the package can be determined from the binary build.
+#      So the build runs first, I then ask the binary for the version
+#      and use that to *create* the .spec file on the fly. For this reason
+#      you never have to edit the .spec file (unless you are changing some-
+#      thing really major (like adding new files to the package).
+
+
+
+# This is the root of cpub in the git repo, where source, docs, and package
+# build happens. From the root of the perf/ephemeral git repo it should be:
+# [perf/ephemeral]/tools/cpub
+# Lots of directories are based off of this.
+# DO NOT SET THIS. It will be set later.
+typeset CPUB_ROOT=
+
+# This is where the package is built
+# DO NOT SET THIS. It will be set later.
+typeset BUILD_BASE=
+
+
+echo "Running Linux-specific build."
+
+# -----------------------------------------------------------------------------
+printf "Determing the root of the build directory."
+
+CPUB_ROOT=$(pwd)
+
+printf "."
+
+if [[ ${CPUB_ROOT} != *cpub ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to find the root directory.\n" >&2
+    exit 1
+fi
+
+printf "."
+
+if [[ ! -d ${CPUB_ROOT}/src ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to find the root directory.\n" >&2
+    exit 1
+fi
+
+printf "."
+
+if [[ ! -d ${CPUB_ROOT}/Build ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to find the root directory.\n" >&2
+    exit 1
+fi
+
+printf "Done.\nUsing: ${CPUB_ROOT}\n"
+
+# -----------------------------------------------------------------------------
+printf "Checking for the build directory..."
+BUILD_BASE=${CPUB_ROOT}/Build/Linux
+if [[ ! -d ${BUILD_BASE} ]]
+then
+    printf "Missing.\n"
+    # DO NOT attempt to create it. The .spec file is here and if it is missing
+    # then this show is over - we cannot continue.
+    printf "ERROR: Unable to find the build directory.\n" >&2
+    exit 1
+fi
+printf "Found.\n"
+
+# -----------------------------------------------------------------------------
+printf "Checking for expected directories.\n"
+typeset -i kindly_exit=0
+for dir_name in RPMS SPECS SRPMS BUILD SOURCES
+do
+    exists=UNK
+    xtramsg=
+
+    if [[ -d ${BUILD_BASE}/${dir_name} ]]
+    then
+        case ${dir_name} in
+            SRPMS|SOURCES)
+                exists=WARN
+                xtramsg="- This directory not used."
+                ;;
+            RPMS)
+                exists=WARN
+                xtramsg="- This directory will be deleted."
+                ;;
+            *)
+                exists=GOOD
+                ;;
+        esac
+    else
+        case ${dir_name} in
+            SRPMS)
+                exists=GOOD
+                xtramsg="- Missing; Not used."
+                ;;
+            BUILD)
+                if mkdir ${BUILD_BASE}/BUILD > /dev/null 2>&1
+                then
+                    exists=FIXD
+                    xtramsg="- Created this directory"
+                else
+                    exists=FAIL
+                    xtramsg="- Unable to create directory"
+                fi
+                ;;
+            RPMS)
+                if mkdir ${BUILD_BASE}/RPMS > /dev/null 2>&1
+                then
+                    exists=FIXD
+                    xtramsg="- Created this directory"
+                else
+                    exists=FAIL
+                    xtramsg="- Unable to create directory"
+                fi
+                ;;
+            SOURCES)
+                exists=GOOD
+                xtramsg="- Missing; Not used."
+                ;;
+            *)
+                exists=FAIL
+                kindly_exit=1
+                ;;
+        esac
+    fi
+
+    printf "  %-7s  %-4s   %-s\n" ${dir_name} ${exists} "${xtramsg}"
+done
+if (( kindly_exit ))
+then
+    printf "ERROR: Missing one or more required directories.\n" >&2
+fi
+
+# -----------------------------------------------------------------------------
+printf "Killing off previous builds.."
+
+if ! rm -rf ${BUILD_BASE}/RPMS
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to remove old RPMS directory.\n" >&2
+fi
+
+printf "."
+
+if ! mkdir -p ${BUILD_BASE}/RPMS
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to recreate new RPMS directory.\n" >&2
+fi
+
+printf "Done.\n"
+
+# -----------------------------------------------------------------------------
+printf "Checking for the source directory..."
+SOURCE_BASE=${CPUB_ROOT}/src
+if [[ ! -d ${SOURCE_BASE} ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to fin the source directory.\n" >&2
+    exit 1
+fi
+printf "Found.\n"
+
+# -----------------------------------------------------------------------------
+printf "Running make clean.\n"
+cd ${SOURCE_BASE}
+if ! make clean
+then
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+printf "Running make (default target).\n"
+cd ${SOURCE_BASE}
+if ! make
+then
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+printf "Parsing the version of the build..."
+cd ${SOURCE_BASE}
+CPUB_VERSION=$( ./cpub -a | grep Version 2>/dev/null )
+CPUB_VERSION=${CPUB_VERSION##*Version: }
+if [[ -z ${CPUB_VERSION} ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to determine cpub version.\n" >&2
+    exit 1
+fi
+printf "${CPUB_VERSION}.\n"
+
+# -----------------------------------------------------------------------------
+printf "Copying binaries into package build tree."
+if ! cp cpub ${BUILD_BASE}/BUILD/cpub > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to copy cpub into packing dir.\n" >&2
+    exit 1
+fi
+printf "."
+if ! cp ebcd ${BUILD_BASE}/BUILD/ebcd > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to copy ebcd into packing dir.\n" >&2
+    exit 1
+fi
+printf "."
+printf "Done.\n"
+
+# -----------------------------------------------------------------------------
+printf "Checking for the man directory..."
+MAN_BASE=${CPUB_ROOT}/man
+if [[ ! -d ${MAN_BASE} ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to find the man directory.\n" >&2
+    exit 1
+fi
+printf "Found.\n"
+
+# -----------------------------------------------------------------------------
+printf "Running make clean on man source.\n"
+cd ${MAN_BASE}/man1
+if ! make clean
+then
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+printf "Running make linux on man source.\n"
+cd ${MAN_BASE}/man1
+if ! make linux
+then
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+printf "Copying man pages into package build tree..."
+if ! gzip -c ${MAN_BASE}/man1/cpub.1 > ${BUILD_BASE}/BUILD/cpub.1.gz 2>/dev/null
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to copy binary into packing dir.\n"
+    exit 1
+else
+    printf "."
+fi
+
+if ! gzip -c ${MAN_BASE}/man5/cpub.5 > ${BUILD_BASE}/BUILD/cpub.5.gz 2>/dev/null
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to copy binary into packing dir.\n"
+    exit 1
+else
+    printf "."
+fi
+printf "Done.\n"
+
+# -----------------------------------------------------------------------------
+printf "Setting up RPM environment.\n"
+env_good=1
+rpmdef_topdir=${BUILD_BASE}
+printf "  %-14s %-s\n" "_topdir" ${rpmdef_topdir}
+if cd ${BUILD_BASE}
+then
+    cwd_state=$(pwd)
+else
+    cwd_state="FAILED!"
+    env_good=0
+fi
+printf "  %-14s %-s\n" "CWD" ${cwd_state}
+printf "  %-14s %-s\n" "CPUB_VERSION" ${CPUB_VERSION}
+
+if (( 0 == env_good ))
+then
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+printf "Auto-versioning the spec file..."
+if ! sed -e s/CPUBVERSION/${CPUB_VERSION}/ ${BUILD_BASE}/SPECS/bb.cpub.core.source > ${BUILD_BASE}/SPECS/bb.cpub.core.spec 2>/dev/null
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to put version info into the spec file.\n" >&2
+    exit 1
+fi
+printf "Done.\n"
+
+# -----------------------------------------------------------------------------
+printf "Building package..."
+if ! rpmbuild --define "_topdir ${rpmdef_topdir}" -bb SPECS/bb.cpub.core.spec > rpmbuild.status 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: rpmbuild failed. Debug info is in rpmbuild.status.\n" >&2
+
+    # Quietly clean up
+    rm -rf RPMS
+
+    exit 1
+fi
+printf "Done.\n"
+
+rpm_pkg=$( find RPMS -name "*.rpm" )
+printf "PACKAGE ==> %s\n" ${rpm_pkg}
+
+
+

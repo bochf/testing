@@ -1,0 +1,33 @@
+forkmalloc is a VERY SIMPLE tool to allocate and "use" memory.
+
+DO NOT RUN IN PRODUCTION - THIS WILL SERIOUSLY HORK YOUR SYSTEM!
+
+It launches X children that each malloc and touch Y meg of memory.
+An optional paramater Z determines how many times each byte will be touched.
+Z is an unsigned char with a default value of 255. (It cannot be greater than
+255.)
+
+Create a configuration file called config.conf:
+set FORK_CHILDREN=1
+set MEG_TO_MALLOC=1024
+set TOUCH_COUNT=255
+GO
+
+Call it thusly:
+forkmalloc config.conf
+
+It does NOT check input - so get it right the first time.
+
+The above will create 1 child pids that each malloc and use 1 G of RAM.
+
+Some notes:
+ - The AIX build should set ldedit values for MAXDATA if it is 32 bit. It DOES
+   NOT currently do this.
+ - Memory access is not thouroughly random
+ - Memory access is shifted to 10 meg segments - specifically so it can
+   exceed the 8 meg cache on a core.
+ - If you get a fail to fork message or a process is killed somehow then the
+   parent will continue for eternity to try to reap that pid. This is hardly
+   a good design... because it is a hack.
+ - All of the above would be written with some better design, but I hacked
+   this together in slightly longer than it took to write this readme.

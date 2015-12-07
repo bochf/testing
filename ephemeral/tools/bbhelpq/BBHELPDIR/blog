@@ -1,0 +1,7 @@
+Name: blog
+Description: Circular logger
+Keylist: admin
+Location: /usr/local/bin/blog 
+Platform: AIX Linux
+Impact: low
+Owner: wfavorit

@@ -1,0 +1,32 @@
+#!/bin/sh
+
+# I am a wrapper script. I exist only to call the appropriate sub-script.
+
+# twho - trace who - Determine what trace programs are running
+#
+#  Ronald Opus <jumpshot@caseclosed.com>
+#  William Favorite <wfavorite2@bloomberg.net>
+#
+
+# Design consideration:
+#  It may be appropriate to parse params here and convert them to explicitly
+#  placed options. This will insure consistent behaviour and require only
+#  one option parsing code block. Then again, it may NOT be appropriate. 
+#
+
+
+
+
+# STUB: The path is hard coded here. We may have to case()-out here for
+# STUB:   each OS. Otherwise we will likely need to rely on PATH as each OS
+# STUB:   is not likely to be installed in the same location. 
+target_ss=./twho.$(uname -s)
+
+if [[ -x ${target_ss} ]]
+then
+    # Just run the appropriate version, keeping args consistent.
+    exec ${target_ss} "${@}"
+else
+    echo "ERROR: Unable to find a OS-specific version of twho. Exiting." >&2
+    exit 1
+fi

@@ -1,0 +1,708 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<!-- 
+     ######################################################################
+     Version History:
+      0.5.0           - First documented version
+      0.6.0   11/6/13 - Cleanup for TEAM page
+      0.7.0   11/7/13 - xhtml compliant
+                      - Wording cleanup
+                      - Added code examples
+      0.8.0   11/8/13 - Content edits
+                      - Modifications to /home/wfavorit/proj/shmtool
+      0.9.0  11/11/13 - Minor wording work
+      0.10.0 11/14/13 - More text cleanup and clarifications
+      0.11.0 11/19/13 - Text revisions / additions
+      0.12.0 11/20/13 - Refinement
+      0.13.0 11/21/13 - Almost there...
+
+     ToDo:
+      [ ] Numerous examples are called for in the document (that have not
+          been written).
+
+     Done:
+      [X] Need a proper treatment of the MAXDATA variable It is not
+          introduced properly and sufficiently. This is part of the Eli
+          feedback. (Eli may do this)
+      [X] The svmon section needs to be clearer to the reader. It does not
+          make sense to the reader exactly what is being said here. This
+          is also part of the Eli feedback.
+-->
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <style type="text/css">
+      body
+      {
+      font-size: 12px;
+      background-color: #FAFAFA;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      }
+
+      .arttitle
+      {
+      font-size: 28px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      .artstitle
+      {
+      font-size: 12px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      .artsstitle
+      {
+      font-size: 10px;
+      text-align:center;
+      }
+
+      .subjhead
+      {
+      font-size: 12px;
+      margin-left: 20px;
+      font-weight:bold;
+      }
+
+      .subjsect
+      {
+      margin-left: 50px;
+      font-weight:bold;
+      }
+
+      .subjcont
+      {
+      margin-left: 50px;
+      margin-right: 20px;
+      }
+      
+      .footnote
+      {
+      font-size: 10px;
+      margin-left: 60px;
+      margin-right: 20px;
+      }
+      
+      .exponent
+      {
+      font-size: 8;
+      position:relative;
+      top:-5px;
+      }
+
+     .codeblock
+      {
+      padding-top: 2px;
+      padding-bottom: 2px;
+      padding-right: 16px;
+      padding-left: 16px;
+      font-family: "Courier New", "Lucida Console", Monospace;
+      font-size: 9pt;
+      margin-left: 60px;
+      width: 50em;
+      color: #00cc00;
+      background-color: black;
+      border-style: solid;
+      border-color: #777777;
+      border-width: 2px;
+      font-weight: bold;
+      }
+
+      .codenote { color: #aaaadd; }
+
+      .thintable
+      {
+      margin-left: auto;
+      margin-right: auto;
+      border-collapse: collapse;
+      }
+
+      .thintd
+      {
+      padding: 5px;
+      border: 1px solid black;
+      }
+
+
+      .textit { font-style:italic; }
+      .texttt { font-family: Monaco, monospace; }
+      .textbf { font-weight:bold; }
+      .underline { text-decoration: underline; }
+
+      a:link { text-decoration: underline; color: #aa00aa; }
+      a:visited { text-decoration: underline; color: #aa00aa; }
+      /* Active is more like "visited" than immediate feedback. */
+      a:active { text-decoration: underline; color: #aa00aa; }
+      a:hover { text-decoration: underline; color: #aa00aa; }
+    </style>
+
+    <title>A Basic Introduction to Shared Memory on AIX</title>
+  </head>
+  <body>
+
+    <p class="arttitle">An Introduction to Shared Memory on AIX</p>
+    <p class="artstitle">For both system administrators and developers</p>
+
+    <p class="artstitle">Version: 0.13.0</p>
+
+    <p class="artsstitle">Charles Valois &lt;disinherited@troyes.fr&gt;<br />William Favorite &lt;wfavorite2@bloomberg.net&gt;</p>
+
+    
+    <!-- ================================================================== -->
+    <p class="subjhead">Overview &amp; purpose of this document</p>
+
+    <p class="subjcont">The AIX implementation of shared memory differs from that of other Unices. This results in frustration for the developer and additional support issues for the administrator. The intent of this document is to assist, primarily the administrator, but also the developer in supporting the AIX specific port from other more <span class="textit">standard</span> implementations.</p>
+
+    <p class="subjcont"><span class="textbf">WARNING:</span> This is a best effort document that relates what is a complex issue even for very senior AIX support staff. Frequently, we are forced to go to the source and/or the <span class="textit">most senior</span> levels of AIX development to work through implementation details. As a result, some of the specifics in this document may vary somewhat from <span class="textit">actual</span> manifestations. Use this document at your own risk and validate everything you read here before releasing the results to a production environment.</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Introduction to shared memory</p>
+
+    <p class="subjcont">Shared memory serves multiple purposes to the developer. It can be used as a method to simplify randomized I/O by mapping a file into memory, a method for inter-process communication, a performance enhancement, a means to allocate specific types of (large page) memory, or <span class="textit">other</span>* uses. Here at Bloomberg, we tend to leverage shared memory <span class="textit">heavily</span> for some very <span class="textit">creative</span> reasons.</p>
+
+    <p class="footnote">[* These are the <span class="textit">typical</span> uses of shared memory. It is a means to <span class="textit">many</span> ends. ]</p>
+
+    <p class="subjcont">As an IPC (Interprocess Communication) method, two processes map the same segment of memory and synchronize access to that location*. Each process communicates to the other by writing and reading to pre-set locations in the memory segment(s). This method rarely needs to save content, so is frequently a shared memory segment of <span class="textit">anonymous</span> memory. This means that it is not backed by a file.</p>
+
+    <p class="footnote">[* The &quot;synchronization&quot; is <span class="textit">very</span> important part of this process. The proper treatment of this issue would significantly lengthen this document and is clearly beyond the scope and purpose of this paper. ]</p>
+
+    <p class="subjcont">If the memory is anonymous or not, the location of the memory is frequently determined by file names. Either the memory is backed by a file (multiple programs open a file for shared access (non-anonymous)), or a filename is used as a <span class="textit">key</span> to &quot;find&quot; the same memory location from two differing processes (see: <a href="http://publib.boulder.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.basetechref/doc/basetrf2/shm_open.htm"><span class="texttt">shm_open()</span></a> and <a href="http://publib.boulder.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.basetechref/doc/basetrf1/ftok.htm"><span class="texttt">ftok()</span></a>).</p>
+
+
+    <p class="subjcont">A file that has a very random access pattern (such as indexed access to multiple records) would normally need to continually <span class="texttt">read()</span> and <span class="texttt">lseek()</span> to find and access that data. By mapping the file into memory, the programmer need only reference the locations where the data is mapped to. This &quot;reference&quot; access both simplifies the navigation of the file and reduces the system call overhead of accessing it.</p>
+
+    <p class="subjcont">Reducing the system call overhead can be a significant compute cost saver. <span class="texttt">read()</span> and <span class="texttt">write()</span> calls come with the cost of a memory copy as data is copied in &amp; out of kernel space. Memory mapped files still incur the cost of page management and the file cache, but avoid the overhead of these system calls.</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Types of shared memory</p>
+
+    <p class="subjsect">Implementations</p>
+
+    <p class="subjcont">Modern Unix has two differing implementations of shared memory. They are &quot;Posix&quot;* and &quot;Sys V&quot;. The Posix routines are <span class="texttt">mmap()</span>, <span class="texttt">munmap()</span>, and related functions. The Sys V routines are grouped around <span class="texttt">shmget()</span>, <span class="texttt">shmat()</span>, <span class="texttt">shmdt()</span>, and <span class="texttt">shmctl()</span>.</p>
+
+    <p class="footnote">[* Equivocating between Sys V, Posix, BSD, and other implementations of IPC are a bit out of scope of this document. The two <span class="textit">competing</span> methods here are derived from Posix and Sys V - Even though the AIX implementation almost deserves a unique reference. Stevens refers to them as Posix and Sys V. Therefore I shall stick to the &quot;biblical&quot; source on this matter. ]</p>
+
+    <p class="subjsect">Usage Variations</p>
+
+    <p class="subjcont">Shared memory takes many forms for all the differing problems it is called upon to solve. It can be backed by a file (meaning it is a file mapped into memory) or backed by paging space (meaning it is more <span class="texttt">malloc()</span>-like). It can be shared amongst multiple processes, or it can be used only by, and visible only to, one process. These options can be combined to create numerous variations on implementation.</p>
+
+    <p class="subjcont">Private mapped memory is memory that is visible only to that process. Changes to the privately mapped files will not be flushed to disk or made visible to other processes*. When a shared mapped file is modified, the changes will be made visible to other processes, including those open()ing the file and read()ing it using more common I/O methods. Shared memory is designed to be used amongst multiple processes, and changes in one application are visible in others.</p>
+
+    <p class="footnote">[* A <span class="texttt">mmap()</span>ed file that has been mapped privately will use a public copy until the first write, then it will maintain a private copy of the data that will not be written to the file (<a href="http://en.wikipedia.org/wiki/Copy-on-write">CoW</a>). The AIX implementation of <span class="texttt">shmat()</span> does not handle the concept of privately mapped files - although the <span class="texttt">shmat()</span> mapping does not have a SysV &quot;key&quot;, nor does it show up in <span class="texttt">ipcs</span>.  ]</p>
+
+    <p class="subjcont">Anonymous shared memory is a convention that means the shared memory is <span class="textit">not</span> backed by a file. This is the default method in Sys V, and can be explicitly specified in <span class="texttt">mmap()</span> with the <span class="texttt">MAP_ANONYMOUS</span> flag. Depending on the page size*, an anonymous shared memory segment is backed by paging space. References to anonymous shared memory segments (keys) can be shared, either through parent/child relationships, by passing the ID of the segment to another process, or using one of the key generating functions (based on file names) to find the common reference (key).</p>
+
+    <p class="footnote">[* Large (16 Meg) pages are pinned, and not backed by paging space. Large pages are an option to <span class="texttt">shmget()</span> with the <span class="texttt">SHM_LGPAGE</span> option. This option is &quot;advisory only&quot;. The returned page size can be validated using <span class="texttt">vmgetinfo(..., VM_PAGE_INFO, ...)</span>. ]</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">APIs</p>
+
+    <p class="subjsect">Posix</p>
+
+    <p class="subjcont"><a href="http://pic.dhe.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.basetechref/doc/basetrf1/mmap.htm" class="texttt">mmap()</a> - This is a versatile API allowing the developer to map a file, anonymous memory*, shared or private. Additionally, because this API was (originally) designed for mapping files, it is well suited for mapping <span class="textit">portions</span> of a file. <span class="texttt">mmap()</span> offers the most portable method for mapping memory in AIX, and is therefore the most consistent with Stevens.</p>
+
+    <p class="footnote">[* Anonymous memory is in admin-speak; &quot;memory&quot;. More explicitly, it is backed by paging space, and not by a file. So if the memory had to be paged out, it would be written to paging space and not flushed to a file. Anonymous memory is sometimes really a mapping of /dev/zero, so that it is initialized to 0s. (Note: This is not necessary in AIX - anonymous <span class="texttt">mmap()</span> segments are initialized to all 0s.) File mappings are initialized to the contents of the file. ]</p>
+
+    <p class="subjcont"><a href="http://pic.dhe.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.basetechref/doc/basetrf1/munmap.htm" class="texttt">munmap()</a> - This removes (unmaps) a memory segment mapped with <span class="texttt">mmap()</span>.</p>
+
+    <p class="subjcont"><a href="http://pic.dhe.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.basetechref/doc/basetrf1/madvise.htm" class="texttt">madvise()</a> - This is offered for compatibility only. AIX ignores input to this call.</p>
+
+    <p class="subjcont"><a href="http://pic.dhe.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.basetechref/doc/basetrf1/msync.htm" class="texttt">msync()</a> - This is the <span class="texttt">mmap()</span> version of <span class="texttt">fsync()</span>; it flushes in-memory data to disk. It is for file not opened <span class="texttt">MAP_PRIVATE</span>. <span class="texttt">mmap()</span> works against an open file descriptor (when mapping a file), but that file descriptor can be closed once the <span class="texttt">mmap()</span> call is complete.</p>
+
+    <p class="subjcont"><a href="http://pic.dhe.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.basetechref/doc/basetrf2/shm_open.htm" class="texttt">shm_open()</a> - Multiple processes can access the same anonymous shared memory by using this call to generate a file descriptor. This call acts like the <span class="texttt">open()</span> call, except the &quot;file&quot; string does not refer to an actual file name, but a pre-agreed string (matching file naming rules). This file descriptor is used instead of a <span class="textit">real</span> file descriptor as returned from <span class="texttt">open()</span>.</p>
+
+    <p class="subjcont"><span class="texttt">memcntl()</span> - This does not appear to be portable / supported in AIX. <a href="http://pic.dhe.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.basetechref/doc/basetrf2/vmgetinfo.htm" class="texttt">vmgetinfo()</a> may provide some of the same functionality.</p>
+
+    <p class="subjsect">Sys V</p>
+
+    <p class="subjcont"><a href="http://pic.dhe.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.basetechref/doc/basetrf1/Ftok.htm" class="texttt">ftok()</a> - This is a SysV convention that creates a &quot;key&quot; from a filename. This key is basically a hash of the filename string. Two otherwise unrelated processes can agree on a filename before hand, and use that filename to generate a key that can be used to find the shared memory segment. The resulting key from this call is used as a parameter to <span class="texttt">shmget()</span>. See <span class="texttt">shm_open()</span> for a Posix &quot;equivalent&quot;.</p>
+
+    <p class="subjcont"><a href="http://pic.dhe.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.basetechref/doc/basetrf2/shmget.htm" class="texttt">shmget()</a> - This is the SysV call that creates a shared memory segment. A process can create a shared memory segment using this call, but then must attach to it using <span class="texttt">shmat()</span>. Important <span class="texttt">shmget()</span> parameters are permissions, and implementation specifics such as large page, pin, and size.</p>
+
+    <p class="subjcont"><a href="http://pic.dhe.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.basetechref/doc/basetrf2/shmat.htm" class="texttt">shmat()</a> - This is the &quot;attach&quot; portion of the SysV API that is used to <span class="textit">connect</span> to an existing shared memory segment. AIX has extended this API to act like <span class="texttt">mmap()</span> in that it can be used to map a <span class="textit">file</span> into memory. (In the file mapping case, the memory segment does not need to be created using <span class="texttt">shmget()</span>.) <span class="texttt">shmat()</span> is preferred to <span class="texttt">mmap()</span> in AIX some cases - including the mapping of files*.</p>
+
+    <p class="footnote">[* Because <span class="texttt">shmat()</span> does not have <span class="textit">native</span> support for mapping files, it does not have a means to map <span class="textit">part</span> of a file. When using <span class="texttt">shmat()</span> is used to map a file, the <span class="textit">whole</span> file is mapped. ]</p>
+
+    <p class="subjcont"><a href="http://pic.dhe.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.basetechref/doc/basetrf2/shmctl.htm" class="texttt">shmctl()</a> - This is a versatile API used to do a number of different operations on a shared memory segment. Primarily it is used to get info with the <span class="texttt">IPC_STAT</span> or remove a segment with the <span class="texttt">IPC_RMID</span> commands*.</p>
+
+    <p class="footnote">[* Many of these routines interpret arguments differently based upon the mode or <span class="textit">intent</span> that the API is called. <span class="texttt">shmctl()</span>, <span class="texttt">shmget()</span>, and <span class="texttt">shmat()</span> are examples of this. The &quot;command&quot; (2nd) argument determines functionality and how other arguments are interpreted. ]</p> 
+
+    <p class="subjcont"><a href="http://pic.dhe.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.basetechref/doc/basetrf2/shmdt.htm" class="texttt">shmdt()</a> - When a <span class="textit">single</span> process is done with a segment it can be released (detached) with this call. This call <span class="textit">will not</span> remove the shared memory segment from the system, but only from the process memory space.</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">AIX specific implementation details</p>
+    
+    <p class="subjsect">Memory layout</p>
+
+    <p class="subjcont">AIX divides application memory space into 256M segments*. Each of the segments is reserved for a specific type of memory and/or page size. In terms of usage <span class="textit">types</span> and page sizes, these segments are &quot;atomic&quot; in nature. It is not possible to sub-divide segments for <span class="textit">different</span> usage. For example, it is not possible to have the executable text and the stack in the same segment, or for either of those to share a segment with shared memory mappings.</p>
+
+    <p class="footnote">[* The term segments tends to become confusing at this point - referring both to shared memory segments and process memory segments. At points they are somewhat synonymous (with <span class="texttt">shmat()</span> mapped memory), but in most cases they are not. It is important to understand the distinction. ]</p>
+
+    <p class="subjcont">Dividing a 32bit process into 256M segments means that it will have 16 segments available to the process. 64bit processes are also divided into these segments, but have a much larger set of process segments to work with. The 32bit boundary of 16 introduces some profound limitations in how memory is used in this model.</p>
+
+    <p class="subjcont">Each process segment has a pre-defined use and a standardized page size. The default layout (for a 32bit process) looks like this:</p>
+
+    <table class="thintable">
+      <tr>
+        <td class="thintd"><span class="textbf">Segment</span></td>
+        <td class="thintd"><span class="textbf">Usage</span></td>
+      </tr>
+      <tr>
+        <td class="thintd">0x0</td>
+        <td class="thintd">Kernel</td>
+      </tr>
+      <tr>
+        <td class="thintd">0x1</td>
+        <td class="thintd">Application program text (aka: process private)</td>
+      </tr>
+      <tr>
+        <td class="thintd">0x2</td>
+        <td class="thintd">Application program data and stack</td>
+      </tr>
+      <tr>
+        <td class="thintd">0x3 - 0xC</td>
+        <td class="thintd">Shared memory</td>
+      </tr>
+      <tr>
+        <td class="thintd">0xD</td>
+        <td class="thintd">Shared library text</td>
+      </tr>
+      <tr>
+        <td class="thintd">0xE</td>
+        <td class="thintd">Miscellaneous kernel data</td>
+      </tr>
+      <tr>
+        <td class="thintd">0xF</td>
+        <td class="thintd">Application shared library data</td>
+      </tr>
+    </table>
+
+    <p class="subjcont">A process owner can modify the <span class="texttt">MAXDATA</span> value that determines how these segments can be used. This is a very important setting in 32 bit processes, and can have some unexpected consequences in 64 bit processes. The default / unspecified <span class="texttt">MAXDATA</span> value limits a 32 bit process to 256 Meg of heap. So, in the 32 bit process space, <span class="texttt">MAXDATA</span> becomes the <span class="textit">enabling</span> method for larger heap allocations. For 64 bit processes, the limit on heap sizes would most likely be encountered only in a wildly leaky application, and would likely exhaust physical resources before hitting a software imposed limit. So, for 64 bit process, <span class="texttt">MAXDATA</span> becomes a <span class="textit">limiting</span> factor.</p>
+
+    <p class="subjcont"><span class="texttt">MAXDATA</span> can be set in three (really two) different methods: During link time as an option to <span class="texttt">ld</span>, post-link by editing the same binary run-time options with <span class="texttt">ldedit</span>, or by specifying the <span class="texttt">MAXDATA</span> value in the <span class="texttt">LDR_CNTRL</span> environmental variable.</p>
+
+    <p class="subjcont">When <span class="texttt">MAXDATA</span> is set to <span class="texttt">0x10000000</span>, one segment (segment <span class="texttt">0x3</span>) is used for heap. When <span class="texttt">MAXDATA</span> is increased, it takes segments reserved for shared memory use, and converts them to heap use. The result will be <span class="textit">less</span> segments for <span class="texttt">mmap()</span> &amp; <span class="texttt">shmat()</span>, and more for basic <span class="texttt">malloc()</span> / computational memory usage.</p>
+
+    <p class="subjcont">The following is a table of <span class="texttt">MAXDATA</span> values and the resulting heap sizes for a 32 bit process:</p>
+
+    <table class="thintable">
+      <tr>
+        <td class="thintd"><span class="textbf"><span class="textt">MAXDATA</span> value</span></td>
+        <td class="thintd"><span class="textbf">Heap space</span></td>
+      </tr>
+      <tr>
+        <td class="thintd">Unset</td>
+        <td class="thintd">256 Meg</td>
+      </tr>
+      <tr>
+        <td class="thintd">0x10000000</td>
+        <td class="thintd">256 Meg</td>
+      </tr>
+      <tr>
+        <td class="thintd">0x20000000</td>
+        <td class="thintd">512 Meg</td>
+      </tr>
+      <tr>
+        <td class="thintd">0x30000000</td>
+        <td class="thintd">768 Meg</td>
+      </tr>
+      <tr>
+        <td class="thintd">0x40000000</td>
+        <td class="thintd">1024 Meg</td>
+      </tr>
+      <tr>
+        <td class="thintd">0x50000000</td>
+        <td class="thintd">1280 Meg</td>
+      </tr>
+      <tr>
+        <td class="thintd">0x60000000</td>
+        <td class="thintd">1536 Meg</td>
+      </tr>
+      <tr>
+        <td class="thintd">0x70000000</td>
+        <td class="thintd">1792 Meg</td>
+      </tr>
+      <tr>
+        <td class="thintd">0x80000000</td>
+        <td class="thintd">2048 Meg</td>
+      </tr>
+      <tr>
+        <td class="thintd">0x90000000</td>
+        <td class="thintd">256 Meg</td>
+      </tr>
+      <tr>
+        <td class="thintd">0x90000000@DSA</td>
+        <td class="thintd">2304 Meg</td>
+      </tr>
+      <tr>
+        <td class="thintd">0xA0000000@DSA</td>
+        <td class="thintd">2560 Meg</td>
+      </tr>
+      <tr>
+        <td class="thintd">0xB0000000@DSA</td>
+        <td class="thintd">2816 Meg</td>
+      </tr>
+      <tr>
+        <td class="thintd">0xC0000000@DSA</td>
+        <td class="thintd">3072 Meg</td>
+      </tr>
+      <tr>
+        <td class="thintd">0xD0000000@DSA</td>
+        <td class="thintd">3328 Meg</td>
+      </tr>
+      <tr>
+        <td class="thintd">0xE0000000@DSA</td>
+        <td class="thintd">256 Meg</td>
+      </tr>
+    </table>
+
+    <p class="subjcont">In the large address space model (when <span class="texttt">MAXDATA</span> is > 0), stack and heap are divided leaving stack in segment 0x2 and heap beginning in 0x3. In the very large address space model (<span class="texttt">DSA</span> (Dynamic Segment Allocation) is used), and up to 13 segments can be used for <span class="texttt">malloc()</span> / computational memory. The <span class="texttt">malloc()</span> (<span class="texttt">sbrk()</span>) call will fail if it extends into a segment that has mapped memory. Likewise, a <span class="texttt">mmap()</span> / <span class="texttt">shmat()</span> will fail if the segment contains other memory (such as stack, heap, text, etc...).</p>
+
+    <p class="subjcont">AIX provides both 32 and 64 bit specific implementations of <span class="texttt">MAXDATA</span>. <span class="texttt">MAXDATA32</span> is used only by 32 bit processes, <span class="texttt">MAXDATA64</span> is used by 64 bit processes, and <span class="texttt">MAXDATA</span> will be used by both. These 32/64 bit variants of the variable are for the <span class="texttt">LDR_CNTRL</span> variable only. When using <span class="texttt">ld</span> or <span class="texttt">ldedit</span> to edit <span class="texttt">MAXDATA</span>, the attribute is applied directly to the binary - so no special &quot;masking&quot; is required.</p>
+
+    <p class="subjcont">For example, setting <span class="texttt">LDR_CNTRL=MAXDATA64=0X0000000180000000</span> will <span class="textit">limit</span> a 64 bit process to 0x18 (24) segments for heap. (24 * 256M = 6G).</p>
+
+    <p class="subjcont"><span class="underline">Try it yourself:</span> Build and run &quot;<span class="texttt">malloc_meg</span>&quot; from <span class="texttt">ibm4:/home/wfavorit/proj/aix_shm_examples</span>. For example; set one of the <span class="texttt">LDR_CNTRL=MAXDATA=</span> values from above, then attempt to <span class="texttt">malloc()</span> the limit for your process. To do this first run [<span class="texttt">export LDR_CNTRL=MAXDATA=0x40000000</span>] then [<span class="texttt">malloc_meg 4096</span>]. Your (32 bit) process will malloc 1023 Meg, and then fail on the 1024th <span class="texttt">malloc()</span> request (because some of the heap is used before the <span class="texttt">malloc()</span>s begin).</p>
+
+    <p class="subjsect">Shared memory implementation</p>
+
+    <p class="subjcont">The AIX implementation of shared memory differs from other versions primarily in how it relates to the segmented memory model described in the previous section but also in some distinct API differences that are not consistent with the &quot;standard&quot; as referenced in the Stevens book. The first implication is that <span class="texttt">shmat()</span> calls are mapped to a 256 Meg segment of the application space. The second is the concept of mapping a file via the <span class="texttt">shmat()</span> call.</p>
+
+    <p class="subjsect">The relationship between shared memory and process memory segments</p>
+
+    <p class="subjcont">Because (by default) <span class="texttt">shmat()</span> mapped memory maps directly to a process memory segment, an application can only map to segments reserved / available for that purpose. For a 32 bit process, this is a major limiting factor. The <span class="texttt">mmap()</span> call, by comparison, is limited by available process memory.* AIX overcomes the <span class="texttt">shmat()</span>-to-segment limitation by using <span class="texttt">mmap()</span> when more segments, or more efficient memory usage, is required. This option is enabled by setting <span class="texttt">EXTSHM=ON</span> environmental variable. Without this setting, the process can only <span class="texttt">shmat()</span> 11 segments**.</p>
+
+    <p class="footnote">[* <span class="texttt">mmap()</span> is <span class="textit">also</span> limited by available memory in the <span class="textit">appropriate</span> segments. Meaning: a call to <span class="texttt">mmap()</span> can fail for lack of memory, while free memory exists. The implications for <span class="texttt">mmap()</span> to satisfy many smaller mappings (when <span class="texttt">shmat()</span> cannot) is significant. ]</p>
+
+    <p class="footnote">[** <span class="texttt">shmat()</span> maxes out at 13 (in the 32bit DSA model (<span class="texttt">LDR_CNTRL=DSA</span>)), 11 in the default mode. Note: For DSA, the documentation says 12; my test case doing nothing else, managed 13. ]</p>
+
+    <p class="subjcont"><span class="underline">Try it yourself:</span> Build and run &quot;<span class="texttt">shmat_limit</span>&quot; from <span class="texttt">ibm4:/home/wfavorit/proj/aix_shm_examples</span>. Set one of the <span class="texttt">LDR_CNTRL</span> values from above, then attempt to <span class="texttt">shmat()</span> the limit for your process. To do this first run [<span class="texttt">export LDR_CNTRL=DSA</span>] then [<span class="texttt">shmat_limit 16</span>]. (16 shared memory segments is chosen because it is the upper boundary of segments for a 32 bit process. This number is not obtainable under any 32 bit configuration of the segments.).</p>
+
+    <p class="subjcont">When a SysV / <span class="texttt">shmat()</span> shared memory segment is mapped into a process memory segment, it consumes the <span class="textit">entire</span> process segment. This means that a one byte mapping can consume 256 Meg of <span class="textit">potential</span> process memory. (<span class="texttt">mmap()</span>, by comparison, only rounds to the page size of the segment.)</p>
+
+    <p class="subjcont">The implications are obvious for the consumer of <span class="textit">many</span> shared memory segments: <span class="texttt">EXTSHM=ON</span> is a requirement. (It is set by default in the environment at Bloomberg.) Unfortunately, using <span class="texttt">mmap()</span> to back <span class="texttt">shmat()</span> carries a performance penalty*. The recommendation is to use <span class="texttt">shmat()</span> when you can, and 
+<span class="texttt">mmap()</span> when you <span class="textit">have</span> to. The primary method of beating these limitations is to build 64 bit binaries that punch through the anemic 16 (process memory) segment limitations of a 32 bit process. Even though the same &quot;wasteful&quot; rules apply, a 64 bit process has much more process space (and therefore segments) to burn through. (2<span class="exponent">36</span> segments.)</p>
+
+    <p class="footnote">[* AIX <span class="textit">muddies</span> this in the Posix implementation (<span class="texttt">mmap()</span>) because multiple processes cannot own a direct mapping of the shared memory location at a time. As each process accesses the memory, a page fault is triggered to bring the translation local to the process. [<a href="http://publib.boulder.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.genprogc/doc/genprogc/understanding_mem_mapping.htm">source</a>] ]</p>
+
+    <p class="subjcont"><span class="texttt">EXTSHM</span> is ignored in the 64bit process environment, at least in terms of what underlying call is used. When a shared memory segment is created, the AIX kernel marks what <span class="textit">kind</span> of segment it is. A segment that is created in one mode may not be directly compatible with one created in another mode. All processes accessing a shared memory segment should access it using the same method.*</p>
+
+    <!-- TODO: Create an example (32 and 64 bit) processes creating and attaching to a segment. -->
+
+    <p class="footnote">[* There is no programmatic API to determine how a segment was created. The best method is to see if the shared segment address sits at the top of the process segment. To the best of my knowledge, this is 1) the ONLY way this can be done, and 2) means the address will be something like: 0x50000000. ]</p>
+
+    <p class="subjsect">Mapping files using <span class="texttt">shmat()</span></p>
+
+    <p class="subjcont">As <span class="texttt">shmat()</span> was not initially designed for file mapping, it does not have the appropriate parameter options for mapping a file. As a result, the file size and offset are not specified in the mapping. When a program <span class="texttt">shmat()</span>'s a file, the <span class="textit">whole</span> file is mapped, and writes beyond the end of the file cause the file to be extended on a page boundary to satisfy the write.</p>
+
+
+    <p class="subjcont">Because this behavior is not portable across platforms, it is not popular (at Bloomberg).</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Administrative commands</p>
+    
+    <p class="subjsect">ProbeVue</p>
+    
+    <p class="subjcont">Vue is not a tool for process segment discovery, but can be used to display operations on the memory segments through probed syscalls. The basic memory mapping syscalls are all covered under the <span class="texttt">syscall</span> and <span class="texttt">syscallx</span> providers. The arguments and return values are visible provided the APIs have been prototyped.</p>
+    
+    <p class="subjcont">Memory locations can be read from a user process, but not much else can be done in terms of accessing information on a shared memory segment of a process.</p>
+    
+    <p class="subjcont">The following is the output of the <span class="texttt">shm_watch.e</span> ProbeVue script when run against the <span class="texttt">shmat_file</span> code (as seen later in this document). There are a few things of note here:</p>
+    
+    <ul class="subjcont">
+      <li>The results of the command and the Vue script are mixed and the timing is not seemingly synchronized. This is an artifact of the Vue results buffering then printing - intermixed with the watched process.</li>
+      <li>The <span class="texttt">EXTSHM</span> value is set so that the <span class="texttt">shmat()</span> is backed by <span class="texttt">mmap()</span>, yet Vue captures the <span class="texttt">shmat()</span> call as the developer would expect.</li>
+      <li>Syscall output is formatted much like <span class="texttt">truss</span>. The values are &quot;raw&quot; in that they are not broken down into bit fields as used by the developer. Vue offers some flexibility in how you format the output.</li>
+      <li>Both the Vue script and the called code can be found in: <span class="texttt">ibm4:/home/wfavorit/proj/aix_shm_examples</span></li>
+    </ul>
+
+    <div class="codeblock">
+      <p>
+        ibm4 # probevue -X ./shmat_file shm_watch.e<br />
+        Character number 9 of the alphabet is I.<br />
+        shmat(3, 0, 6144) = 0x30000000<br />
+        shmdt(0x30000000) = 0<br />
+        ibm4 # echo ${EXTSHM}<br />
+        ON
+      </p>
+    </div>
+
+    <p class="subjsect">svmon</p>
+    
+    <p class="subjcont">The following are a few examples of <span class="texttt">svmon</span> output when using the <span class="texttt">-P</span>(rocess) switch. This shows the memory segment usage for a process called &quot;<span class="texttt">shmtool</span>&quot; (<span class="texttt">ibm4:/home/wfavorit/proj/shmtool</span>). The program maps two 4K segments, one to anonymous memory and the other to a type (file or anonymous) specified when the program is called. The first (always anonymous) mapping is not touched, while the second (user specified) <span class="textit">is</span>. All of the following examples are against a 32 bit version of the program. Here is the calling syntax for <span class="texttt">shmtool</span>:</p>
+
+    <div class="codeblock">
+      <p>
+        $ ./shmtool -h<br />
+        shmtool - A tool to create a shared memory segment<br />
+        version: 0.4.3<br />
+        usage: shmtool &lt;p|v&gt; &lt;f|a&gt;<br />
+        &nbsp;&nbsp;&nbsp;p - Map Posix (mmap())<br />
+        &nbsp;&nbsp;&nbsp;v - Map Sys V (shmat())<br />
+        &nbsp;&nbsp;&nbsp;f - Map a file<br />
+        &nbsp;&nbsp;&nbsp;a - Map anonymous<br />
+      </p>
+    </div>
+
+    <p class="subjcont">Each of the following examples are the results of svmon clipped down to the most relevant lines. Also note: when <span class="texttt">shmtool</span> runs it builds the <span class="texttt">svmon</span> command for you to paste into another window. It will wait for user input so that you have the time to run the command and read the results.</p>
+
+    <p class="subjcont">This shows a process with two anonymously mapped <span class="texttt">shmat()</span> segments. While the address sizes will differ, the results should be the same for a 64 bit process. <span class="texttt">EXTSHM</span> was not set, and we can see that the <span class="texttt">shmat()</span> calls were <span class="textit">actually</span> handled by <span class="texttt">shmat()</span>. <span class="underline">Try it yourself:</span> [<span class="texttt">unset EXTSHM</span>] then [<span class="texttt">shmtool v a</span>]</p>
+
+
+
+    <div class="codeblock">
+      <p>
+        &nbsp;&nbsp;&nbsp;&nbsp;Vsid&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Esid&nbsp;Type&nbsp;Description&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PSize&nbsp;&nbsp;Inuse&nbsp;&nbsp;&nbsp;Pin&nbsp;Pgsp&nbsp;Virtual<br />
+        &nbsp;&nbsp;2e5d8c&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4&nbsp;work&nbsp;shared&nbsp;memory&nbsp;segment&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1<br />
+        &nbsp;&nbsp;5892d8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3&nbsp;work&nbsp;shared&nbsp;memory&nbsp;segment&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0
+      </p>
+    </div>
+
+
+    <p class="subjcont">The following output is from the mapping of two <span class="texttt">shmat()</span> segments, one anonymous, one a file. The file segment had each byte touched (written to), the other did not. <span class="texttt">EXTSHM</span> was not set. Each call to <span class="texttt">shmat()</span> was actually handled by <span class="texttt">shmat()</span>. <span class="underline">Try it yourself:</span> [<span class="texttt">unset EXTSHM</span>] then [<span class="texttt">shmtool v f</span>]</p>
+
+    <div class="codeblock">
+      <p>
+        &nbsp;&nbsp;&nbsp;&nbsp;Vsid&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Esid&nbsp;Type&nbsp;Description&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PSize&nbsp;&nbsp;Inuse&nbsp;&nbsp;&nbsp;Pin&nbsp;Pgsp&nbsp;Virtual<br />
+        &nbsp;&nbsp;f93e6f&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4&nbsp;clnt&nbsp;remote&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-<br />
+        &nbsp;&nbsp;5d78c3&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3&nbsp;work&nbsp;shared&nbsp;memory&nbsp;segment&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0
+      </p>
+    </div>
+
+    <p class="subjcont">The following output is from the mapping of two anonymously mapped <span class="texttt">mmap()</span> segments. <span class="texttt">EXTSHM</span> was not set, and was not related to this example as <span class="texttt">mmap()</span> was explicitly called. (If <span class="texttt">EXTSHM</span> was set to &quot;<span class="texttt">ON</span>&quot; the results would have been the same.) <span class="underline">Try it yourself:</span> [<span class="texttt">shmtool p a</span>]</p>
+
+
+    <div class="codeblock">
+      <p>
+        &nbsp;&nbsp;&nbsp;&nbsp;Vsid&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Esid&nbsp;Type&nbsp;Description&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PSize&nbsp;&nbsp;Inuse&nbsp;&nbsp;&nbsp;Pin&nbsp;Pgsp&nbsp;Virtual<br />
+        &nbsp;&nbsp;4d7acb&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3&nbsp;mmap&nbsp;maps&nbsp;2&nbsp;source(s)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-
+      </p>
+    </div>
+
+    <p class="subjcont">The output here is virtually identical to the previous (as <span class="texttt">mmap()</span> was used). The difference is that the program called <span class="texttt">shmat()</span> with the <span class="texttt">EXTSHM=ON</span> value set. The <span class="texttt">shmat()</span> here was for anonymous memory. <span class="underline">Try it yourself:</span> [<span class="texttt">export EXTSHM=ON</span>] then [<span class="texttt">shmtool v a</span>]</p>
+
+    <div class="codeblock">
+      <p>
+        &nbsp;&nbsp;&nbsp;&nbsp;Vsid&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Esid&nbsp;Type&nbsp;Description&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PSize&nbsp;&nbsp;Inuse&nbsp;&nbsp;&nbsp;Pin&nbsp;Pgsp&nbsp;Virtual<br />
+        &nbsp;&nbsp;af9d38&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3&nbsp;mmap&nbsp;maps&nbsp;2&nbsp;source(s)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-
+      </p>
+    </div>
+
+    <p class="subjcont">Here, <span class="texttt">EXTSHM=ON</span> and <span class="texttt">shmat()</span> was called. It first mapped an anonymous segment, then a file. Like the previous example, it uses <span class="texttt">mmap()</span>, but still breaks them into different process segments because of the differing types of mappings (file and anonymous). <span class="underline">Try it yourself:</span> [<span class="texttt">export EXTSHM=ON</span>] then [<span class="texttt">shmtool v f</span>]</p>
+
+    <div class="codeblock">
+      <p>
+        &nbsp;&nbsp;&nbsp;&nbsp;Vsid&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Esid&nbsp;Type&nbsp;Description&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PSize&nbsp;&nbsp;Inuse&nbsp;&nbsp;&nbsp;Pin&nbsp;Pgsp&nbsp;Virtual<br />
+        &nbsp;&nbsp;4cbcdf&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4&nbsp;clnt&nbsp;remote&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;1&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-<br />
+        &nbsp;&nbsp;baeb23&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3&nbsp;mmap&nbsp;maps&nbsp;1&nbsp;source(s)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;s&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0&nbsp;&nbsp;&nbsp;&nbsp;-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-
+      </p>
+    </div>
+
+    <p class="subjsect">procmap</p>
+    
+    <p class="subjcont"><span class="texttt">procmap</span> is not the <span class="textit">best</span> tool for viewing shared memory locations. (In fact, it can actually be <span class="textit">misleading</span> in some cases.) A few notes on its use:</p>
+
+    <ul class="subjcont">
+      <li>The <span class="texttt">-S</span> option is required to view shared memory mappings. (This is an undocumented option.*)</li>
+
+      <li>True <span class="texttt">shmat()</span> mappings (<span class="texttt">EXTSHM</span> is unset) are visible, provided they are not file mappings (then they do not show up). The ShmID is provided.</li>
+      <li>True <span class="texttt">mmap()</span> mappings show up as a single segment (when there is more than one). The quantity (of mappings) is not given. The individual mappings are not given (unless there is only one in the segment).</li>
+      <li><span class="texttt">EXTSHM=ON</span> <span class="texttt">shmat()</span> mappings (that are handled by <span class="texttt">mmap()</span>) show up as &quot;mmap&quot; mappings. The ShmID is provided. The address is the top of the segment (for all mappings) - so the actual address is not to be trusted.</li>
+    </ul>
+    
+    <p class="footnote">[* The <span class="texttt">-S</span> option was added at our request to make <span class="texttt">procmap</span> more useful to the developer. The results have been somewhat disappointing. ]</p>
+
+    <!--
+    <p class="subjsect">dbx</p>
+        
+    <p class="subjcont">-</p>
+    
+    <p class="subjsect">kdb</p>
+    
+    <p class="subjcont">-</p>
+    
+    <p class="subjsect">ipcs</p>
+
+    <p class="subjcont">-</p>
+    -->
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Reference Links</p>
+
+    <p class="subjcont"><a href="http://pic.dhe.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.genprogc/doc/genprogc/understanding_mem_mapping.htm">Understanding memory mapping</a><br />
+      <a href="http://pic.dhe.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.genprogc/doc/genprogc/address_space.htm">Program address space overview</a></p>
+
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Code Examples</p>
+
+    <p class="subjcont">All code examples from this document can be found in: <span class="texttt">ibm4:/home/wfavorit/proj/aix_shm_examples</span></p>
+
+    <p class="subjcont">Map a file (of known size) to a memory location and access an individual byte using <span class="texttt">mmap()</span>. This can be found in <span class="texttt">ibm4:/home/wfavorit/proj/aix_shm_examples/mmap_file.c</span></p>
+
+    <div class="codeblock">
+      <p>
+        /* For fprintf() and printf() calls */<br />
+        #include &lt;stdio.h&gt;<br />
+        /* For the open() call */<br />
+        #include &lt;fcntl.h&gt;<br />
+        /* For the close() call */<br />
+        #include &lt;unistd.h&gt;<br />
+        /* For the mmap() and munmap() calls */<br />
+        #include &lt;sys/types.h&gt;<br />
+        #include &lt;sys/mman.h&gt;<br />
+        <br />
+        int main(int argc, char *argv[])<br />
+        {<br />
+        &nbsp;&nbsp;&nbsp;int fd;<br />
+        &nbsp;&nbsp;&nbsp;char *data;<br />
+        &nbsp;&nbsp;&nbsp;int i;<br />
+        <br />
+        &nbsp;&nbsp;&nbsp;/* open() the file to get a file descriptor. Insure that our open() and mmap()<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;access types are the same (both read-only). In this case DATA_FILE contains<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;26 bytes of upper-case ASCII characters.<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Specifically: ABCDEFGHIJKLMNOPQRSTUVWXYZ<br />
+        &nbsp;&nbsp;&nbsp;*/<br />
+        &nbsp;&nbsp;&nbsp;if ( -1 == (fd = (open("DATA_FILE", O_RDONLY))) )<br />
+        &nbsp;&nbsp;&nbsp;{<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/* Catch errors and exit */<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr, "ERROR: Failed to open \"DATA FILE\".\n");<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return(1);<br />
+        &nbsp;&nbsp;&nbsp;}<br />
+        <br />
+        &nbsp;&nbsp;&nbsp;/* mmap() the file:<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NULL &lt;--------- to any address<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;26 &lt;----------- 26 bytes (will be rounded up to page size)<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;PROT_READ &lt;---- access will be read-only<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MAP_FILE &lt;----- will be a file (or'd with)<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;MAP_PRIVATE &lt;-- will be for our use only (not subject to external changes)<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fd &lt;----------- file descriptor from open()<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;0 &lt;------------ begin mapping at offset 0 (the beginning) of the file<br />
+        &nbsp;&nbsp;&nbsp;*/<br />
+        &nbsp;&nbsp;&nbsp;data = (char *)mmap(NULL, 26, PROT_READ, MAP_FILE | MAP_PRIVATE, fd, 0);<br />
+        &nbsp;&nbsp;&nbsp;if ( NULL == data )<br />
+        &nbsp;&nbsp;&nbsp;{<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr, "ERROR: Unable to map opened file to a memory location.\n");<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return(1);<br />
+        &nbsp;&nbsp;&nbsp;}<br />
+        <br />
+        &nbsp;&nbsp;&nbsp;/* Close the file, ignore errors.<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NOTE: We close the fd before we start to access the mmap()ed data. */<br />
+        &nbsp;&nbsp;&nbsp;close(fd);<br />
+        <br />
+        &nbsp;&nbsp;&nbsp;/* Set an arbitrary index.<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NOTE: The index is 0 based, we refer to the data (the alphabet) starting<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;at 1 so we will do some 0 &lt;---&gt; 1 offset conversions.<br />
+        &nbsp;&nbsp;&nbsp;*/ <br />
+        &nbsp;&nbsp;&nbsp;i = 8;<br />
+        <br />
+        &nbsp;&nbsp;&nbsp;/* Print a simple statement to show how we access the file data */<br />
+        &nbsp;&nbsp;&nbsp;printf("Character number %d of the alphabet is %c.\n", i + 1, data[i]);<br />
+        <br />
+        &nbsp;&nbsp;&nbsp;/* Unmap the memory location, ignore any errors (we are about to exit) */<br />
+        &nbsp;&nbsp;&nbsp;munmap(data, 26);<br />
+        <br />
+        &nbsp;&nbsp;&nbsp;/* Leave main() */<br />
+        &nbsp;&nbsp;&nbsp;return(0);<br />
+        }
+      </p>
+    </div>
+    
+
+    <p class="subjcont">Map a file to a memory location and access an individual byte using <span class="texttt">shmat()</span>. This can be found in <span class="texttt">ibm4:/home/wfavorit/proj/aix_shm_examples/shmat_file.c</span></p>
+
+    <div class="codeblock">
+      <p>
+        /* For fprintf() and printf() calls */<br />
+        #include &lt;stdio.h&gt;<br />
+        /* For the open() call */<br />
+        #include &lt;fcntl.h&gt;<br />
+        /* For the close() call */<br />
+        #include &lt;unistd.h&gt;<br />
+        /* For the shmat() and shmdt() calls */<br />
+        #include &lt;sys/shm.h&gt;<br />
+        <br />
+        int main(int argc, char *argv[])<br />
+        {<br />
+        &nbsp;&nbsp;&nbsp;int fd;<br />
+        &nbsp;&nbsp;&nbsp;char *data;<br />
+        &nbsp;&nbsp;&nbsp;int i;<br />
+        <br />
+        &nbsp;&nbsp;&nbsp;/* open() the file to get a file descriptor. Insure that our open() and shmat()<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;access types are the same (both read-only). In this case DATA_FILE contains<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;26 bytes of upper-case ASCII characters.<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Specifically: ABCDEFGHIJKLMNOPQRSTUVWXYZ<br />
+        &nbsp;&nbsp;&nbsp;*/<br />
+        &nbsp;&nbsp;&nbsp;if ( -1 == (fd = (open("DATA_FILE", O_RDONLY))) )<br />
+        &nbsp;&nbsp;&nbsp;{<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/* Catch errors and exit */<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr, "ERROR: Failed to open \"DATA FILE\".\n");<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return(1);<br />
+        &nbsp;&nbsp;&nbsp;}<br />
+        <br />
+        &nbsp;&nbsp;&nbsp;/* shmat() the file:<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fd &lt;---------- file descriptor to map<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NULL &lt;-------- map to any address<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SHM_MAP &lt;----- will be a file (or'd with)<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;SHM_RDONLY &lt;-- will be read only<br />
+        &nbsp;&nbsp;&nbsp;*/<br />
+        &nbsp;&nbsp;&nbsp;data = (char *)shmat(fd, NULL, SHM_MAP | SHM_RDONLY);<br />
+        &nbsp;&nbsp;&nbsp;if ( (void *)-1 == data )<br />
+        &nbsp;&nbsp;&nbsp;{<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fprintf(stderr, "ERROR: Unable to map opened file to a memory location.\n");<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return(1);<br />
+        &nbsp;&nbsp;&nbsp;}<br />
+        <br />
+        &nbsp;&nbsp;&nbsp;/* Set an arbitrary index.<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NOTE: The index is 0 based, we refer to the data (the alphabet) starting at 1<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;so we will do some 0 &lt;---&gt; 1 offset conversions.<br />
+        &nbsp;&nbsp;&nbsp;*/ <br />
+        &nbsp;&nbsp;&nbsp;i = 8;<br />
+        <br />
+        &nbsp;&nbsp;&nbsp;/* Print a simple statement to show how we access the file data */<br />
+        &nbsp;&nbsp;&nbsp;printf("Character number %d of the alphabet is %c.\n", i + 1, data[i]);<br />
+        <br />
+        &nbsp;&nbsp;&nbsp;/* Release the memory location, ignore any errors (we are about to exit) */<br />
+        &nbsp;&nbsp;&nbsp;shmdt(data);<br />
+        <br />
+        &nbsp;&nbsp;&nbsp;/* Close the file, ignore errors.<br />
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;NOTE: We close the fd after we are done accessing the maped data. */<br />
+        &nbsp;&nbsp;&nbsp;close(fd);<br />
+        <br />
+        &nbsp;&nbsp;&nbsp;/* Leave main() */<br />
+        &nbsp;&nbsp;&nbsp;return(0);<br />
+        }
+      </p>
+    </div>
+
+    <p />
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Appendix - Notes</p>
+
+    <p class="subjsect">Setting explicit runtime options</p>
+
+    <p class="subjcont"><span class="texttt">ldedit</span> can be used to set options on a binary. The syntax (for <span class="texttt">MAXDATA</span> against a &quot;hello_world&quot; binary) is:<br />
+      &nbsp;&nbsp;<span class="texttt">ldedit -bmaxdata:0x20000000 hello_world</span><br />
+      &nbsp;&nbsp;-- or -- <br />
+      &nbsp;&nbsp;<span class="texttt">ldedit -bmaxdata:0xa0000000/dsa hello_world</span></p>
+
+
+    <p class="subjcont">The ldedit documentation can be found <a href="http://publib.boulder.ibm.com/infocenter/aix/v7r1/topic/com.ibm.aix.cmds/doc/aixcmds3/ldedit.htm">here</a>.</p>
+
+    <p class="subjcont"><span class="texttt">LDR_CNTRL</span> examples litter the document, but it should be noted that multiple settings can be contained in this variable by separating them with the &quot;@&quot; symbol. Here is an example:<br />
+    &nbsp;&nbsp;<span class="texttt">LDR_CNTRL=MAXDATA=0XB0000000@DSA@TEXTPSIZE=4K@STACKPSIZE=64K@DATAPSIZE=64K</span></p>
+
+    <p class="subjsect">Validating explicit runtime options</p>
+
+    <p class="subjcont">The <span class="texttt">dump</span> command can be used to view current (binary) settings. Run <span class="texttt">dump</span> against the binary like this:<br />
+&nbsp;&nbsp;<span class="texttt">dump -X 32_64 -o hello_world</span></p>
+
+
+</body>
+</html>

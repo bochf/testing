@@ -1,0 +1,7 @@
+vcpu
+testperf
+cputree
+libprocperf.a
+*.o
+core
+lastlink.out

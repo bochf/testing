@@ -1,0 +1,8 @@
+libmb.a
+libmb32.a
+libmb64.a
+libmb.out
+libmb32.out
+libmb64.out
+*.o
+*~

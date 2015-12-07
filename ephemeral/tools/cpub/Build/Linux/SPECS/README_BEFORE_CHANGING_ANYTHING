@@ -1,0 +1,6 @@
+Modify the .source file. DO NOT edit the .spec file!
+
+The source file will be sed-ed into the .spec file.
+
+The CPUBVERSION string will be replaced with the actual cpub version as 
+determined by "cpub -a" from the most recent build.

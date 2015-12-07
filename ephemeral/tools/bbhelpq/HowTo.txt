@@ -1,0 +1,26 @@
+This is a quick HowTo / FAQ / About file for bbhelpq.
+
+What is bbhelpq?
+
+It is a query tool that will run queries against flat files. The purpose of
+these files is to provide basic "help" for finding appropriate commands in
+the Bloomberg environment.
+
+The files queried are (generally) well formatted and specific to this need.
+
+Why write a C binary tool like this?
+
+The point was to create a "drop in" database where new files could be 
+dropped in without changes to the code that is used to query & display
+results.
+
+Parsing lots of small files could be a bit difficult / slow with shell so
+a C binary was created. Furthermore, the source files can be "compiled" to
+a single file that is mmap()ed into memory and accessed as a single syscall
+instead of "lots" of open()s, read()s, lseek()s, and close()s.
+
+The intent was to write a tool that provides a "query-like" capability so
+that it could be wrapped in some sort of "browser" tool.
+
+The options to list keys and names are just methods to find more restrictive
+drill-in options.

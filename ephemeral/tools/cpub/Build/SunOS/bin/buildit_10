@@ -1,0 +1,130 @@
+#!/bin/ksh93
+
+# -----------------------------------------------------------------------------
+# Check where we are.
+printf "Looking to see if called from where expected..."
+if [[ ! -d bin ]] # Almost stupid check
+then
+    printf "Failed.\n"
+    printf "ERROR: Solaris 10 build script called from unknown location.\n" >&2
+    exit 1
+fi
+printf "."
+if [[ ! -x bin/buildit_10 ]] # Look in the mirror
+then
+    printf "Failed.\n"
+    printf "ERROR: Solaris 10 build script called from unknown location.\n" >&2
+    exit 1
+fi
+printf "."
+if [[ ! -d ROOT ]] # Should have been staged by our parent
+then
+    printf "Failed.\n"
+    printf "ERROR: Solaris 10 build script called from unknown location.\n" >&2
+    exit 1
+fi
+printf "Good.\n"
+
+# -----------------------------------------------------------------------------
+printf "Looking for the binary version..."
+VERSIONSTRING=$( ROOT/usr/local/bin/cpub -a | grep Version 2>/dev/null)
+VERSIONSTRING=${VERSIONSTRING##*Version: }
+if [[ ${VERSIONSTRING} != +([0-9]).+([0-9]).+([0-9]) ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: The version string does not match an expected pattern.\n" >&2
+    exit 1
+fi
+printf "${VERSIONSTRING}.\n"
+
+# -----------------------------------------------------------------------------
+printf "Clearing away previous temp files..."
+if ! rm -f pkginfo > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to remove pkginfo file.\n" >&2
+    exit 1
+fi
+printf "."
+if ! rm -rf BBcpubcore > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to remove BBcpubcore directory.\n" >&2
+    exit 1
+fi
+printf "."
+if ! rm -f pkgmk.output > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to remove pkgmk.output file.\n" >&2
+    exit 1
+fi
+printf "."
+if ! rm -f pkgtrans.output > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to remove pkgtrans.output file.\n" >&2
+    exit 1
+fi
+printf "."
+if ! rm -f BBcpubcore*.pkg > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to remove previous .pkg file.\n" >&2
+    exit 1
+fi
+printf "Done.\n"
+
+# -----------------------------------------------------------------------------
+# Do not run pkgproto
+printf "Preparing the pkginfo file..."
+if ! sed -e s/VERSIONSTRING/${VERSIONSTRING}/ pkginfo.source > pkginfo 2>/dev/null
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to stage the pkginfo file.\n" >&2
+    exit 1
+fi
+printf "Done.\n"
+
+# -----------------------------------------------------------------------------
+printf "Building the package (pkgmk)..."
+if ! pkgmk -d $(pwd) > pkgmk.output 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: pkgmk command failed. Results are in pkgmk.output\n" >&2
+    exit 1
+fi
+printf "Done.\n"
+printf "NOTE: Results are in pkgmk.output.\n"
+
+# -----------------------------------------------------------------------------
+printf "Building the package (pkgtrans)..."
+if ! pkgtrans $(pwd) BBcpubcore-sparc-${VERSIONSTRING}.pkg BBcpubcore > pkgtrans.output 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: pkgtrans command failed. Results are in pkgtrans.output\n" >&2
+    exit 1
+fi
+printf "Done.\n"
+printf "NOTE: Results are in pkgtrans.output.\n"
+
+# -----------------------------------------------------------------------------
+printf "Cleanup..."
+if ! rm -f pkginfo > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to remove pkginfo file.\n" >&2
+    exit 1
+fi
+printf "."
+if ! rm -rf BBcpubcore > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to remove BBcpubcore directory.\n" >&2
+    exit 1
+fi
+printf "Done.\n"
+
+
+
+

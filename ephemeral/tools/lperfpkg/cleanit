@@ -1,0 +1,35 @@
+#!/bin/sh
+
+if (( $# != 1 ))
+then
+    echo "ERROR: Argument list not understood." >&2
+    exit 1
+fi
+
+target_pkg=${1}
+
+if [[ -z ${target_pkg} ]]
+then
+    echo "ERROR: Missing required argument." >&2
+    exit 1
+fi
+
+if [[ ${target_pkg} != "perf" ]]
+then
+    echo "NOTE: ${target_pkg} is not a \"standard\" buildit target."
+    exit 0
+fi
+
+if [[ ! -e ${target_pkg}/buildit.conf ]]
+then
+    echo "ERROR: ${target_pkg} does not look like a valid package directory." >&2
+    exit 1
+fi
+
+if ! cd ${target_pkg} > /dev/null 2>&1
+then
+    echo "ERROR: Unable to change to ${target_pkg} directory." >&2
+    exit 1
+fi
+
+exec ../bin/cleanit

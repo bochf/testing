@@ -1,0 +1,27 @@
+#!/bin/bash
+
+
+if (( $(id -u) != 0 ))
+then
+    echo "ERROR: This can only be run as root!" >&2
+    exit 1
+fi
+
+typeset -i on_first_cpu=0
+
+echo "Processor information__________________________________________"
+/usr/sbin/dmidecode --type 4 | while read line
+do
+    if [[ ${line} == "Processor Information" ]]
+    then
+        (( on_first_cpu++ ))
+        if (( on_first_cpu != 1 )) ; then break ; fi
+    fi
+
+    if [[ ${line} == *Speed* ]]
+    then
+        echo "  "${line}
+    fi
+done
+echo "Processor state________________________________________________"
+{ turbostat true ; }  2>&1 | head -2 | sed -r 's/^.{12}//'

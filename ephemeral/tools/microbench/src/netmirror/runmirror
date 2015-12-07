@@ -1,0 +1,16 @@
+#!./netmirror
+
+# This setting should be one of the following:
+#   sender -----> Send but not sink
+#   receiver ---> Recieve from the sender, potentially send to sink
+#                 aka: mirror
+#   sink -------> Send and sink (other is receiver)
+set MODE = receiver
+
+set MIRROR_ADDRESS=all
+set MIRROR_PROTOCOL = tcp
+set MIRROR_PORT = 5454
+
+set VERBOSITY = debug
+
+go

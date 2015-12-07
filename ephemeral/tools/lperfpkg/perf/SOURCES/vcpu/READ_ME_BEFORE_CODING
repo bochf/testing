@@ -1,0 +1,16 @@
+The majority of the "low level" work here is done in the procperf libary.
+This is loosely based on the AIX perfstat libary. The ugliness of reading
+the Linux /proc file system is hidden by that library.
+
+The code in *this* directory is laid out in a few major sections:
+ options - Parsing and presentation of user options
+ gather  - Get the stats
+ munge   - Calculate the stats
+ scatter - Display the stats
+
+The key structures passed around here are:
+ options - Defined in options.h - Holds user options/defaults
+ cpu_list - Defined in gather.h - Holds all the CPU stats
+
+The x86 Linux version of this code is different than the LoP version in that
+it does a re-ordering of the CPUs in the system.

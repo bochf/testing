@@ -1,0 +1,26 @@
+#!/bin/bash
+
+# This is fork-city here!!! Not sure what options we have 
+lcpu=$(grep processor /proc/cpuinfo | wc -l)
+sockets=$(grep "physical id" /proc/cpuinfo | sort -u | wc -l)
+cores=$(grep "cpu cores" /proc/cpuinfo | head -1)
+cores=${cores##*:[[:space:]]}
+# Basic exception handling
+if [[ ${sockets} != +([0-9]) ]] ; then sockets=1 ; fi
+if [[ ${cores} != +([0-9]) ]] ; then cores=1 ; fi
+if (( ${sockets} == 0 )) ; then sockets=1 ; fi
+if (( ${cores} == 0 )) ; then cores=1 ; fi
+
+pcpu=$(( cores * sockets ))
+if (( pcpu > 0 ))
+then
+    smt=$((lcpu / pcpu))
+else
+    smt=1
+fi
+
+echo lcpu = ${lcpu}
+echo pcpu = ${pcpu}
+echo cores = ${cores}
+echo sockets = ${sockets}
+echo smt = ${smt}

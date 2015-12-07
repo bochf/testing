@@ -1,0 +1,685 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+          "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!-- 
+     ######################################################################
+     Python RFC - An open discussion on installation, maintenance, and
+     use of Python at BLP.
+
+     Emilio Aguinaldo <magdalo@malolos.ph>
+     William Favorite <wfavorite2@bloomberg.net>
+
+     Notes:
+     - Stolen from the Scripting Standards document
+     - ToDos are at the *end* of the document!
+
+     Version History:
+     0.1.0  11/24/15 - First documented version
+     0.2.0  11/24/15 - Minor edits
+	  0.3.0  11/24/15 - CSS updates
+	  0.4.0  11/30/15 - Merge in of Gene's additions
+	  0.5.0   12/1/15 - More Gene merge
+     - Some work to get the document through the HTML
+     validator.
+     
+     ######################################################################
+  -->
+
+
+<!-- **********************************************************************
+     This is what an inline comment looks like.
+     ********************************************************************** -->
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+    <style type="text/css">
+      <!--
+          /* Soften the background colour and move to a nice serifed fornt */
+          body
+          {
+          font-size: 12px;
+          background-color: #FAFAFA;
+          font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+          }
+
+          /* This is a title line. Very bold, very large, used once. */
+          .arttitle
+          {
+          font-size: 28px;
+          text-align:center;
+          font-weight:bold;
+          }
+          
+          /* Subtitle, used to provide a second, smaller block of text */
+          .artstitle
+          {
+          font-size: 12px;
+          text-align:center;
+          font-weight:bold;
+          }
+          
+          /* Used for the version string */
+          .artsstitle
+          {
+          font-size: 10px;
+          text-align:center;
+          }
+
+          /* def is used for definitions - where the indent is reversed */
+          .defblock
+          {
+          padding-left: 50px;
+          padding-right: 30px;
+          text-indent: -20px;
+          text-align:justify;
+          }
+
+          .subdef
+          {
+          padding-left: 80px;
+          padding-right: 40px;
+          text-indent: -20px;
+          text-align:justify;
+          }
+
+          /* Used as a markup tag - easily identifyable when proofing */
+          .debug
+          {
+          color: red;
+          }
+
+          /* Weighted, colored, and monospace - texttt is an alternate option */
+          .oscmd
+          {
+          font-family: Monaco, monospace;
+          font-weight:bold;
+          color: #333300;
+          }
+          
+          /* Designed to look like the terminal - background is lost when printing */
+          .bbtermcmd
+          {
+          font-family: Monaco, monospace;
+          font-weight:bold;
+          color: orange;
+          background-color: black;
+          padding:0px 2px 0px 2px;
+          }
+          
+          .subjhead
+          {
+          font-size: 12px;
+          margin-left: 20px;
+          font-weight:bold;
+          }
+
+          .subjsect
+          {
+          margin-left: 50px;
+          font-weight:bold;
+          }
+
+          .subjcont
+          {
+          margin-left: 50px;
+          margin-right: 20px;
+          }
+          
+          .footnote
+          {
+          font-size: 10px;
+          margin-left: 70px;
+          margin-right: 70px;
+          text-align:justify;
+          }
+          
+          .reference
+          {
+          font-size: 8px;
+          position:relative;
+          top:-5px;
+          }
+
+          .exponent
+          {
+          font-size: 8px;
+          position:relative;
+          top:-5px;
+          }
+
+          .thintable
+          {
+          margin-left: 55px;
+          margin-right: 40px;
+          border-collapse: collapse;
+          }
+
+          .thintd
+          {
+          padding: 5px;
+          border: 1px solid black;
+          vertical-align:text-top;
+          }
+
+          /* List table is like a thin table without borders */
+          .listtable
+          {
+          margin-left: 55px;
+          margin-right: 40px;
+          border-collapse: collapse;
+          }
+
+          .listtd
+          {
+          padding: 4px;
+          vertical-align:text-top;
+          }
+
+          .rlisttd
+          {
+          padding: 4px;
+          vertical-align:text-top;
+          text-align: right
+          }
+
+          /* Green on black box to put monospace code */
+          .codeblock
+          {
+          padding-top: 2px;
+          padding-bottom: 2px;
+          padding-right: 16px;
+          padding-left: 16px;
+          font-family: "Courier New", "Lucida Console", Monospace;
+          font-size: 9pt;
+          margin-left: 56px;
+          /* margin-right: 15px; */
+          width: 50em;
+          color: #00cc00;
+          background-color: black;
+          border-style: solid;
+          border-color: #777777;
+          border-width: 2px;
+          font-weight: bold;
+          }
+
+          .codenote { color: #aaaadd; }
+
+          /* This sits under a code block (or similar box) with the name of the
+          file or text such as "Figure 1."  */
+          .boxnote
+          {
+          margin-top: 0; /* Pull it in tight with the box above */
+          font-size: 10px;
+          margin-left: 70px;
+          margin-right: 70px;
+          text-align:justify;
+          }
+
+
+          .textit { font-style:italic; }
+          .texttt { font-family: Monaco, monospace; }
+          .textbf { font-weight:bold; }
+          .underline { text-decoration: underline; }
+
+
+          a:link { text-decoration: underline; color: #0000FF }
+          a:visited { text-decoration: underline; color: #0000FF }
+          /* Active is more like "visited" than immediate feedback. */
+          a:active { text-decoration: underline; color: #0000FF }
+          a:hover { text-decoration: underline; color: #0000FF }
+        -->
+    </style>
+
+    <title>On Resource Controls</title>
+  </head>
+
+  <body>
+
+    <p class="arttitle">On Resource Controls</p>
+    <p class="artstitle">Designing The Best Approach</p>
+	 <p class="artsstitle">Version: 0.5.0</p>
+
+	 
+
+    <!-- ############################################################################ -->
+    <p class="subjhead">Executive Overview</p>
+
+    <p class="subjcont">Resource controls on modern Unices should use the modern interfaces.</p>
+
+    <!-- ============================================================================ -->
+    <p class="subjsect">Sharing</p>
+
+    <p class="subjcont"> The concept of sharing resources is fundamental economics.  A resource with the right capacity, or available at the right times, can serve the needs of many users, and potentially do so at a lower cost than if each user had their own dedicated resource.   This concept applies everywhere - at home, farming, industry, markets... and certainly also computing.</p>
+
+    <p class="subjcont">Sharing implies a trade-off:</p>
+
+    <ul class="subjcont">
+	   <li>The shared resource should be a better value than giving each user a personal, dedicated, stand-alone resource</li>
+	   <li>There must be management of the shared resource that allows users to get their needs met a reasonable timeframe, and a means to arbitrate competition</li>
+    </ul>
+
+    <p class="subjsect">Managing a Shared Resource</p>
+    <p class="subjcont">It's a bad assumption that all users will play nicely together. Left unmanaged, it's disastrous for all users if just a few users are able to monopolize the needed resources, thereby denying them to all other users.</p>
+
+    <p class="subjcont">Therefore shared resources need to be managed. The manager must be able to:</p>
+
+    <ul class="subjcont">
+      <li>Group the stakeholders who are using the resource</li>
+      <li>Identify the shared resources</li>
+      <li>Set up the sharing facility, the governing rules</li>
+      <li>Define what reasonable access to the resource looks like</li>
+      <li>Where possible, arbitrate access to the resource during periods of heavy demand</li>
+      <li>Assess sharing problems</li>
+      <li>Maintain order, which may entail having to forcibly say "no" to requests or deny access</li>
+    </ul>
+
+    <p class="subjsect"> Resource Controls </p>
+    <p class="subjcont"> In computing, this management is termed resource control.  The compute resource to be shared include processor time, memory, I/O, multiple types of handles, and any other system resources that are shared.  While it's possible to tune every knob and dial, the focus should be on areas where there is known risk or competition.</p>
+
+
+    <!-- ############################################################################ -->
+    <p class="subjhead">On the use of <span class="texttt">ulimit</span></p>
+
+    <p class="subjcont">The costs and benefits of pursuing a ulimit based solution.</p>
+
+    <!-- ============================================================================ -->
+    <p class="subjsect">Benefits</p>
+
+    <table class="listtable">
+
+      <tr>
+        <td class="listtd" colspan="2">&bull;&nbsp;ulimits are a consistent interface across platforms</td></tr>
+      <tr>
+        <td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur in tincidunt ex, quis sodales elit. Integer id tempus lorem, nec imperdiet nibh. Proin et justo sit amet urna facilisis vehicula. Ut sollicitudin arcu lacus, quis tristique nunc bibendum at. Quisque aliquet nisl viverra neque elementum, eget euismod nibh pulvinar. Donec mi ipsum, consequat et viverra vestibulum, tincidunt eget ligula. Nam pulvinar mollis eros id tempus. Vestibulum orci lorem, feugiat nec dolor non, hendrerit viverra eros. Curabitur at sodales libero. Pellentesque pretium, elit at aliquam rhoncus, libero erat placerat est, nec ultricies diam dolor eu tortor.</td>
+      </tr>
+
+      <tr>
+        <td class="listtd" colspan="2">&bull;&nbsp;ulimits are a well understood interface</td></tr>
+      <tr>
+        <td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur in tincidunt ex, quis sodales elit. Integer id tempus lorem, nec imperdiet nibh. Proin et justo sit amet urna facilisis vehicula. Ut sollicitudin arcu lacus, quis tristique nunc bibendum at. Quisque aliquet nisl viverra neque elementum, eget euismod nibh pulvinar. Donec mi ipsum, consequat et viverra vestibulum, tincidunt eget ligula. Nam pulvinar mollis eros id tempus. Vestibulum orci lorem, feugiat nec dolor non, hendrerit viverra eros. Curabitur at sodales libero. Pellentesque pretium, elit at aliquam rhoncus, libero erat placerat est, nec ultricies diam dolor eu tortor.</td>
+      </tr>
+
+    </table>
+
+
+    <!-- ============================================================================ -->
+    <p class="subjsect">Implementation Downsides</p>
+
+    <table class="listtable">
+
+      <tr>
+        <td class="listtd" colspan="2">&bull;&nbsp;Exceeding a ulimit fails silently</td></tr>
+      <tr>
+        <td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur in tincidunt ex, quis sodales elit. Integer id tempus lorem, nec imperdiet nibh. Proin et justo sit amet urna facilisis vehicula. Ut sollicitudin arcu lacus, quis tristique nunc bibendum at. Quisque aliquet nisl viverra neque elementum, eget euismod nibh pulvinar. Donec mi ipsum, consequat et viverra vestibulum, tincidunt eget ligula. Nam pulvinar mollis eros id tempus. Vestibulum orci lorem, feugiat nec dolor non, hendrerit viverra eros. Curabitur at sodales libero. Pellentesque pretium, elit at aliquam rhoncus, libero erat placerat est, nec ultricies diam dolor eu tortor.</td>
+      </tr>
+
+      <tr>
+        <td class="listtd" colspan="2">&bull;&nbsp;ulimits do not handle a subset of resource constraints</td></tr>
+      <tr>
+        <td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">fork / process count Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur in tincidunt ex, quis sodales elit. Integer id tempus lorem, nec imperdiet nibh. Proin et justo sit amet urna facilisis vehicula. Ut sollicitudin arcu lacus, quis tristique nunc bibendum at. Quisque aliquet nisl viverra neque elementum, eget euismod nibh pulvinar. Donec mi ipsum, consequat et viverra vestibulum, tincidunt eget ligula. Nam pulvinar mollis eros id tempus. Vestibulum orci lorem, feugiat nec dolor non, hendrerit viverra eros. Curabitur at sodales libero. Pellentesque pretium, elit at aliquam rhoncus, libero erat placerat est, nec ultricies diam dolor eu tortor.</td>
+      </tr>
+
+      <tr>
+        <td class="listtd" colspan="2">&bull;&nbsp;ulimits must be implemented programatically </td></tr>
+      <tr>
+        <td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">Using the <a class="texttt" href="http://pubs.opengroup.org/onlinepubs/9699919799/utilities/ulimit.html">ulimit</a> command from the shell is highly problematic for a variety of reasons.</td>
+      </tr>
+
+    </table>
+
+
+    <!-- ############################################################################ -->
+    <p class="subjhead">AIX</p>
+
+    <!-- ============================================================================ -->
+    <p class="subjsect"> Basic per-process resource controls: <span class="texttt">setrlimit()</span>/<span class="texttt">ulimit</span></p>
+
+    <p class="subjcont"> AIX provides traditional UNIX resource controls through the <a class="texttt" href="https://www-01.ibm.com/support/knowledgecenter/ssw_aix_71/com.ibm.aix.basetrf1/getrlimit_64.htm?lang=en">setrlimit()</a> API and the corresponding <a class="texttt" href="http://www-01.ibm.com/support/knowledgecenter/ssw_aix_71/com.ibm.aix.cmds5/ulimit.htm?lang=en">ulimit</a> shell functionality that leverages <span class="texttt">setrlimit()</span>. The <span class="texttt">setrlimit()</span>/<span class="texttt">ulimit</span> facility governs several resources, applicable on a per-process basis. For each resource, the facility provides a tunable &quot;soft&quot; limit and a &quot;hard&quot; limit. The setrlimit facility contains the concept of an &quot;unlimited&quot; upper bound, which allow the upper bound to float to whatever the system will bear or until limited by some other mechanism. The set of <span class="texttt">setrlimit()</span> tuning is inherited across the <span class="texttt">fork()</span> system call by child processes.</p>
+
+    <p class="subjcont">Soft limits can be dynamically raised, up to the ceiling set by the corresponding hard limit, or dynamically lowered. Access to this function is limited to the user owning the target process ID and to privileged users (root).</p>
+
+    <p class="subjcont">Hard limits can be dynamically raised or lowered, but under stricter access control. Access to raise or lower this tuning is limited to privileged users, while unprivileged users are restricted and may only lower the tuning. Hard limits have an interesting property: an unprivileged process can create a limitation on itself using hard limits from which the process cannot escape.</p>
+
+    <table class="listtable">
+      <tr>
+        <td class="listtd textbf"><span class="texttt">setrlimit()</span>&nbsp;option&nbsp;&amp;&nbsp;unit</td>
+	     <td class="listtd textbf"><span class="texttt">ksh93</span>&nbsp;<span class="texttt">ulimit</span>&nbsp;option&nbsp;&amp;&nbsp;unit</td>
+	     <td class="listtd textbf">Description</td>
+	     <td class="listtd textbf">Enforcement Action</td>
+	   </tr>
+
+      <tr id="RLIMIT_CPU">
+	     <td class="listtd"><span class="texttt">RLIMIT_CPU</span> (ms)</td>
+	     <td class="listtd">-t (sec)</td>
+	     <td class="listtd">CPU time limit</td>
+	     <td class="listtd">Process is thrown SIGXCPU at soft limit; killed at hard limit </td>
+	   </tr>
+
+	   <tr id="RLIMIT_FSIZE">
+	     <td class="listtd"><span class="texttt">RLIMIT_FSIZE</span> (bytes) </td>
+	     <td class="listtd">-f (blocks)          </td>
+	     <td class="listtd">Maximum file size (bytes) </td>
+	     <td class="listtd">read/write call that would exceed file descriptor limit fails, returning EFBIG </td>
+	   </tr>
+
+	   <tr id="RLIMIT_NOFILE">
+	     <td class="listtd"><span class="texttt">RLIMIT_NOFILE</span>      ) </td>
+	     <td class="listtd">-n                   </td>
+	     <td class="listtd">Maximum number of file descriptors </td>
+	     <td class="listtd">open/creat/socket call that would exceed file descriptor limit fails, returning EMFILE </td>
+	   </tr>
+
+	   <tr id="RLIMIT_DATA">
+	     <td class="listtd"><span class="texttt">RLIMIT_DATA</span> (bytes)  </td>
+	     <td class="listtd">-d (kB)              </td>
+	     <td class="listtd">Data (heap) size (bytes) </td>
+	     <td class="listtd">malloc/new call fails, returns ENOMEM </td>
+	   </tr>
+
+	   <tr id="RLIMIT_STACK">
+	     <td class="listtd"><span class="texttt">RLIMIT_STACK</span> (bytes) </td>
+	     <td class="listtd">-s (kB)     </td>
+	     <td class="listtd">Stack size (bytes) </td>
+	     <td class="listtd">Process is thrown SIGSEGV </td>
+	   </tr>
+
+	   <tr id="RLIMIT_CORE">
+	     <td class="listtd"><span class="texttt">RLIMIT_CORE</span> (bytes)  </td>
+	     <td class="listtd">-c (blocks) </td>
+	     <td class="listtd">Core file size (bytes) </td>
+	     <td class="listtd">Core file is truncated </td>
+	   </tr>
+
+	   <tr id="RLIMIT_RSS">
+	     <td class="listtd"><span class="texttt">RLIMIT_RSS</span> (bytes) </td>
+	     <td class="listtd">-m (kB) </td>
+	     <td class="listtd">Resident set size, i.e. Memory pages in RAM </td>
+	     <td class="listtd">*Not currently enforced on AIX 7.1 </td>
+	   </tr>
+
+	   <tr id="RLIMIT_AS">
+	     <td class="listtd"><span class="texttt">RLIMIT_AS</span> (bytes) </td>
+	     <td class="listtd">-v (kB) </td>
+	     <td class="listtd">Address space (i.e. virtual memory) limit </td>
+        <td class="listtd">*Not currently implemented on AIX 7.1;  <i>Enhancement request DCR #MR121814525 </i> </td>
+	   </tr>
+
+	   <tr id="RLIMIT_THREADS">
+	     <td class="listtd"><span class="texttt">RLIMIT_THREADS</span> </td>
+	     <td class="listtd">-r             </td>
+	     <td class="listtd">Thread count limit  </td>
+	     <td class="listtd">pthread_create fails, returns EAGAIN </td>
+	   </tr>
+
+	   <tr id="RLIMIT_NPROC">
+	     <td class="listtd"><span class="texttt">RLIMIT_NPROC</span>   </td>
+	     <td class="listtd">-u             </td>
+	     <td class="listtd">Per-user process count limit  </td>
+	     <td class="listtd">fork fails, returns EAGAIN, when the calling process has the limit set, and where the fork would cause the system-wide count of processes owned by that user to exceed the limit.  Meanwhile, since setrlimit is per-process, the user's other processes may be subject to a different limit.  This limit is not consistently applied unless the admin can guarantee that all processes owned by the user will have the limit.   See <a class="texttt" href="#maxuproc">maxuproc</a> below, which is a more effective facility on AIX. </td>
+	   </tr>
+    </table>
+
+    <!-- ============================================================================ -->
+    <p class="subjsect">AIX: Notable System-wide limits</p>
+    <table class="listtable">
+      <tr>
+        <td class="listtd">Facility </td>
+        <td class="listtd">Limit</td>
+        <td class="listtd">Description</td>
+        <td class="listtd">Enforcement Action</td>
+      </tr>
+
+      <tr id="maxuproc">
+	     <td class="listtd">System tunable (sys0) maxuproc </td>
+	     <td class="listtd">4096, Default <span class="textit">Depends on BBCPU tag;</span></td>
+	     <td class="listtd">Max processes per user</td>
+	     <td class="listtd"><span class="texttt">fork()</span> fails, returns EAGAIN, when the <span class="texttt">fork()</span> would cause the system-wide count of processes owned by that user to exceed the limit.</td>
+      </tr>
+    </table>
+
+    <!-- ============================================================================ -->
+    <p class="subjsect">AIX Interprocess Communication (IPC) limits</p>
+
+    <p class="subjcont">IPC limits are fixed system-wide. Limits are not imposed on individual processes or users. A program can interrogate the values directly with the <a class="texttt" href="http://www-01.ibm.com/support/knowledgecenter/ssw_aix_71/com.ibm.aix.basetrf2/vmgetinfo.htm?lang=en">vmgetinfo()</a> system call and an <span class="texttt">IPC_LIMITS</span> command argument.</p>
+
+    <table class="listtable" id="ipc_limits">
+      <tr><td class="listtd textbf"> Parameter</td><td class="rlisttd textbf">Limit</td><td class="listtd textbf">Description</td></tr>
+      <tr><td class="listtd">semmni  </td><td class="rlisttd">        1048576</td><td class="listtd">Maximum number of semaphore IDs                            </td></tr>
+      <tr><td class="listtd">semmsl  </td><td class="rlisttd">          65535</td><td class="listtd">Maximum number of semaphores per semaphore ID              </td></tr>
+      <tr><td class="listtd">semopm  </td><td class="rlisttd">           1024</td><td class="listtd">Maximum number of operations per semop() call              </td></tr>
+      <tr><td class="listtd">semvmx  </td><td class="rlisttd">          32767</td><td class="listtd">Maximum value of a semaphore                               </td></tr>
+      <tr><td class="listtd">semume  </td><td class="rlisttd">           1024</td><td class="listtd">Maximum number of semaphore undo entries per process       </td></tr>
+      <tr><td class="listtd">semaem  </td><td class="rlisttd">          16384</td><td class="listtd">Maximum value for semaphore adjustment on exit             </td></tr>
+      <tr><td class="listtd">msgmax  </td><td class="rlisttd">        4194304</td><td class="listtd">Maximum message size                                       </td></tr>
+      <tr><td class="listtd">msgmnb  </td><td class="rlisttd">        4194304</td><td class="listtd">Maximum number of bytes per message queue                  </td></tr>
+      <tr><td class="listtd">msgmni  </td><td class="rlisttd">        1048576</td><td class="listtd">Maximum number of message queue IDs                        </td></tr>
+      <tr><td class="listtd">msgmnm  </td><td class="rlisttd">         524288</td><td class="listtd">Maximum number of messages per queue ID                    </td></tr>
+      <tr><td class="listtd">shmmni  </td><td class="rlisttd">        1048576</td><td class="listtd">Maximum number of shared memory IDs                        </td></tr>
+      <tr><td class="listtd">shmmax64</td><td class="rlisttd"> 35184372088832</td><td class="listtd">Maximum Shared Memory region size for a 64-bit process     </td></tr>
+      <tr><td class="listtd">shmmax32</td><td class="rlisttd">     3489660928</td><td class="listtd">Maximum Shared Memory region size for a 32-bit process     </td></tr>
+      <tr><td class="listtd">shmmin  </td><td class="rlisttd">              1</td><td class="listtd">Minimum Shared Memory region size                          </td></tr>
+      <tr><td class="listtd">shmseg64</td><td class="rlisttd">      268435456</td><td class="listtd">Maximum number of Shared Memory segments per 64-bit process</td></tr>
+      <tr><td class="listtd">shmseg32</td><td class="rlisttd">             11</td><td class="listtd">Maximum number of Shared Memory segments per 32-bit process</td></tr>
+    </table>
+
+    <!-- ============================================================================ -->
+    <p class="subjsect"><a href="http://www.redbooks.ibm.com/abstracts/sg245977.html">AIX Workload Manager</a></p>
+
+    <p class="subjcont">Workload Manager (WLM) is a major resource control facility that is directly integrated into the AIX OS. The technology was introduced in AIX 4.3.3 (1999) and is regarded as mature, stable and reliable. The use of WLM does not incur any additional software licensing, activations or fees.</p>
+
+    <p class="subjcont">WLM governs on the basis of class assignment (group), with optional sub-class (sub-group) designations. The smallest unit of membership in a class is a thread, but process membership is more common. Membership of a process or thread in a class is achieved through either manual assignment (see <a class="texttt" href="https://www-01.ibm.com/support/knowledgecenter/ssw_aix_71/com.ibm.aix.cmds6/wlmassign.htm?lang=en">wlmassign(1)</a> command and <a class="texttt" href="https://www-01.ibm.com/support/knowledgecenter/ssw_aix_71/com.ibm.aix.basetrf2/wlm_assign.htm?lang=en">wlm_assign(3)</a> API), by automatic assignment through a simple rules engine (see <a class="textt" href="https://www-01.ibm.com/support/knowledgecenter/ssw_aix_71/com.ibm.aix.osdevice/wlmexample_rules.htm?lang=en-us">rules(4)</a>), or by inheritance. Inheritance of class membership across forks is a property that is part of the class definition.</p>
+
+    <p class="subjcont">WLM can be set up to be <span class="textit">passive</span> (i.e. monitoring and statistics gathering only), <span class="textit">cpu only</span> or <span class="textit">active</span> with respect to enforcing resource controls. </p>
+
+    <p class="subjcont">WLM supports the concept of soft and hard limits. Where applicable, WLM supports the measurement of resources as a fixed quantities or as percentages of the system total.</p>
+
+    <p class="subjcont">The technology has garnered interest in the SA community for years, but (until now) hadn't been cultivated due to competing priorities. As of November 2015, WLM had not yet been leveraged on any Bloomberg servers.</p>
+
+    <!-- ============================================================================ -->
+    <p class="subjsect">AIX Workload Manager Resource Controls</p>
+
+    <p class="subjcont">The following limits are designated by class. Not all of them need to be specified.</p>
+
+    <ul class="subjcont">
+      <li><span class="textbf">Process &amp; Thread count limits</span></li>
+      <li><span class="textbf">CPU runtime tiering</span></li>
+      <li><span class="textbf">CPU time limits</span>, applicable to timeshare (SCHED_OTHER) processes</li>
+      <li><span class="textbf">Fair Share Scheduling Option</span>, affecting timeshare (SCHED_OTHER) scheduling among classes</li>
+      <li><span class="textbf">Memory limits</span>, which apply to total data usage (including heap and other private pages, but not shared memory)</li>
+      <li><span class="textbf">Disk I/O limits</span></li>
+      <li><span class="textbf">Login count and User connect time limits</span></li>
+      <li><span class="textbf">Time-of-day based resource controls</span></li>
+    </ul>
+
+    <p class="subjcont">Of these, the single most compelling for the Bloomberg AIX environment may be the memory limits facility, because that's been an area of demonstrated exposure in production. The other limits might be more useful in the multi-user dev environment.</p>
+
+    <!-- ============================================================================ -->
+    <p class="subjsect">AIX Workload Manager configuration files</p>
+
+    <p class="subjcont">Multiple configurations can be defined in <span class="texttt">/etc/wlm</span> with the default in <span class="texttt">/etc/wlm/current</span>.  The configuration is stored in a series of flat files used to configure the environment: <span class="texttt">description</span>, describing the configuration; <span class="texttt">classes</span>, enumerating the classes, class descriptions, tiers and defining attributes; <span class="texttt">limits</span>, specifying the classes' actual resource limits; <span class="texttt">rules</span>, specifying the auto-assignment rules attaching a process to a class; and <span class="texttt">shares</span>, if required, setting up the parameters for Fair Share scheduling.</p>
+
+    <p class="subjsect">AIX Workload Manager status</p>
+
+    <p class="subjcont">The <a class="texttt" href="https://www-01.ibm.com/support/knowledgecenter/ssw_aix_71/com.ibm.aix.cmds6/wlmstat.htm?lang=en">wlmstat</a>, <a class="texttt" href="https://www-01.ibm.com/support/knowledgecenter/ssw_aix_71/com.ibm.aix.cmds4/nmon.htm?lang=en">nmon</a> and <a class="texttt" href="https://www-01.ibm.com/support/knowledgecenter/ssw_aix_71/com.ibm.aix.performance/wlm_stat_screen_topas.htm?lang=en">topas</a> commands are among the several mechanisms to view the state of the classes in the WLM system.</p>
+
+    <!-- ============================================================================ -->
+    <p class="subjsect">AIX Workload Manager References</p>
+
+    <ul class="subjcont">
+      <li><a href="http://www.redbooks.ibm.com/abstracts/sg245977.html">IBM Redbook: AIX 5L Workload Manager</a></li>
+    </ul>
+
+
+    <!-- ############################################################################ -->
+    <p class="subjhead">Linux</p>
+
+    <!-- ============================================================================ -->
+    <p class="subjsect">cgroups</p>
+
+    <p class="subjcont">Cgroups or Control Group, available in RHEL6 and above, are a Linux kernel features to allow resources allocation, like cpuset, memory, cpu,  among hierarchically ordered group of processes running on a system. The main advantage of cgroups is allowing fine granularity of resource allocation and isolation. Having the possibility to allocate cgroup hierarchically (in a classic tree) provide the possibility to provide deep  sub pool of resources that won't overgrow the above level. For example, a cgroup with 10 cpus for a user can be split and allocate to subask without taking extra resources. <span class="debug">Multiple hierarchy support</span> is provided to allow for situations where the division of tasks into cgroups is distinctly different for different subsystems - having parallel hierarchies allows each hierarchy to be a natural division of tasks, without having to handle complex combinations of tasks that would be present if several unrelated subsystems needed to be forced into the same tree of cgroups. Any process generated by a parent bound with the cgroup automatically inherits the same cgroup allows organizing the work load on a system into related sets of tasks. A task may be re-attached to any other cgroup, if allowed by the permissions on the necessary cgroup file system directories. The last point underlines the dynamicity of the cgroup where process can be reorganized and rebalanced to best fit the system needs.</p>
+    
+    <p class="subjcont">As mentioned cgroup is a resource management and this means doesn't always guarantee performance improvement if not used correctly. The hierarchy structure offers a flexibility in management where system engineer can setup the main group under root giving permission to "op" to manage this group. Upon the cgroup preliminary hierarchy is setup it is up to development group to manage any further subdiivision and task allocation. Since cgroup is provide a  pseudo-file-system interface the operational can be performed as simple file system operation such <span class="texttt">mkdir</span> to create a hierarchy or <span class="texttt">echo</span> to assign value to the cgroup parameter. This is the easier way to manage and check cgroups but are also available api in <a href="http://libcg.sourceforge.net/html/index.html">libcgroup</a> or tools like <span class="texttt">cgexec</span>, <span class="texttt">cgset</span>, and more.</p>
+
+    <p class="subjcont"> The main disadvantage of cgroup usage sits in the complexity developers can face in managing a detailed configuration. Linux virtualization strongly uses this technology creating framework to abstract the complexity to simple conf files. Other tools try to leverage cgroup for cluster management like <a href="http://mesos.apache.org/">MESOS</a> (Wikipedia: <a href="https://en.wikipedia.org/wiki/Apache_Mesos">MESOS</a>). Compared with other UNIX technologies it may be less mature and we don't exclude to hit possible bugs, for this reason is  important  have robust tests for each deployment.</p>
+
+
+
+
+    <!-- ############################################################################ -->
+    <p class="subjhead">Solaris</p>
+
+    <!-- ============================================================================ -->
+    <p class="subjsect">Shell based <span class="texttt">ulimit</span>s</p>
+    <!-- ============================================================================ -->
+
+    <p class="subjcont">
+      ulimits are a shell implementation of the
+      <a class="texttt" href="http://docs.oracle.com/cd/E36784_01/html/E36872/getrlimit-2.html">setrlimit(2)/getrlimit(2)</a>
+      syscalls.  The implementation among shells is not identical, and can thus have unusual/unexpected behavior between
+      shells.  In particular, a ulimit can be lost when a 32-bit process calls a 64-bit process, or vice versa, since
+      several of the rlimits become undefined when they cross such an exec boundary, as discussions in detail with Solaris
+      kernel engineers have revealed.  These are corner cases to be sure, but they've appeared in many tickets over the
+      years, often unrecognized and misattributed to being "bugs" in the OS, when in fact rlimits are unable to express
+      the transitions in question.
+    </p>
+    <p class="subjcont">
+      It's worth noting that the Solaris <a class="texttt" href="http://docs.oracle.com/cd/E36784_01/html/E36872/getrlimit-2.html">getrlimit(2)</a> man page provides this annotation:
+    </p>
+
+    <pre class="texttt">
+      The rlimit functionality is now provided by the more general
+      resource control facility described on the setrctl(2) manual
+      page.  The  actions  associated  with  the  resource  limits
+      described  above are true at system boot, but an administra-
+      tor can modify the  local  configuration  to  modify  signal
+      delivery  or  type. Application authors that utilize rlimits
+      for the purposes of resource  awareness  should  investigate
+      the resource controls facility.
+    </pre>
+
+    <p class="subjcont">
+      As can be seen, the above recommends transitioning from the limited rlimit implementation to the kernel based
+      rctl (resource control) implementation, which is purely 64-bit, and has a well defined application to 32-bit
+      processes:
+    </p>
+
+    <!-- ============================================================================ -->
+    <p class="subjsect">Resource Controls, a Kernel Based Alternative to <span class="texttt">ulimit</span>s</p>
+    <!-- ============================================================================ -->
+
+    <p class="subjcont">
+      Starting with Solaris 7 and 8, the Operating System began to provide Resource Controls to eliminate the known
+      issues/limitations with rlimits.
+    </p>
+
+    <!-- ============================================================================ -->
+    <p class="subjsect">Resource Caps</p>
+    <!-- ============================================================================ -->
+
+    <!-- ============================================================================ -->
+    <p class="subjsect">Applying Resource Controls At Multiple Layers</p>
+    <!-- ============================================================================ -->
+
+    <table class="listtable">
+
+      <tr>
+        <td class="listtd" colspan="2">&bull;&nbsp;Zone</td>
+      </tr>
+      <tr>
+        <td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd"></td>
+      </tr>
+      <tr>
+        <td class="listtd" colspan="2">&bull;&nbsp;Project</td>
+      </tr>
+      <tr>
+        <td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd"></td>
+      </tr>
+
+      <tr>
+        <td class="listtd" colspan="2">&bull;&nbsp;Task</td>
+      </tr>
+      <tr>
+        <td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Curabitur in tincidunt ex, quis sodales elit. Integer id tempus lorem, nec imperdiet nibh. Proin et justo sit amet urna facilisis vehicula. Ut sollicitudin arcu lacus, quis tristique nunc bibendum at. Quisque aliquet nisl viverra neque elementum, eget euismod nibh pulvinar. Donec mi ipsum, consequat et viverra vestibulum, tincidunt eget ligula. Nam pulvinar mollis eros id tempus. Vestibulum orci lorem, feugiat nec dolor non, hendrerit viverra eros. Curabitur at sodales libero. Pellentesque pretium, elit at aliquam rhoncus, libero erat placerat est, nec ultricies diam dolor eu tortor.</td>
+      </tr>
+
+    </table>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    <!-- ############################################################################ -->
+    <p class="subjhead">About this document</p>
+
+    <p class="subjcont">This document is maintained by group 325. Contact one of the members of the group for any issues, questions, or concerns arising from this document.</p>
+
+    <!-- **********************************************************************
+         wfavorit:
+         I wanted to...
+         (1) order based on arbitrary (sort) order
+         (2) have Petrov at the top (that is what I do)
+         so... I orderd by sorting on the email address.
+         ********************************************************************** -->
+
+    <p class="subjsect">Contributors to this document:</p>
+
+    <ul class="subjcont">
+      <!-- <li>Emilio Aguinaldo &lt;magdalo@malolos.ph&gt;</li> -->
+      <li>Giovanni Rucher &lt;grucher@bloomberg.net&gt;</li>
+      <li>William Favorite &lt;wfavorite2@bloomberg.net&gt;</li>
+      <li>Eugene Schulman  &lt;eschulman6@bloomberg.net&gt;</li>
+      <li>Gordon Marler    &lt;gmarler@bloomberg.net&gt;</li>
+    </ul>
+
+    <p class="subjcont">Additional &quot;commentary&quot; can be found in the comments within the (X)HTML of this document. This is a <span class="textit">living</span> and <span class="textit">collaborative</span> document; we continually seek improvements / refinements to the recommendations herein. All feedback is appreciated.</p>
+
+    <!-- ############################################################################ -->
+    <!--
+        ToDos
+
+        [ ] Strip out all lorem ipsum (replace with content)
+        [ ] Clean up authors and other notes in the document
+
+        Done
+      -->
+
+
+
+
+  </body>
+</html>
+

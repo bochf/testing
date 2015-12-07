@@ -1,0 +1,852 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!---
+    WritingAProvider.html - Information on writing a CPUB provider
+
+    Authors:
+       Ottmar Mergenthaler - Top billing
+       William Favorite - Primary contact for errors.
+-->
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <style type="text/css">
+      body
+      {
+      font-size: 12px;
+      background-color: #FAFAFA;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      }
+
+      .arttitle
+      {
+      font-size: 28px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      .artstitle
+      {
+      font-size: 12px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      .artsstitle
+      {
+      font-size: 10px;
+      text-align:center;
+      }
+
+
+      .defblock /* Definition block - used for word-cap with indented text */
+      {
+      padding-left: 50px;
+      padding-right: 30px;
+      text-indent: -20px;
+      text-align:justify;
+      }
+
+      .subdef
+      {
+      padding-left: 80px;
+      padding-right: 40px;
+      text-indent: -20px;
+      text-align:justify;
+      }
+
+      .debug
+      {
+      color: red;
+      }
+
+      .oscmd
+      {
+      font-family: Monaco, monospace;
+      font-weight:bold;
+      color: #333300;
+      }
+      
+      .bbtermcmd
+      {
+      font-family: Monaco, monospace;
+      font-weight:bold;
+      color: orange;
+      background-color: black;
+      padding:0px 2px 0px 2px;
+      }
+      
+      .subjhead
+      {
+      font-size: 12px;
+      margin-left: 20px;
+      font-weight:bold;
+      }
+
+      .subjsect
+      {
+      margin-left: 50px;
+      font-weight:bold;
+      }
+
+      .subjcont
+      {
+      margin-left: 50px;
+      margin-right: 20px;
+      }
+      
+      .footnote
+      {
+      font-size: 10px;
+      margin-left: 70px;
+      margin-right: 70px;
+      text-align:justify;
+      }
+      
+      .exponent
+      {
+      font-size: 8;
+      position:relative;
+      top:-5px;
+      }
+
+      .reference
+      {
+      font-size: 8;
+      position:relative;
+      top:-5px;
+      text-decoration: none;
+      color: #000000;
+      }
+
+      .thintable
+      {
+      margin-left: 55px;
+      margin-right: 40px;
+      border-collapse: collapse;
+      }
+
+      .thintd
+      {
+      padding: 4px;
+      border: 1px solid black;
+      vertical-align:text-top;
+      }
+
+      .codetable
+      {
+      margin-left: 60px;
+      margin-right: 40px;
+      border-collapse: collapse;
+      font-family: Monaco, monospace;
+      font-weight: 600;
+      }
+
+      .codetd
+      {
+      padding: 0px;
+      font-family: Monaco, monospace;
+      font-size: 10px;
+      font-weight: 600;
+      vertical-align:text-top;
+      }
+
+      .tdgowide /* A special, "go wide" td just for one table */
+      {
+      table-layout:fixed;
+      width: 290px;
+      }
+      
+      .textit { font-style:italic; }
+      .texttt { font-family: Monaco, monospace; }
+      .textbf { font-weight:bold; }
+      .underline { text-decoration: underline; }
+
+      a:link { text-decoration: underline; color: #aa00aa; }
+      a:visited { text-decoration: underline; color: #aa00aa; }
+      /* Active is more like "visited" than immediate feedback. */
+      a:active { text-decoration: underline; color: #aa00aa; }
+      a:hover { text-decoration: underline; color: #aa00aa; }
+    </style>
+
+    <title>Writing a Provider for the CPUB Framework</title>
+  </head>
+  <body>
+
+
+    <p class="arttitle">Writing a Provider for the CPUB Framework</p>
+
+    <p class="artsstitle">Version: 1.3.0</p>
+
+    <hr width="65%" />
+   
+    <!-- ================================================================== -->
+    <p class="subjhead">Overview &amp; Background Information (The challenge)</p>
+
+    <p class="subjcont">The primary challenge (and greatest value) of CPUB is the ability to provide a simplistic reference to disparate statistics throughout a system. The framework then must repeatedly retrieve the same stat, keeping the previous value for diff (rate of change) purposes. The framework is challenged with a means to describe the data, and the provider is challenged with retrieving the data. This document will detail methods for keeping track of data items <span class="textit">within</span> the provider implementation. How the request comes from the framework to the provider implementation is an important place to begin this process. The &quot;tokenization&quot; of data items allows them to be combined into config files that define new ad-hoc tools that spring forth and are modified as the user sees fit. The problem of how to turn this standardized <span class="textit">token</span> (called a &quot;quad&quot;) into a specific data item is the topic of this document.</p>
+
+    <p class="subjcont">The quad is a four part descriptor that defines a piece of data and how to manage that data. It is a string representation divided by &quot;:&quot; (colon) symbols. The following is a BNF-ish description, and then a simplistic example of a quad:</p>
+
+    <p class="subjcont"><span class="oscmd">&lt;provider&gt;:&lt;provider_arguments&gt;:&lt;data item&gt;[:&lt;data arguments&gt;]</span></p>
+
+    <ul class="subjcont">
+
+      <li><span class="texttt">&lt;provider&gt;</span> - This is the name of the provider. The provider is a source of data (a unit of code) that can <span class="textit">provide</span> a set of data items. A provider tends to be defined on a single data source such as an API or a <span class="texttt">/proc</span> file. A provider can also define a <span class="textit">subject</span> such as a particular thing that might have multiple sources. (This is significantly more complex to write than a single <span class="textit">source</span> example - as will be seen later in this document. It is referred to as the &quot;Complex model&quot;.)</li>
+
+      <li><span class="texttt">&lt;provider_arguments&gt;</span> - This is a rarely used section (typically an empty quad) that allows instance information or directives to what the provider should be doing. So for example, if a provider serves per-process information, then this would contain the PID of the process the provider should monitor.</li>
+
+      <li><span class="texttt">&lt;data item&gt;</span> - This is a specific data item the provider can serve. One common example might be &quot;memfree&quot; would be a data item provided by the &quot;meminfo&quot; provider.</li>
+
+      <li><span class="texttt">[:&lt;data arguments&gt;]</span> - Operations on the data (prior to display) can be entered here. This is not always used, and when it is not used, then the final &quot;:&quot; is omitted as well. An example of this is the &quot;diff&quot; argument, which says to serve the <span class="textit">difference</span> between this iteration's data and the last. Another is &quot;psavg&quot;, which says to average the data to a per-second value. These can be joined in any manner (they are identified with a simplistic pattern match), but the convention is to join multiple data item arguments with a &quot;.&quot; (period) such as &quot;diff.psavg&quot;.</li>
+
+    </ul>
+
+    <p class="subjcont">A working (valid) sample is one of the timestamp data points from the core provider<a href="#core_provider" class="reference">*</a>:</p>
+
+    <p class="subjcont"><span class="oscmd">core::24HHMMSS</span></p>
+
+    <p class="subjcont">This will provide a simple HHMMSS (where hours are 0 - 23) timestamp for each iteration of the framework. The core provider does not support arguments on it's data types (that are typically strings or more complex types), so the final quad argument has been omitted.</p>
+
+    <a name="core_provider"></a>
+    <p class="footnote">[* The core provider is a common provider to all the platforms. It generates a number of different timestamps and/or iteration values. ]</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Language Choice and Implementation Issues (Let's get this out of the way)</p>
+
+    <p class="subjcont">The code for this project is C. The only two language contenders were C and C++. C was chosen for compatibility with the various header files. Some of which are not properly wrapped/handled in C++. That said, the problem here is really an object oriented one. The provider is expected to have several public interfaces that the framework can rely upon. Furthermore, there are a number of structs and functions that are provided to your provider implementation that you can rely upon. So, in short, you should &quot;inherit&quot; the code in providers and that should be your &quot;public&quot; interface to the framework. This OO approach will be discussed in detail throughout the sections that follow.</p>
+
+    <p class="subjcont">For example, it would be ideal for the provider implementation to inherit and override (extend) functionality provided by the base provider class. This is a C++ (object-oriented) concept. Instead using the C language, each provider uses and is accessible by a set of APIs provided by the <span class="texttt">providers.h/c</span> code. This insures that there is a consistent interface to the framework (and back), yet all the ugly implementation specific details remain obfuscated by the provider.</p>
+
+    <p class="subjcont">Unfortunately this means that the language-enforced constraints of C++ are missing and developers must rely upon <span class="textit">convention</span> to enforce the OO concepts of the framework.</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">How Your Provider Is Called (Pay attention, this is important)</p>
+
+    <p class="subjcont">There is no reference to your providers header file (function prototypes) in the framework.</p>
+
+    <p class="subjcont">The previous sentence is important in understanding <span class="textit">how</span> your provider can plug into the framework. The provider must provide four interfaces (functions) to ther framework. One function is the registration of the remaining three (and that is usually buried in a library implementation). The remaining three are &quot;standardized&quot; interfaces that the framework only knows through function pointers. From those three interfaces, the provider is tasked with retrieving data for the framework.</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Data Structures for Providers (How it ties together)</p>
+
+    <p class="subjcont">Data is broken down into provider and data item structures. A provider structure forms a linked list of all provider related data. Data item structures are individual data items that are served up by the provider. A frequently used example is memory and memfree. If your provider got its info from the memdata API, then the provider would likely be called &quot;memdata&quot;. (This helps the user find their way back to the API if they need detailed information on what the stats mean or how they are derived.) The data item here is memfree (a member of the fictional memdata struct/API).</p>
+
+    <p class="subjcont">The provider framework is accessible from a <span class="texttt">proot</span> struct. This struct references a linked list of <span class="texttt">provider</span> structs and <span class="texttt">pitem</span> structs. The list of providers is used by the framework to track things such as what providers are active (those that will have threads spawned), how to activate, and update data items. The list of <span class="texttt">pitem</span> structs is an ordered list of items that the writer needs to commit to the final destination. For this reason, the <span class="texttt">proot</span> struct is the common access point to the data between framework components.<a href="#proot_caveat" class="reference">*</a></p>
+
+    <p class="footnote">[* As a general rule, the <span class="texttt">proot</span> struct is only used <span class="textit">outside</span> of the provider. It is used <span class="textit">inside</span> the provider implementation only when the provider first registers itself. ]</p> 
+
+    <table align="center">
+      <tr>
+        <td class="thintd"><img src="ProviderData.png" alt="The proot based data structures" /></td>
+      </tr>
+      <tr>
+        <td>Fig 1. Structure of provider data</td>
+      </tr>
+    </table>
+
+    <p class="subjcont">The <span class="texttt">proot</span> struct tracks all providers (<span class="texttt">struct provider</span>) in the system as well as all <span class="textit">active</span> data items (<span class="texttt">struct pitem</span>). The <span class="texttt">proot</span> holds references to all items the framework needs to know about. Provider and data item details are managed through the &quot;private&quot; parts of their respective structs.</p>
+
+    <p class="subjcont">The <span class="texttt">pitem</span> structure holds the information needed to represent the data when &quot;printing&quot;<a href="#printing" class="reference">*</a> to external sources. This includes a reference (pointer) to the data, the (explicit) data type referred to, the header text, the name of the item how the data should be &quot;munged&quot; and the linked list pointer to the next data item. </p>
+
+    <a name="printing"></a>
+    <p class="footnote">[* &quot;Printing&quot; here refers to printing to stdout, a file, saving in a binary format, alarming, etc... Not necessarily just what is needed to write the data to the screen. ]</p>
+
+    <p class="subjcont">The <span class="texttt">pitem</span> structure also holds &quot;private&quot; items used by the provider to keep track of how the data item is retrieved from the system. One example of this is the <span class="texttt">sioffset</span> item (Struct Item OFFSET). This is the number of bytes to add to the base of the struct to find this specific member in the struct. This mathematical reference is much easier than keeping track of (and then updating) a series of pointers to previous, current, and presentable<a href="#data_ref" class="reference">*</a> data. The <span class="texttt">dstruct</span> pointer is a reference to a struct of the providers own design that may be used to pull together whatever is needed to retrieve this information on each iteration. As the name suggests, it is a struct, but because it is a void pointer it can be a struct, a string, or a reference (pointer) to any data item.</p>
+
+    <p class="footnote">[* The concept here is that when pulling data from an API into a struct, there are two structs. Previous and Current are two structs that rotate each iteration. Current becomes Previous, then what was Previous gets overwritten with the &quot;new&quot; Current values. Each iteration, the data is diffed or averaged into what is a presentable value. The presentable value is the data reference pointed to by the <span class="texttt">pitem-&gt;data_ptr</span> value and what is passed to the writer for output. If each <span class="texttt">pitem</span> struct tracked individual references to previous and current values, then these would need to be rotated as well. So, just before the data is collected for the provider the structs are rotated - and the individual p(rovider )item updates only need to find a reference to their data by finding the offset from the rotated values of the data structures. ]</p>
+
+    <p class="subjcont">The <span class="texttt">next_*</span> items are used to hold the linked lists together. <span class="texttt">next_opi</span> is used for the <span class="texttt">proot</span> linked list of output items. (The writer walks this ordered list when writing items.) The <span class="texttt">next_ui</span> member is used to maintain the (optional) &quot;update items&quot; list. (The provider can walk this list when determining what needs to be done to update all items that will go to the writer module.)</p>
+
+    <p class="subjcont">A &quot;sign_flag&quot; member was added to the <span class="texttt">pitem</span> struct. This is an <span class="textit">optional</span> method of storing the sign of a value. The primary reason for this &quot;out of band&quot; sign storage is because the user may opt to diff the data on a data type that is unsigned. (For example: A memory value would be unsigned as you cannot have <span class="textit">negative</span> memory. The user then chooses to diff this value to see only changes. By default, most provider implementations will use the same data type for this storage as it retrieved the data from. So if the data goes negative (memory shrank over an iteration) then the negative aspect cannot be properly stored in the native data type that was never designed to represent negative values.) The <span class="texttt">sign_flag</span> value can hold the sign for an unsigned type (as well as for signed types). The writer modules have been coded to respect the traditional signed types as well as the sign bit set here. The <span class="texttt">sign_flag</span> is explicity unset in the functions provided for <span class="texttt">pitem</span> creation to prevent it inadvertenly being set on a signed datatype that is negative. If the data is negative, the provider should use one method or the other (either set the <span class="texttt">sign_flag</span> and the |VALUE| (absolute value) regardless of the type, or let the value be represented as negative in the native signed type), but not both. The provided <span class="texttt">CalcData()</span> function will use the <span class="texttt">sign_flag</span> and save <span class="textit">only</span> the absolute value of the data in the supplied type - regardless of it being signed or unsigned type.</p>
+
+         <table class="codetable">
+      <tr>
+        <td class="codetd" colspan="4">struct pitem</td>
+      </tr>
+      <tr>
+        <td class="codetd" colspan="4">{</td>
+      </tr>
+      <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">/* PUBLIC */</td>
+        <td class="codetd"></td>
+        <td class="codetd"></td>
+      </tr>
+      <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">char&nbsp;name[MAX_QPART_LEN];</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">Holds the data item name</td>
+      </tr>
+      <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">int data_type;</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">Data type flag identifier</td>
+      </tr>
+
+      <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">void *data_ptr;</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">A reference to the end/printable data</td>
+      </tr>
+
+      <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">char*&nbsp;header[MAX_QPART_LEN];</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">Header used when output needs to label data</td>
+      </tr>
+
+      <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">int munge_flag;</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">How the data is massaged (derived from data item args)</td>
+      </tr>
+
+      <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">int sign_flag;</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">Optional storage location for the sign bit</td>
+      </tr>
+
+      <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">struct pitem *next_opi;</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">Used to walk the list of items to be output</td>
+      </tr>
+
+      <tr>
+        <td class="codetd" colspan="4">&nbsp;</td>
+      </tr>
+
+      <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">/* PRIVATE */</td>
+        <td class="codetd"></td>
+        <td class="codetd"></td>
+      </tr>
+
+      <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">unsigned long sioffset;</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">Used by the &quot;dynamic method&quot; providers to find struct members</td>
+      </tr>
+
+      <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">struct pitem *next_ui;</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">Linked list of &quot;update&quot; items</td>
+      </tr>
+
+      <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">void *dstruct;</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">Used primarily by &quot;complex method&quot; providers</td>
+      </tr>
+      <tr>
+        <td class="codetd" colspan="4">};</td>
+      </tr>
+
+</table>
+
+
+    <p class="subjcont">The <span class="texttt">provider</span> structure holds all references to items needed by the framework for the provider including the update item list. To be more specific, it is the primary interface <span class="textit">into</span> the provider. The intent is for most other provider data structures to be defined statically to the provider implementation. While the update list is an internal <span class="textit">housekeeping</span> kind of structure, it is provider for by the provider.h/c &quot;base class&quot; because it is a common need of all providers. This is <span class="textit">somewhat like</span> a C++/OOP class would contain the data - keeping it obfuscated from external sources.</p>
+
+    <p class="subjcont">One of the more notable differences with the <span class="texttt">provider</span> structure is the inclusion of three function pointers for the well-defined external interfaces to the provider. These are called: <span class="texttt">update()</span>, <span class="texttt">list()</span>, and <span class="texttt">enable()</span>. (More on these later.) The other items are more &quot;intuitive&quot;, such as <span class="texttt">update_required</span> that is a flag to determine if the provider has an active data item. (This will be used to determine if a worker thread needs to be spawned for this provider to do updates. It is set when the first data item in that provider is activated.) The <span class="texttt">name</span> and linked list <span class="texttt">next</span> items are fairly obvious.</p>
+
+   <table class="codetable">
+      <tr>
+        <td class="codetd" colspan="4">struct provider</td>
+      </tr>
+      <tr>
+        <td class="codetd" colspan="4">{</td>
+      </tr>
+      <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">/* PUBLIC */</td>
+        <td class="codetd"></td>
+        <td class="codetd"></td>
+      </tr>
+
+     <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">char name[MAX_QPART_LEN];</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">The name of the provider (first quad part)</td>
+      </tr>
+
+     <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">int update_required;</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">Boolean flag to determine if provider is &quot;hot&quot;</td>
+      </tr>
+
+     <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">int (*refresh)(int interval);</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">&quot;update()&quot; function pointer</td>
+      </tr>
+
+     <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">int (*listavail)(int dflag);</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">&quot;list()&quot; function pointer</td>
+      </tr>
+
+     <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd tdgowide">struct&nbsp;pitem&nbsp;*(*enablepitem)(struct&nbsp;qparts&nbsp;*qp);</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">&quot;enable()&quot; function pointer</td>
+      </tr>
+
+      <tr>
+        <td class="codetd" colspan="4">&nbsp;</td>
+      </tr>
+
+     <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">struct provider *next;</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">Linkage for the provider list</td>
+      </tr>
+
+      <tr>
+        <td class="codetd" colspan="4">&nbsp;</td>
+      </tr>
+
+      <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">/* PRIVATE */</td>
+        <td class="codetd"></td>
+        <td class="codetd"></td>
+      </tr>
+
+      <tr>
+        <td class="codetd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="codetd">struct pitem *ui_list;</td>
+        <td class="codetd">&nbsp;&#8678;&nbsp;</td>
+        <td class="codetd">Holds list of items to be updated (optional)</td>
+      </tr>
+ 
+      <tr>
+        <td class="codetd" colspan="4">};</td>
+      </tr>
+
+   </table>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Ways To Write A Provider (Use what works best with your data)</p>
+
+    <!-- ********** -->
+    <p class="subjsect">The &quot;Dynamic Method&quot; (I do pointer math for fun)</p>
+
+    <p class="subjcont">The most popular method is to programmatically find your way to the data. This method is a response to APIs that return data in structures. This basically boils down to &quot;if the requested data is x then record the offset for struct member x; if the requested data is y then record the offset for struct member y...&quot;. Once the connection has been made - the update only involves retrieving the data from the offset of both structs (if diff-ing) and inserting into the destination location. After the offset is determined, the update code never needs to know what struct item it actually was.
+The most used tool in this &quot;method&quot; is the <span class="texttt">sioffset</span> value that tracks the offset from the base of the struct to the data item. </p>
+
+    <!-- ********** -->
+    <p class="subjsect">The &quot;Item Specific Method&quot; (Each data item is <span class="textit">special snowflake</span>)</p>
+
+    <p class="subjcont">Most providers will use the dynamic method and the rest will likely use the complex method, but a few may use the &quot;item specific&quot; method. This is where the data in a provider may come from different APIs - but has been joined under a common provider because they are somehow <span class="textit">related</span>. The example provider that most exlempifies this is the &quot;core&quot; provider. Some data in the core provider comes from <span class="texttt">time()</span>, some from <span class="texttt">gettimeofday()</span>, some from other APIs. Because they are all timestamps, they have been joined into a single provider. But on update, the provider needs to know what API to call for <span class="textit">each</span> (type of) data item. (Interestingly, the core provider (re)uses <span class="texttt">sioffset</span> to hold a <span class="texttt">#define</span>'d tag that is used in a <span class="texttt">switch()</span> to differentiate between each <span class="textit">method</span> to retrieve the data for that data item.)</p>
+
+    <!-- ********** -->
+    <p class="subjsect">The &quot;Complex Method&quot; (I've got 99 structs...)</p>
+
+    <p class="subjcont">Calling this method &quot;complex&quot; is not exactly justified - it is kind of a &quot;catch all&quot; for providers that have to do more specialized requests for data. This is a case where the same API/method may be used to retrieve the data, but it needs to be called more than once, with different data sets. A reference to this type of provider is the &quot;process&quot; provider. In the process provider, there are effectively <span class="textit">two</span> lists of items that the provider is aware of: the list of PIDs and the related previous and current data structures and then another list of the output data items. If the provider simply kept PID references on each data item, it might have multiple references to the PID and may update the same PID multiple times as it walked through the item list doing updates. Instead, it uses a <span class="textit">two pass</span> method where it updates all PIDs from a PID list, then it calculates all items from the per-PID retrieval it just completed.</p>
+
+    <table class="thintable">
+      <tr>
+        <td></td>
+        <td class="thintd">Dynamic</td>
+        <td class="thintd">Item-Specific</td>
+        <td class="thintd">Complex</td>
+      </tr>
+      <tr>
+        <td class="thintd">Overview</td>
+        <td class="thintd">The provider tracks all the data. The pitem tracks a pointer to its data.</td>
+        <td class="thintd">Each data item type has a different code path.</td>
+        <td class="thintd">Varies - but may entail special data retrieval and handling.</td>
+      </tr>
+      <tr>
+        <td class="thintd">Strengths</td>
+        <td class="thintd">Extremely lightweight, scales well.</td>
+        <td class="thintd">Logically groups like data that uses unlike retrieval methods.</td>
+        <td class="thintd">Can present more meaningful data and potentially lower cost.</td>
+      </tr>
+      <tr>
+        <td class="thintd">Weaknesses</td>
+        <td class="thintd">Pointer management is a bit complex. Code can be &quot;crafty&quot;.</td>
+        <td class="thintd">Processing updates involves complex code paths.</td>
+        <td class="thintd">The hardest of all to code.</td>
+      </tr>
+      <tr>
+        <td class="thintd">Reference provider<a href="#refprov" class="reference">*</a></td>
+        <td class="thintd">perfstat.cputotal (AIX); meminfo (Linux)</td>
+        <td class="thintd">core (all)</td>
+        <td class="thintd">file.stat (all); process (AIX)</td>
+      </tr>
+    </table>
+
+    <a name="refprov"></a>
+    <p class="footnote">[* What this document lacks in concept coverage should be completed by looking at the code and comments in the representative provider implementations. In short, refer to the code. ]</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">APIs and Interfaces (Look before you write)</p>
+
+    <p class="subjcont">The <span class="texttt">providers.h</span> file has proper descriptions of the functions used for provider management. What follows is a quick run-down of all the functions. Make note that the &quot;Private&quot; and &quot;Public&quot; usage tags are really about <span class="textit">design</span> and <span class="textit">intent</span> as the C language has no formal recognition of these conventions.</p>
+
+    <table class="thintable">
+      <tr>
+        <td class="thintd"><span class="textbf">API</span></td>
+        <td class="thintd"><span class="textbf">Usage</span></td>
+        <td class="thintd"><span class="textbf">Description</span></td>
+      </tr>
+      <tr>
+        <td class="thintd"><span class="texttt">Providers()</span></td>
+        <td class="thintd">Public</td>
+        <td class="thintd">Initializes the <span class="texttt">proot</span> structure. Called <span class="textit">once</span> by <span class="texttt">main()</span>.</td>
+      </tr>
+      <tr>
+        <td class="thintd"><span class="texttt">RegisterProvider()</span></td>
+        <td class="thintd">Private</td>
+        <td class="thintd">Initializes a <span class="texttt">provider</span> structure and adds it to the <span class="texttt">proot</span> structure.</td>
+      </tr>
+      <tr>
+        <td class="thintd"><span class="texttt">NewPItem()</span></td>
+        <td class="thintd">Private</td>
+        <td class="thintd">Initializes a <span class="texttt">pitem</span> struct.</td>
+      </tr>
+      <tr>
+        <td class="thintd"><span class="texttt">StrToQuadPartsCreate()</span></td>
+        <td class="thintd">Private/Public</td>
+        <td class="thintd">Creates a <span class="texttt">qparts</span> struct from a string quad representation.</td>
+      </tr>
+      <tr>
+        <td class="thintd"><span class="texttt">StrToQuadPartsFill()</span></td>
+        <td class="thintd">Private/Public</td>
+        <td class="thintd">Fills an existing <span class="texttt">qparts</span> struct from a string quad representation.</td>
+      </tr>
+      <tr>
+        <td class="thintd"><span class="texttt">DumpPItemList()</span></td>
+        <td class="thintd">Public</td>
+        <td class="thintd">Called by the framework to have all providers dump data item lists</td>
+      </tr>
+      <tr>
+        <td class="thintd"><span class="texttt">DumpQuadData()</span></td>
+        <td class="thintd">Private</td>
+        <td class="thintd">Used by a provider <span class="texttt">list()</span> implementation to consistently format expected output data.</td>
+      </tr>
+      <tr>
+        <td class="thintd"><span class="texttt">ShouldDiff()</span></td>
+        <td class="thintd">Private</td>
+        <td class="thintd">Simple test to see if quad data item arguments call for a diff (between latest and last values).</td>
+      </tr>
+      <tr>
+        <td class="thintd"><span class="texttt">ShouldPSAvg()</span></td>
+        <td class="thintd">Private</td>
+        <td class="thintd">Simple test to see if quad data item arguments call for a psavg (average per-second value).</td>
+      </tr>
+      <tr>
+        <td class="thintd"><span class="texttt">GetProviderByName[Str|QP]()</span></td>
+        <td class="thintd">Public/Private</td>
+        <td class="thintd">Retrieve a <span class="texttt">provider</span> reference given a quad representation in string or <span class="texttt">qparts</span> format.</td>
+      </tr>
+      <tr>
+        <td class="thintd"><span class="texttt">EnableDataPoint()</span></td>
+        <td class="thintd">Public</td>
+        <td class="thintd">Enable a data item based on a quad string. The <span class="texttt">pitem</span> structure for this data point may not exist until this is called. So this should be called before attempting to retrieve the item. Called exclusively by the framework.</td>
+      </tr>
+      <tr>
+        <td class="thintd"><span class="texttt">InsertUpdateItem()</span></td>
+        <td class="thintd">Private</td>
+        <td class="thintd">Used by the provider as a uniform means to manage (add to) the optional update item list. The code here is <span class="textit">painfully</span> simple - but the point is to simplify, standardize, and streamline this much as possible for the provider developer.</td>
+      </tr>
+      <tr>
+        <td class="thintd"><span class="texttt">GetActiveProviderCount()</span></td>
+        <td class="thintd">Public</td>
+        <td class="thintd">Used by the framework to count the number of providers that are active (have active data items). This is obviously called after the data items have been activated.</td>
+      </tr>
+      <tr>
+        <td class="thintd"><span class="texttt">GetNextActiveProvider()</span></td>
+        <td class="thintd">Public</td>
+        <td class="thintd">Used as a means to walk the <span class="texttt">provider</span> list returning only those providers that are active.</td>
+      </tr>
+      <tr>
+        <td class="thintd"><span class="texttt">CalcData()</span></td>
+        <td class="thintd">Private</td>
+        <td class="thintd">Simplifies the calculating data and assigning it to the output location for the provider's <span class="texttt">update()</span> implementation.</td>
+      </tr>
+    </table>
+
+    <p class="subjcont">While there is not a significant number of cases, there are APIs in the <span class="texttt">providers.h/c</span> &quot;framework&quot; that are <span class="textit">cooperative</span>. This means effectively means that if you stay in the framework design you are ok, if you decide to roll your own implemetation you should do so carefully. Efforts have been made in the code documentation to note these issues, but the most notable is the <span class="texttt">EnableDataPoint()</span> and <span class="texttt">NewPItem()</span> functions. <span class="texttt">EnableDataPoint()</span> is called externally, and will call the provider's <span class="texttt">enable_pitem()</span> implementation, which is expected to call <span class="texttt">NewPItem()</span> internally. Because writer items need to be saved in the <span class="texttt">pitem</span> struct (that the provider should not typically care about) these two provided functions will handle this for the provider writer. They do this by <span class="textit">piggy-backing</span> the data onto the <span class="texttt">qparts</span> struct that is passed between the functions. The provider's <span class="texttt">enable_pitem()</span> and <span class="texttt">update()</span> implementations will (likely) be oblivious to this data handling that happens on its behalf. If the provider writer were to re-implement these functions, the implementation would be responsible for items that have little or nothing to do with providing data.</p>
+
+    <p class="subjcont">The following image (Fig. 2) is an over-simplified representation of the interface between the portions of code. A few items are of note:</p>
+
+    <ul class="subjcont">
+      <li>Some providers rely on library code (such as common functions used for that platform).</li>
+      <li>One provider does not rely on library code at all. That is the &quot;core&quot; provider. It is registered directly in <span class="texttt">main()</span> even though it uses the same interfaces as other providers. All other providers are built into libraries and are registered from a single library registration call. (This is really a legacy issue. It was the first provider written - before the libraries were implemented.)</li>
+      <li><span class="texttt">providers.c/h</span> <span class="textit">enforces</span> a common / consistent interface to <span class="underline">all</span> the providers. For example, the common provider registration function insures that the four required functions are set when establishing the provider. By this measure, the common provider code serves as an interface to both the provider (from external to the provider) and to the provider data (from within the provider). The point here is to <span class="textit">objectify</span> the provider giving all the differing implementations a common interface.</li>
+      <li>The framework knows to call the three provider &quot;actions&quot; (enable item, list, &amp; update) through the registered functions. In this respect, the providers are accessed directly from the framework.</li>
+    </ul>
+
+    <table align="center">
+      <tr>
+        <td class="thintd"><img src="APIInterfaces.png" alt="Logical view of provider interfaces" /></td>
+      </tr>
+      <tr>
+        <td>Fig 2. Data flow through API interfaces</td>
+      </tr>
+    </table>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Library Conventions (Managing a diverse build tree)</p>
+
+    <p class="subjsect">OS specific providers are built as part of a OS specific library.</p>
+
+    <p class="subjcont">All the OS specific code resides in a OS specific library. The framework does not need to concern itself with the provider details (such as function names, data structures, or data access methods). The library has a single registration point for all providers in the library, and then each provider supplies a highly standardized interface through that registration point. The three functions that each provider &quot;publishes&quot; will be covered later in the document, but the key point here is that the boundaries (requirements) of the providers are well defined.</p>
+
+    <p class="subjsect">&quot;Common&quot; providers are built as part of a library.</p>
+
+    <p class="subjcont">Providers that are cross-platform are built into the common library. (The core provider is an exception to this rule.) The common provider library works like the OS-specific versions, except that it must compile and run on all platforms that cpub runs on. (If you find that your code is littered with port-specific <span class="texttt">#ifdef</span>s, then you might consider writing a different implementation of the same provider in each OS-specific build/library tree.)</p>
+
+    <p class="subjsect">The OS-specific library is built in a directory name matching <span class="texttt">uname -s</span></p>
+
+    <p class="subjcont">The make/build process can find the OS specific parts to build using this method. This way one OS'es APIs are not (tried to be) compiled on another OS.</p>
+
+    <p class="subjsect">Each OS-specific library has a single, uniquely named header file.</p>
+
+    <p class="subjcont">This is typically <span class="texttt">&lt;OSNAME&gt;providers.h</span>. This could be done in a more crafty manner, but the current design causes an error if there is some sort of Makefile mishap and the wrong item is somehow referenced. So, for example, the AIX header file is <span class="texttt">AIX/aixproviders.h</span>.</p>
+
+
+    <p class="subjsect">All providers (from the library) are loaded with a single function that
+        is the &quot;load-point&quot; for all provider functionality.</p>
+
+    <p class="subjcont">This function name must be defined in the previously mentioned header file. This function name must be: <span class="texttt">ALLOSRegister()</span> and it takes a single parameter of a <span class="texttt">proot</span> (provider root) struct. All the <span class="texttt">providers</span> will hang off this struct.</p>
+
+    <p class="subjsect">All the providers use the <span class="texttt">provider</span> struct.</p>
+
+    <p class="subjcont">Within this struct is a series of function pointers that reference the methods used to interact with the provider. It is up to the provider (developer) to decide how to fulfill the requests. Meaning: implementation is provider specific.</p>
+
+    <p class="subjsect">The library that is built in this (OS-specific) directory will have a consistent name of &quot;libprovider.a&quot;.</p>
+
+    <p class="subjcont">Largely just a convention, but this helps in keeping the makefile noise under control.</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Best Practices (Save yourself some pain)</p>
+
+    <p class="subjsect">Use <span class="textit">explicit</span> data types.</p>
+
+    <p class="subjcont">Providers should use well defined &quot;<a href="http://en.wikipedia.org/wiki/C_data_types#Fixed-width_integer_types">C99 data types</a>&quot;. This is because bitness dependent types are a problem when passed through void pointers. Stick to the precise type and be safe - when working on a platform know your types and know your bitness. (All platforms should be compiled 64bit.)</p>
+
+    <p class="subjsect">Test and validate your data type assumptions.</p>
+
+    <p class="subjcont">Most OS supplied APIs return <span class="texttt">typedef</span>ed data types. These types are frequently obfuscated from the developer so that implementations can swap types at a later date without breaking code. If you use the supplied type, you will be safe. Unfortunately, the framework must pass references to types between modules. For this reason, the reliance on <span class="texttt">typedef</span>-ed types becomes unsafe.<a href="#safe_types" class="reference">*</a> The problem is when one assumes these types are a specific size when they might in fact be different based upon the version of the API called or the bitness of the compile. For this reason, it is recommended that all types that are used (converted to more explicit types) should be tested with <span class="texttt">assert()</span> macros.</p>
+
+    <a name="safe_types"></a>
+    <p class="footnote">[* This is a bit contrary to standard practice. The use of <span class="texttt">typedef</span>ed types throughout an application is considered <span class="textit">safe</span> in most cases. Here, it is impossible to create writer modules capable of writing the <span class="textit">hundreds</span> of <span class="texttt">typedef</span>ed types that all the providers might generate. The solution is to distill them down to a small list of <span class="textit">standard</span> types that all writer modules should be expected to support. ]</p>
+
+    <p class="subjcont">Here is a sample test for the <span class="texttt">time_t</span> data type on your platform:</p>
+
+    <p class="subjcont"><span class="texttt">assert(sizeof(time_t) == sizeof(uint32_t));</span></p>
+
+    <p class="subjcont">If the OS vendor slips in a 64bit variant of <span class="texttt">time_t</span>, while the references (pointers) to it are assuming 32 bit values, then unhappiness would result if appropriate tests like this are not done.</p>
+
+    <p class="subjcont">This (<span class="texttt">assert()</span> &quot;call&quot;) should be done in the provider initialization code. This way the test-before-ship for data types becomes as simple as registering all providers. (&quot;<span class="texttt">cpub -l</span>&quot; will be sufficient to cause all providers to be registered and all <span class="texttt">assert()</span>s to be tested.)</p>
+
+    <p class="subjsect">Init data on first registration</p>
+
+    <p class="subjcont">Providers are designed to be of minimal weight. Each provider has two states: registered and activated. The provider registers on startup. This registers the interfaces to communicate with the provider. The framework (driven by user instructions) may choose not to engage the provider at all. Once a data item is chosen for output by the user/framework, then the provider is activated and will be expected to provide data. If the provider is only registered, then it should <span class="textit">not</span> be allocating space for memory structures or engaging the system to retrieve data. The recommendation is to not &quot;light up&quot; the provider until the user has asked for the first data item.</p>
+
+    <p class="subjsect">Validate data access on first registration</p>
+
+    <p class="subjcont">The user running the framework may not have sufficient privileges to access the data. The data might not be valid for this particular system. So it should be validated on registration that the data can be accessed. This is also made more convenient in that the framework registers all data item requests <span class="textit">before</span> the process daemonizes itself and/or spawns threads. So handling error conditions on startup is much easier than when regular iterations are happening.</p>
+
+
+    <!-- ================================================================== -->
+    <p class="subjhead">The steps for writing a provider are: (Your sleeves should be in the rolled-up &amp; coding position)</p>
+
+    <p class="subjcont">(This is a Linux example here, map to your OS-specific implementation build tree as appropriate)</p>
+
+    <!-- ********** -->
+    <p class="subjsect">1. Investigate/understand your data source.</p>
+
+    <p class="subjcont">In this <span class="textit">fictitious</span> example I will be instrumenting USB data found in <span class="texttt">/proc/usbstats</span>. This file has a number of counters and associated names in an expected format - so I can just pull both the names and the stats right out of the file.</p>
+
+    <!-- ********** -->
+    <p class="subjsect">4. Determine (design) how this provider will track data it is repsonsible for.</p>
+
+    <p class="subjcont"><span class="textit">How</span> this works is up to the developer (implementation specific). This was discussed earlier in &quot;Ways To Write A Provider&quot;. In a nutshell - a method must be designed to map a string quad representation supplied by the user (via config file) into the data that resides in <span class="texttt">/proc/usbstats</span>. The design I will use in this method will involve parsing the data out of the <span class="texttt">/proc</span> file into a struct of my own making - and using the &quot;dynamic&quot; method to track my individual items. (This is made somewhat easier by the fact that the Linux library implementation has some helper functions designed for reading <span class="texttt">/proc</span> files.) I <span class="textit">could</span> try to get crafty here by trying to determine offsets in the <span class="texttt">/proc</span> file - but I will resist that temptation for the safer &quot;extract to a manageable source&quot; method. So, I may pay a bit extra (computationally) to read the whole file, but I save on exception handling and design complexity.</p>
+
+    <p class="subjcont">The proposed method will:<br />
+      &#10004; Extract data from the <span class="texttt">/proc</span> file into a struct.<br />
+      &#10004; Use &quot;update list&quot; based <span class="texttt">pitem</span>s to track the selected (to be updated) items.<br />
+      &#10004; Each <span class="texttt">pitem-&gt;sioffset</span> will contain the offset from the top of the struct to the specific data item it needs in the struct.</p>
+
+    <!-- ********** -->
+    <p class="subjsect">3. Create a provider source file that will plug into the OS-specific build directory.</p>
+
+    <p class="subjcont">I shall call my source <span class="texttt">usbprov.h/c</span>. These files will be placed in the <span class="texttt">Linux/</span> directory.</p>
+
+    <!-- ********** -->
+    <p class="subjsect">4. Include a provider registration in the &quot;main&quot; library entry point.</p>
+
+    <p class="subjcont">The function created here will be dropped is the <span class="texttt">ALLOSRegister()</span> function as defined in the primary library header file. <span class="texttt">ALLOSRegister()</span> is responsible for registering your provider in the framework. The function in this example shall be called <span class="texttt">USBStatRegister()</span>. The forward declaration is in <span class="texttt">usbprov.h</span> and the code is in <span class="texttt">usbprov.c</span>. It is ONLY called from <span class="texttt">ALLOSRegister()</span>. <span class="texttt">AllOSRegister()</span> is defined for Linux in <span class="texttt">Linux/linproviders.h</span>, and is coded in <span class="texttt">Linux/linproviders.c</span>. The <span class="texttt">RegisterProvider()</span> function defined in <span class="texttt">providers.h</span> does the bulk of the work of the registration for you. (It has a number of parameters that will become more clear in the steps that follow.) In this implemetation I will <span class="textit">only</span> call <span class="texttt">RegisterProvider()</span> and leave any memory allocation or other work until the user (the framework) requests the first data item from this provider.</p>
+
+    <p class="subjcont">The provider registration should:<br />
+      &#10004; Set the bare minimum of provider data. For example: NULL out pointers to provider data. These can be (conditionally) tested for and then <span class="texttt">malloc()</span>ed <span class="textit">later</span> in the first data item registration.<br />
+      &#10004; Test all your <span class="texttt">typedef</span>ed data types against where it will be stored.<br />
+      &#10004; Call <span class="texttt">RegisterProvider()</span> (with all access function names - see the next step) to initialize the <span class="texttt">provider</span> structure.</p>
+
+    <!-- ********** -->
+    <p class="subjsect">5. The registration of the provider requires that I also register several functions for data access (that were referenced in the previous step).</p>
+
+    <p class="subjcont">These are:</p>
+    <table class="subjcont">
+      <tr>
+        <td>&bull;</td>
+        <td><span class="texttt">update()</span></td>
+        <td>&lArr;</td>
+        <td>Called iteratively to refresh the data</td>
+      </tr>
+      <tr>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>This will not be called on your provider unless an item has been requested by the user. That said, the provider should be aware of what the user has requested (via the <span class="texttt">enable_pitem()</span> API). The flag value for calling this is the <span class="texttt">provider&#8209;&gt;update_required</span> boolean. When <span class="texttt">update()</span> is called, the provider needs to retrieve the latest data and update all the data items that have been chosen for output.</td>
+      </tr>
+      <tr>
+        <td>&bull;</td>
+        <td><span class="texttt">list()</span></td>
+        <td>&lArr;</td>
+        <td>List (to stdout) all data points by this provider</td>
+      </tr>
+      <tr>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>This is used to dump a list of all the data items that the provider is capable of serving. It uses the <span class="texttt">DumpPItemList()</span> API and the associated helper APIs. It is <span class="textbf">strongly</span> recommended that these APIs be used. The desired outcome here is a uniformity in the output. The point of this list is to tell the user what data points he can pick from.</td>
+      </tr>
+      <tr>
+        <td>&bull;</td>
+        <td><span class="texttt">enable_pitem()</span></td>
+        <td>&lArr;</td>
+        <td>Start data collection for this item</td>
+      </tr>
+      <tr>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>&nbsp;</td>
+        <td>This tells the provider that the data item described by this quad is desired for output. The local implementation is required to:<br />
+           &#10004; Capture this enablement for updating. This can be placed into the <span class="texttt">provider&#8209;&gt;ui_list</span>,. This really depends on how the provider tracks and updates the items. Some may step through the <span class="texttt">ui_list</span>, or others may simply check the collect flag.<br />
+           &#10004; Capture the &quot;iargs&quot; flags that are appropriate to data munging. The captured (supported) flags should be applied to the <span class="texttt">pitem&#8209;&gt;munge_flag</span> value. This will be used when processing the data.</td>
+      </tr>
+    </table>
+
+    <p class="subjsect">6. Add a functional description of the provider to the <span class="texttt">cpub.1</span> man page.</p>
+
+    <p class="subjcont">The <span class="texttt">man 1</span> page is divided into three parts. The first and last pars are generic, with the middle part being the OS specific provider information. In this case, because this is a Linux-specific provider, the content will go into the Linux-specific part of the man page. The build process for the final man page will combine the appropriate parts for the platform the build is happening on.</p>
+
+
+    <!-- ================================================================== -->
+    <p class="subjhead">The pitem lists (Checking a list, and keeping it twice)</p>
+
+    <p class="subjcont">When a pitem is created it must be added to the output items list (for the writers to use) but will likely be tracked inside the provider as items it needs to update. These lists are:</p>
+
+    <!-- ********** -->
+    <p class="subjsect">Update items ( Root: <span class="texttt">provider-&gt;ui_list</span>; Link: <span class="texttt">pitem-&gt;next_ui</span>; )</p>
+
+    <p class="subjcont">This is actually optional - but <span class="underline">highly</span> recommended. It is provider maintained (not a public list). This is (can be) a primary method for the provider to know what items should be updated.</p>
+
+    <!-- ********** -->
+    <p class="subjsect">Output items ( Root: <span class="texttt">proot-&gt;pi_olist</span>; Link: <span class="texttt">pitem-&gt;next_opi</span>; )</p>
+
+    <p class="subjcont">This is the <span class="underline">required</span>, <span class="underline">ordered</span> list that is used to manage output. This list is what is sent to the writer module for output. Ordering (consistent with the config file quads) must be preserved so that the end consumer can properly parse the data.</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">FAQ (Flotsam and jetsam)</p>
+
+    <p class="subjsect">First... why call this &quot;cpub&quot;?</p>
+
+    <p class="subjcont">Part arrogance, part promotional effort, part laziness. cpub is designed to be an extension of <span class="texttt">CPUA&lt;go&gt;</span>. Unfortunately it reads more like &quot;See-Pub&quot; than &quot;CPU-B&quot;. Other / better names were suggested, but none overcame the inertia of the initial name. So, if Ben Mosse came back he could give us a catchy name like <span class="texttt">crum</span> or <span class="texttt">showtunes</span> - until then, we are stuck with my amateurish attempts to mimic his tool naming genius.</p>
+
+    <p class="subjsect">What should my provider do when it gets an unexpected (read: unsupported) provider argument?</p>
+
+    <p class="subjcont">As a general rule, the CPUB framework will display an error and exit when it cannot fulfill the request of a user. That said, unused  provider arguments as well as un-satisfiable data item arguments are typically just silently ignored. If the addition of an argument would be <span class="textit">expected</span> to provide a result, but it does not, then an error-fail condition may be more appropriate. But if the user mistakenly asks for the <span class="texttt">psavg</span> on a string data type - this <span class="textit">obviously</span> cannot be satisfied, and in most instances of the code would be silently ignored. The correct answer is that the invalid user input should be validated in all cases. The practical answer is that not all implementations check every argument.</p>
+
+    <p class="subjsect">Why doesn't that provider provide <span class="textit">massaged</span> results?</p>
+
+    <p class="subjcont">Most providers are designed to spit out raw, or slightly modified data. Provider implementations in most cases are acting as a thin layer over the data sources. The intent is to use post-processing to get aggregated or more &quot;normalized&quot; data.</p>
+
+    <p class="subjsect">Sure, but I would <span class="textit">really</span> like to get more managed values.</p>
+
+    <p class="subjcont">Fine - Write a provider that does that. And then make sure that you document how the numbers in this provider are aggregated, munged, massaged, etc... from the raw numbers. Every provider adds value to the framework. This kind of development is encouraged.</p>
+
+    <p class="subjsect">Why is the man page (<span class="texttt">cpub.1</span>) in parts? Why do I have to &quot;build&quot; the man page with <span class="textt">make</span>?</p>
+
+    <p class="subjcont">The command man page (<span class="texttt">cpub.1</span>) is in parts because the header and footer (beginning and end) should be exactly the same in all OSes. This part of the &quot;tool experience&quot; should be consistent across ALL operating systems. The middle part (the provider documentation) is OS specific. The OS specific parts are kept from the universal parts. So yea, the need to build the man page is a bit irritating, but the goal here is cross-platform consistency in the tool, and per-platform strength, and documentation of the providers. The need to &quot;make&quot; the page is a means to that end.</p>
+
+    <p class="subjsect">I want to write a provider that could apply to all platforms, what do I do?</p>
+
+    <p class="subjcont">Write it. Put it in the &quot;Common&quot; build tree. But make sure that you test and support it on all platforms (AIX, Solaris, &amp; Linux). Most &quot;standard&quot; OS APIs are truly <span class="textit">standard</span>. That said, some differences exist either in the APIs or the compiler's interpretation of your code. So it will be important to do builds and tests across all platforms to insure things are behaving consistently.</p>
+
+    <p class="subjsect">This raises a point; what are we going to do about cross-platform build issues? Are there plans for continuous builds?</p>
+
+    <p class="subjcont">There are no plans for continuous builds or even <span class="textit">where</span> to host the code at this time.</p>
+
+    <p class="subjsect">This app leaks memory!</p>
+
+    <p class="subjcont">Technically, it leaks memory, but in practice it does not. It allocates a number of structs during startup that it never releases. This is only during startup and is very inconsequential. Memory should NOT be allocated during normal (iterative) operation. The &quot;init&quot; parts of the application may allocate pointers to data, and then return <span class="texttt">NULL</span> without <span class="texttt">free()</span>ing the memory. Whenever this happens it is because the <span class="texttt">NULL</span> is a <span class="underline">fatal</span> error condition that will terminate the program. While the <span class="texttt">free()</span> is admittedly a best practice, the locations that this happens are all on startup and are consitent in that they are failure conditions that doom the application to premature exit (and implicit <span class="texttt">free()</span>s of the allocations).</p>
+
+    <p class="subjsect">Why didn't you write this in &lt;insert my favorite language here&gt;?</p>
+
+    <p class="subjcont">The common API / access method to all these interfaces are C. The fastest language for this (performance sensitive) task is C. The language is more complex than, say... Shell, but only a subset of the user base needs to actually write the providers (or writer modules). The real value here is to the ease of use and potential gain to the broader community of users through a lightweight and powerful tool. So, yes, the developer pool is somewhat limited - but that really has more to do with the application and task requirements than it does with the language choice. In short; the subject material of what is developed here would reduce the pool of potential developers more than the choice of language to write the tool.</p>
+
+    <p class="subjsect">The dependence on C is nuts! Even <span class="textit">users</span> have to go to the C header files to find out what is in these providers and data items.</p>
+
+    <p class="subjcont">This is true. Admins wanting to author a .cpub config file need to know what the data is and what it means. But this also means that 1. understanding these values is not easy, 2. C is universally the language used when discussing Unix algorithms and internals, 3. not everyone will be authoring .cpub config files (most will be consumers), and 4. GOOD - we want more people to be looking under the hood to see how this stuff works.</p>
+
+    <p class="subjsect">What happened to the &quot;list method&quot; poviders?</p>
+
+    <p class="subjcont">The (now depricated) list method involved creating a list of <span class="texttt">pitem</span>s known to the provider, then moving those items to the update and output item lists when they were requested. A single <span class="texttt">pitem</span> could have been in <span class="textit">three</span> lists at once (known items, update items, and output items). The problem is that in some situations (such as setting alarms), it may be necessary to register the same quad within a provider <span class="underline">more than once</span>. If the <span class="texttt">pitem</span>s are not created when requested then it is impossible to include it more than once. This shift in thinking allowed for multiple registrations, but also <span class="textit">simplified</span> the API for the provider.</p>
+
+    <p class="subjsect">What's up with making all implementations 64 bit?</p>
+
+    <p class="subjcont">It is not really a <span class="textit">hard</span> requirement, but more of a <span class="underline">strong</span> recommendation. (On AIX it is a requirement.) The reasoning here is that 64bit apps do not need special considerations for large file support, get all the appropriate sized counters in most APIs, and have generally less issues when dealing with variable size data types.</p>
+
+    <p class="subjsect">What kind of provider should I write?</p>
+
+    <p class="subjcont">The value of the CPUB provider framework is that there is really a large range of potential providers. Many stats are not directly retrievable from the system but are instead derived values. It is possible to write a provider to do that work. Additionally, there is no need to stick to &quot;performance&quot; stats. Capacity stats such as how much disk is in use could be valuable. A CPUB provider could monitor just about anything that can be distilled down to a metric. The work has been done on the framework to allow for these extreme variations in actual deployed usage.</p>
+
+    <p class="subjsect">Do the providers support wild-card / REGEX expressions?</p>
+
+    <p class="subjcont">This is up to the provider. Most do not, and really <span class="textit">should not</span>. The first provider to support a wild-card for the provider argument is the &quot;mount.df&quot; provider. The &quot;*&quot; character is passed in to the <span class="texttt">enablepitem()</span> implementation for the provider and it returns multiple <span class="texttt">pitem</span> structures. Ordering of the output items does not matter (in most cases), but insuring that each output item and its associated structs are properly handled does matter. The <span class="texttt">providers.h/c</span> implementation does not get in the way of the wild-card capabilites managed by the provider.</p>
+
+    <p class="subjsect">Who is Ottmar Mergenthaler?</p>
+
+    <p class="subjcont">Ottmar Mergenthaler was the inventor of the Linotype system. His invention revolutionized printing in the 20th century. No longer were newspapers and other sources of print bound to the same concepts of movable type that were developed in the 15th century under Gutenberg. The Linotype &quot;hot type&quot; system not only allowed printers to set effectively unlimited amounts of text but also allowed them to do it orders of magnitude faster than the older movable type methods. Mergenthaler removed the phrase &quot;Out of sorts&quot; from the typesetting vernacular. Mergenthaler is the second Gutenberg. - An additional note... this document was set in &quot;Palatino Linotype&quot;, an exceptionally popular typeface developed by Hermann Zapf originally for the Linotype corporation / system in the late 1940s.</p>
+
+    <!--
+    <p class="subjsect"></p>
+
+    <p class="subjcont"></p>
+    -->
+
+  </body>
+</html>
+
+
+<!-- Non breaking hyphen : &#8209; -->

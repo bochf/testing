@@ -1,0 +1,90 @@
+The purpose:
+  To gather as much relevant info about a system and present it in a
+  "normalized" manner such that it can be directly diffed against another
+  system.
+
+  Normalized --> All data is presented in consistent order with numbers that
+  do not need to be specific (such as the current number of processes) are 
+  rounded to reduce the number of false differences in the comparison.
+
+Version History:
+  0.0.1   10/7/14 - Original PoC creation
+  0.0.2  10/10/14 - Value add
+  0.0.3  10/13/14 - Value add
+  0.0.4  10/15/14 - Fixed bug in uptime
+                  - Added some return value checking
+  0.0.5  10/17/14 - Added Linux network info
+  0.0.6  10/23/14 - Added multicast module
+  0.0.7  11/06/14 - Work on network (201) modules & functions
+  0.0.8  11/06/14 - Added bbcpu and hosts checksum
+                  - Fixed multicast module
+
+To Do:
+  [ ] Sol11: 003.model does not work on sundev63 (zone issue)
+  [_] Push 224.multicast goodness into Solaris network module (it has Sol11
+      specific fixes). Test on sundev63.
+  [_] Write a primary if, storage if, n2 if, & other (feed) if module
+      This will not sort correctly (unless we evaluate the list of potential
+      interfaces in a specific order)
+      if[00] type    : n2
+      if[00] attrX   : 5
+  [ ] Linux: lsmod | awk '{ print $1 " " $2 " " $3 }'
+  [ ] 852.bbcpu likely needs testing and refinement in the filter mechanisim
+  [ ] 852.bbcpu - add output for quad, dev, beta, etc...
+  [ ] Write a describe mode where each module will need to describe the
+      entries it prints. The user is not going to make this out otherwise.
+  [ ] 210.resolver should go to an array so it can be presented in order
+  [ ] Multiple todos in 210.resolver
+  [ ] Write a disk(dev) counter
+  [ ] Write a module to detect the connected array
+  [ ] Write a module to print config options for all adapters (if, hba, etc...)
+  [ ] Write a mem_phys and mem_virt (stats/free) module(s)
+  [_] Need helper functions (check uid)
+  [ ] Need to define the ranges of tests (the numbers)
+  [ ] xoslevel
+  [ ] 006.phys_mem is incomplete for Solaris
+  [ ] Login shell(?)
+  [ ] Default (system) TZ
+  [ ] modprobe (sort | uniq | cksum)
+  [ ] Well known processes (on|off)
+  [_] Processor set configurations
+  [ ] 110.cpuset is not tested on any platform. It does not parse the info
+      on either Solaris or Linux.
+  [ ] mnt_summary should break down mounts by type (nfs/san/local). As much of
+      the mount stuff should be done in one run as possible as this is an
+      expensive call (on mount-heavy systems)
+  [ ] 125.various is purely AIX
+
+Done:
+  [X] Non-host specifc part of bbcpu.lst
+  [X] csum the /etc/hosts file (and count entries?)
+  [X] Multicast module is broken on Linux
+  [X] 201.networks_Linux needs bondX capability
+  [X] Define return values for modules
+  [X] netstat --> registered multicast addresses
+  [X] 852.bbcpu not finished. remove debug statuements.
+  [X] Need option to run a single test (or range of tests)
+  [X] shared memory segments (ipcs)
+  [X] Parse command line options to wrapper script
+  [X] Need an option to print the section headers (so you can find what you
+      have diffed when the items do not make perfect sense)
+  [X] The number of bigs running
+  [X] Divide by zero bug in bbenv
+  [X] 100.uptime should "round" load average entries so as to not always diff  
+  [X] Uptime should be rounded to days
+  [X] Wrapper needs to check return values
+  [X] Write a CPU module that gets count, speed, and type
+  [X] cpu info is all "UNK" on Solaris
+  [X] Todos in 004.cpu
+  [X] Write a round() function that rounds values
+  [X] Handle missing paramaters in modules (before you write any more)
+
+
+Issues & impediments:
+ - The current limitation for the label names are entirely too short. The
+   thinking is that each module will be run and the results will be edited
+   into a description file that has the shortened label on the left and a
+   60 char or so description on the right. This way the user can look up the
+   labels and determine the source without needing to read the code to find
+   the values. (Reading the source may be problematic if a module is written
+   in C.)

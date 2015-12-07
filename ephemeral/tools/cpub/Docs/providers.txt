@@ -1,0 +1,8 @@
+No formalized documentation exists at this time. So I created this.
+
+ core.icount    A simple counter that increments on each iteration
+ core.nctime    A localtime() string with no colons. Confoms to ISO-8601
+ core.ctime     String output from ctime() --> wall time
+ core.utime     The Unix epoch offset. Straight from time()
+ core.timeval   gettimeofday() high resolution timestamp
+ core.timespec  clock_gettime() high(er) resolution timestamp

@@ -1,0 +1,88 @@
+#!/opt/swt/bin/perl
+
+use Digest::MD5 qw(md5_base64);
+
+my $hn=`uname -n`;
+chomp($hn);
+my $outfile = $ARGV[0];
+my $PRINTF = $ENV{'PRINTF'};
+my $beverbose = 0;
+
+if ( $PRINTF =~ /printf/ )
+{
+    $beverbose = 1;
+}
+
+my @bbentry = ();
+my $bblines = 0;
+my @bbtags = ();
+
+if (( $beverbose )) { print "."; }
+
+### Open and look through the bbcpu.lst file
+if ( open(BBCPU_LST, "/bb/bin/bbcpu.lst") )
+{
+    @bbentry = grep { /^$hn / } (<BBCPU_LST>);
+
+    close(BBCPU_LST);
+
+    $bblines = `wc -l < /bb/bin/bbcpu.lst`;
+    chomp($bblines);
+    $bblines =~ s/^\s+//;
+
+    @bbtags = split " ", $bbentry[0];
+}
+
+if (( $beverbose )) { print "."; }
+
+foreach $tag (@bbtags)
+{
+    # Filter entry one and two
+    if ( $tag =~ /^$hn$/ ) { next; }
+    if ( $tag =~ /^[1-9][0-9]*$/ ) { next; }
+    # Filter other non-essential terms
+    # Physical location
+    if ( $tag =~ /^west$/ ) { next; }
+    if ( $tag =~ /^orange$/ ) { next; }
+    if ( $tag =~ /^ridge$/ ) { next; }
+    # Area represented
+    #if ( $tag =~ /^mesa$/ ) { next; }
+    #if ( $tag =~ /^japan$/ ) { next; }
+    # Physical / logical location
+    if ( $tag =~ /^quad[0-4]$/ ) { next; }
+    if ( $tag =~ /^sysq.*$/ ) { next; }
+    if ( $tag =~ /^devq[0-4]$/ ) { next; }
+    # Area represented / type (there is also an XXall variant)
+    #if ( $tag =~ /nyusr/ ) { next; }
+    #if ( $tag =~ /lnusr/ ) { next; }
+    #if ( $tag =~ /miusr/ ) { next; } # ? (there are 5 of them)
+    #if ( $tag =~ /meusr/ ) { next; }
+    #if ( $tag =~ /tkusr/ ) { next; }
+
+
+    push ( @abbrev, $tag );
+}
+
+# This is used for debuggery of the filtering mechanisim
+#print "\nDEBUG\n";
+#print join(", ", sort(@bbtags));
+#print "\n\n";
+#print join(", ", sort(@abbrev));
+#print "\nDEBUG\n";
+
+my $cksum = md5_base64(sort(@abbrev));
+
+open(OUTFILE, ">>$outfile") || exit(1);
+
+printf OUTFILE "bbcpu total# : %s\n", $bblines;
+printf OUTFILE "bbcpu this # : %s\n", scalar(@bbentry);
+printf OUTFILE "bbcpu tags # : %s\n", scalar(@bbtags);
+printf OUTFILE "bbcpu Utag # : %s\n", scalar(@abbrev);
+printf OUTFILE "bbcpu Utcsum : %s\n", $cksum;
+
+close(OUTFILE);
+
+if (( $beverbose )) { print "."; }
+
+exit(0);
+

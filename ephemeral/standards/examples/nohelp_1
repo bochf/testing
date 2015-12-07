@@ -1,0 +1,30 @@
+#!/bin/ksh93
+
+rm -f results.out
+
+printf "Retrieving data to a file..."
+if ! getdata 1>;results.out 2>/dev/null
+then
+    printf "Failed.\n"
+    exit 1
+fi
+printf "Done.\n"
+
+printf "Retrieving data to a file..."
+if ! getdata 1>>results.out 2>/dev/null
+then
+    printf "Failed.\n"
+    exit 1
+fi
+printf "Done.\n"
+
+
+printf "Retrieving data to a variable..."
+if ! gotval=$(getdata 2> /dev/null)
+then
+    printf "Failed.\n"
+    exit 1
+fi
+printf "Done.\n"
+
+

@@ -1,0 +1,18 @@
+# This is the base of the Solaris root file system (it is temporary)
+ROOT
+
+# These are Solaris 10 package derived files
+pkginfo
+# This is the resulting package file
+*.pkg
+# Temp stuff
+BBcpubcore
+*.output
+
+
+
+# These are Solaris 11 package derived files
+*.stderr
+*.stdout
+*.out
+*.p5p

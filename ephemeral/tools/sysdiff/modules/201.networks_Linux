@@ -1,0 +1,264 @@
+#!/bin/ksh93
+
+# ----------------------------------------
+function dump_leg_data
+{
+    typeset ifnum=$1
+    typeset legnum=$2
+    typeset legdev=$3
+    typeset outf=$4
+    
+    if [[ -z ${ifnum} ]] ; then return 1 ; fi
+    if [[ -z ${legnum} ]] ; then return 1 ; fi
+    if [[ -z ${legdev} ]] ; then return 1 ; fi
+    if [[ -z ${outf} ]] ; then return 1 ; fi
+
+    ### ethtool <interface>
+    typeset speed=UNK
+    typeset duplex=UNK
+    typeset suprts=UNK
+    typeset aauton=UNK
+    typeset port=UNK
+    typeset phyad=UNK
+    typeset trncvr=UNK
+    typeset auton=UNK
+    typeset swakeo=UNK
+    typeset wakeo=UNK
+    typeset linkd=UNK
+
+    ethtool ${legdev} 2>/dev/null | while read line
+    do
+        if [[ ${line} == *Speed:* ]] ; then speed=${line#*eed: } ;       continue ; fi
+        if [[ ${line} == *plex:* ]] ; then duplex=${line#*plex: } ;      continue ; fi
+        if [[ ${line} == *"ted port"* ]] ; then suprts=${line#*orts: } ; continue ; fi
+        if [[ ${line} == *"sed auto-n"* ]] ; then aauton=${line#*on: } ; continue ; fi
+        if [[ ${line} == *"Port:"* ]] ; then port=${line#*ort: } ;       continue ; fi
+        if [[ ${line} == *"PHYAD"* ]] ; then phyad=${line#*AD: } ;       continue ; fi     
+        if [[ ${line} == *"ansceiver:"* ]] ; then trncvr=${line#*er: } ; continue ; fi     
+        if [[ ${line} == *"Auto-ne"* ]] ; then auton=${line#*tion: } ;   continue ; fi
+        if [[ ${line} == *"rts Wake"* ]] ; then swakeo=${line#*on: } ;   continue ; fi
+        if [[ ${line} == *"Wake-on"* ]] ; then wakeo=${line#*on: } ;     continue ; fi
+        if [[ ${line} == *"Link det"* ]] ; then linkd=${line#*ted: } ;   continue ; fi
+    done
+
+    printf "if%02d.%1d speed : %s\n" ${ifnum} ${legnum} "${speed}" >> ${outf}
+    printf "if%02d.%1d duplex: %s\n" ${ifnum} ${legnum} "${duplex}" >> ${outf}
+    printf "if%02d.%1d suprts: %s\n" ${ifnum} ${legnum} "${suprts}" >> ${outf}
+    printf "if%02d.%1d aauton: %s\n" ${ifnum} ${legnum} "${aauton}" >> ${outf}
+    printf "if%02d.%1d port  : %s\n" ${ifnum} ${legnum} "${port}" >> ${outf}
+    printf "if%02d.%1d PHYAD : %s\n" ${ifnum} ${legnum} "${phyad}" >> ${outf}
+    printf "if%02d.%1d trncvr: %s\n" ${ifnum} ${legnum} "${trncvr}" >> ${outf}
+    printf "if%02d.%1d auton : %s\n" ${ifnum} ${legnum} "${auton}" >> ${outf}
+    printf "if%02d.%1d swakeo: %s\n" ${ifnum} ${legnum} "${swakeo}" >> ${outf}
+    printf "if%02d.%1d wakeo : %s\n" ${ifnum} ${legnum} "${wakeo}" >> ${outf}
+    printf "if%02d.%1d linkdt: %s\n" ${ifnum} ${legnum} "${linkd}" >> ${outf}
+
+    ### ethtool -i <interface>
+    typeset driver=UNK
+    typeset version=UNK
+    typeset fwver=UNK
+
+    ethtool -i ${legdev} 2>/dev/null | while read line
+    do
+        if [[ ${line} == driver* ]] ; then driver=${line#*er: } ;     continue ; fi
+        if [[ ${line} == version* ]] ; then version=${line#*on: } ;   continue ; fi
+        if [[ ${line} == firm* ]] ; then fwver=${line#*on: } ;        continue ; fi
+    done
+
+    printf "if%02d.%1d driver: %s\n" ${ifnum} ${legnum} "${driver}" >> ${outf}
+    printf "if%02d.%1d versn : %s\n" ${ifnum} ${legnum} "${version}" >> ${outf}
+    printf "if%02d.%1d fwver : %s\n" ${ifnum} ${legnum} "${fwver}" >> ${outf}
+
+    ### ethtool -k <interface>
+    typeset rxCksm=UNK
+    typeset txCksm=UNK
+    typeset scga=UNK
+    typeset tcpseg=UNK
+    typeset udpfra=UNK
+    typeset genseg=UNK
+    typeset genro=UNK
+
+    ethtool -k ${legdev} 2>/dev/null | while read line
+    do
+        if [[ ${line} == rx-check* ]] ; then rxCksm=${line#*ing: } ;     continue ; fi
+        if [[ ${line} == tx-check* ]] ; then txCksm=${line#*ing: } ;     continue ; fi
+        if [[ ${line} == *"ter-gath"* ]] ; then scga=${line#*er: } ;     continue ; fi
+        if [[ ${line} == "tcp segm"* ]] ; then tcpseg=${line#*ad: } ; fi
+        if [[ ${line} == "udp frag"* ]] ; then udpfra=${line#*ad: } ; fi
+        if [[ ${line} == *"ic-seg"* ]] ; then genseg=${line#*ad: } ; fi
+        if [[ ${line} == *"ic-rec"* ]] ; then genro=${line#*ad: } ; fi
+    done
+
+    printf "if%02d.%1d rxCksm: %s\n" ${ifnum} ${legnum} "${rxCksm}" >> ${outf}
+    printf "if%02d.%1d txCksm: %s\n" ${ifnum} ${legnum} "${txCksm}" >> ${outf}
+    printf "if%02d.%1d scrgtr: %s\n" ${ifnum} ${legnum} "${scga}" >> ${outf}
+    printf "if%02d.%1d tcpseg: %s\n" ${ifnum} ${legnum} "${tcpseg}" >> ${outf}
+    printf "if%02d.%1d udpfra: %s\n" ${ifnum} ${legnum} "${udpfra}" >> ${outf}
+    printf "if%02d.%1d genseg: %s\n" ${ifnum} ${legnum} "${genseg}" >> ${outf}
+    printf "if%02d.%1d genrol: %s\n" ${ifnum} ${legnum} "${genro}" >> ${outf}
+}
+
+# ----------------------------------------
+function is_bond_if
+{
+    typeset ibiifdev=$1
+
+    if [[ -z ${ibiifdev} ]]
+    then
+        return 1
+    fi
+
+    if ip link show ${ibiifdev} | grep MASTER >/dev/null 2>&1
+    then
+        return 0
+    fi
+        
+    return 1
+}
+
+# ----------------------------------------
+function list_bond_members
+{
+    typeset lbmifdev=$1
+    typeset lbmline=
+
+    if [[ -z ${lbmifdev} ]] ; then return 1 ; fi
+
+    ip link show up | grep ${lbmifdev} | while read lbmline
+    do
+        lbmline=${lbmline#*: }
+        lbmline=${lbmline%%:*}
+
+        if [[ ${lbmline} != ${lbmifdev} ]]
+        then
+            echo ${lbmline}
+        fi
+    done
+
+    return 0
+}
+
+
+# ----------------------------------------
+function dump_if_data
+{
+    typeset ifnum=$1
+    typeset ifname=$2
+    typeset outf=$3
+    typeset -i didbnum=0
+
+    if [[ -z ${ifnum} ]] ; then return 1 ; fi
+    if [[ -z ${ifname} ]] ; then return 1 ; fi
+    if [[ -z ${outf} ]] ; then return 1 ; fi
+
+    if is_bond_if ${ifname}
+    then
+        printf "if%02d   bonded: Yes\n" ${ifnum} >> ${outf}
+
+        didbnum=0
+        for bondleg in $(list_bond_members ${ifname})
+        do
+            #printf "if%02d BONDBG: [%s]\n" ${ifnum} "${bondleg}" >> ${outf}
+            dump_leg_data ${ifnum} ${didbnum} ${bondleg} ${outf}
+            #didbnum=$(( didbnum + 1 ))
+            (( didbnum++ ))
+        done
+
+
+    else
+        printf "if%02d   bonded: No\n" ${ifnum} >> ${outf}
+        # This is a single leg (non-bonded) interface
+        dump_leg_data ${ifnum} 0 ${ifname} ${outf}
+    fi
+
+
+
+    # Determine if we are LACP/bond
+    # STUB: Not on this box
+    #dump_leg_data ${ifnum} 0 ${ifname} ${outf}
+
+}
+
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Source in functions we will need
+if [[ -f modules/functions/netif.ksh ]]
+then
+    . modules/functions/netif.ksh
+else
+    exit 1
+fi
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+### This reads in whatever paramaters may have been passed on command line
+shift
+while [[ -n ${1} ]]
+do
+    eval ${1}
+    shift
+done
+
+dot
+uname_n=$(uname -n)
+
+case $(uname -s)
+in
+    SunOS) return 2 ;;
+    AIX) return 2 ;;
+esac
+
+typeset -A if_to_ip
+typeset -A hn_to_if
+
+# Grab all the interfaces and map them to IP addresses & host names
+for ifname in $(up_if_list Linux)
+do
+    hname=X
+
+    if hname=$(get_hn_for_if ${ifname} Linux)
+    then
+        hn_to_if[$hname]=${ifname}
+        
+        #printf "DEBUG  %5s  %16s  %12s\n" ${ifname} ${ipaddr} ${hname}
+    fi
+done
+
+dot
+
+set -sA sortedHosts ${!hn_to_if[*]}
+
+typeset -i ifn=0
+
+for hname in ${sortedHosts[*]}
+do
+    if [[ ${hname} == ${uname_n} ]]
+    then
+        printf "if%02d   type  : Primary\n" ${ifn} >> ${outfile}
+    else
+        printf "if%02d   type  : %s\n" ${ifn} ${hname#$uname_n} >> ${outfile}
+    fi
+
+    ifname=${hn_to_if[$hname]}
+
+    mtu=$(ifconfig ${ifname} | grep MTU 2>/dev/null)
+    mtu=${mtu#*MTU:}
+    mtu=${mtu%% *}
+    printf "if%02d   mtu   : %s\n" ${ifn} ${mtu} >> ${outfile}
+    
+    if [[ ${ifname} != lo ]]
+    then
+        dump_if_data ${ifn} ${ifname} ${outfile}
+    fi
+
+    dot
+    (( ifn++ ))
+done

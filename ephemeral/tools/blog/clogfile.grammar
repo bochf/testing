@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ufwb version="1.1.5">
+    <grammar name="Clog file" start="id:3502" author="William Favorite">
+        <description>Grammar for my file format</description>
+        <structure name="Header" id="3502" alignment="1" encoding="ISO_8859-1:1987" endian="little" signed="no">
+            <string name="Magic" mustmatch="yes" id="3503" type="fixed-length" length="4">
+                <fixedvalue name="CLOG" value="CLOG"/>
+            </string>
+            <number name="Version" mustmatch="yes" id="3504" type="integer" length="1">
+                <fixedvalue name="Ver1" value="1"/>
+                <fixedvalue name="Ver2" value="2"/>
+            </number>
+            <number name="dstart" id="3505" type="integer" length="1"/>
+            <binary name="Endian" id="3506" length="1"/>
+            <number name="dlength" id="3507" type="integer" length="1"/>
+            <number name="Head" id="3508" type="integer" length="8" endian="little"/>
+            <number name="Tail" id="3509" type="integer" length="8" endian="little" display="hex"/>
+            <number name="Recv" id="3510" type="integer" length="8" endian="little"/>
+            <number name="size" id="3512" type="integer" length="8"/>
+            <number name="First write time" id="3513" type="integer" length="4"/>
+            <number name="Last write time" id="3514" type="integer" length="4"/>
+        </structure>
+    </grammar>
+</ufwb>

@@ -1,0 +1,18 @@
+
+# Either "usr" or "root"
+liblppa_type=usr
+
+# Only if you have scripts to source (This is a dir with contents)
+liblppa_src=liblppa.usr.src
+
+# This could possibly be derived (or passed) but it is hard set for now
+liblppa_fileset=BB.cpub.core.rte
+
+# Where this will go (Directory)
+liblppa_dir=BUILD_ROOT/usr/lpp/BB.cpub.core
+
+# Where to create content (to archive)
+liblppa_tmp=tmp.usr
+
+# 1 = keep info on exit
+liblppa_debug=0

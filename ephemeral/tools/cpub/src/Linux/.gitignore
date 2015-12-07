@@ -1,0 +1,5 @@
+libbuild.out
+libprovider.a
+core
+*~
+*.o

@@ -1,0 +1,34 @@
+#!/bin/sh
+
+ver_str=${1}
+file_name=${2}
+
+if [[ -z ${ver_str} ]]
+then
+    echo "mk_buildinfo: Missing version string (arg 1)"
+    return 1
+fi
+
+if [[ -z ${file_name} ]]
+then
+    echo "mk_buildinfo: Missing file name (arg 2)"
+    return 1
+fi
+
+echo "Creating build info file...\c"
+cat /dev/null > ${file_name}
+echo ".\c"
+echo "Package version: ${ver_str}" >>${file_name} 
+echo ".\c"
+echo "Build time: $(date)" >> ${file_name}
+echo ".\c"
+echo "Built by: $(id -un)" >> ${file_name}
+echo ".\c"
+echo "Build system: $(uname -n)" >> ${file_name}
+echo ".\c"
+echo "Last git log entry:" >> ${file_name}
+git log -1 >> ${file_name} 2> /dev/null
+echo ".\c"
+echo ".Done."
+
+return 0

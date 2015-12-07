@@ -1,0 +1,186 @@
+#!/bin/ksh93
+
+# INTENT: Tinly wrap the real buildit
+
+# This is the root of cpub in the git repo, where source, docs, and package
+# build happens. From the root of the perf/ephemeral git repo it should be:
+# [perf/ephemeral]/tools/cpub
+# Lots of directories are based off of this.
+# DO NOT SET THIS. It will be set later.
+typeset CPUB_ROOT=
+
+# This is where the package is built
+# DO NOT SET THIS. It will be set later.
+typeset BUILD_BASE=
+
+printf "Running AIX-specific build.\n"
+
+# -----------------------------------------------------------------------------
+printf "Determing the root of the build directory."
+
+CPUB_ROOT=$(pwd)
+
+printf "."
+
+if [[ ${CPUB_ROOT} != *cpub ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to find the root directory.\n" >&2
+    exit 1
+fi
+
+printf "."
+
+if [[ ! -d ${CPUB_ROOT}/src ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to find the root directory.\n" >&2
+    exit 1
+fi
+
+printf "."
+
+if [[ ! -d ${CPUB_ROOT}/Build ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to find the root directory.\n" >&2
+    exit 1
+fi
+
+printf "Done.\nUsing: ${CPUB_ROOT}\n"
+
+# -----------------------------------------------------------------------------
+printf "Checking for the build directory..."
+BUILD_BASE=${CPUB_ROOT}/Build/AIX
+if [[ ! -d ${BUILD_BASE} ]]
+then
+    printf "Missing.\n"
+    # DO NOT attempt to create it. This directory should contain config and
+    # script content.
+    printf "ERROR: Unable to find the build directory.\n" >&2
+    exit 1
+fi
+printf "Found.\n"
+
+# -----------------------------------------------------------------------------
+printf "Checking for the source directory..."
+SOURCE_BASE=${CPUB_ROOT}/src
+if [[ ! -d ${SOURCE_BASE} ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to fin the source directory.\n" >&2
+    exit 1
+fi
+printf "Found.\n"
+
+# -----------------------------------------------------------------------------
+printf "Running make clean.\n"
+cd ${SOURCE_BASE}
+if ! gmake clean
+then
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+printf "Running make (default target).\n"
+cd ${SOURCE_BASE}
+if ! gmake
+then
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+printf "Parsing the version of the build..."
+cd ${SOURCE_BASE}
+CPUB_VERSION=$( ./cpub -a | grep Version 2>/dev/null )
+CPUB_VERSION=${CPUB_VERSION##*Version: }
+if [[ -z ${CPUB_VERSION} ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to determine cpub version.\n" >&2
+    exit 1
+fi
+printf "${CPUB_VERSION}.\n"
+echo ${CPUB_VERSION} > ${BUILD_BASE}/VERSION_STRING
+
+
+# -----------------------------------------------------------------------------
+printf "Copying binaries into package build tree."
+cd ${SOURCE_BASE}
+if ! cp cpub ${BUILD_BASE}/USR_PART/usr/local/bin/cpub > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to copy cpub into packing dir.\n"
+    exit 1
+fi
+printf "."
+if ! cp ebcd ${BUILD_BASE}/USR_PART/usr/local/bin/ebcd > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to copy ebcd into packing dir.\n"
+    exit 1
+fi
+printf "."
+printf "Done.\n"
+
+# -----------------------------------------------------------------------------
+printf "Checking for the man directory..."
+MAN_BASE=${CPUB_ROOT}/man
+if [[ ! -d ${MAN_BASE} ]]
+then
+    printf "Failed.\n"
+    printf "ERROR: Unable to find the man directory.\n" >&2
+    exit 1
+fi
+printf "Found.\n"
+
+# -----------------------------------------------------------------------------
+printf "Running make clean on man source.\n"
+cd ${MAN_BASE}/man1
+if ! make clean
+then
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+printf "Running make aix on man source.\n"
+cd ${MAN_BASE}/man1
+if ! make aix
+then
+    exit 1
+fi
+
+# -----------------------------------------------------------------------------
+printf "Copying man pages into package build tree..."
+if ! cp ${MAN_BASE}/man1/cpub.1 ${BUILD_BASE}/USR_PART/usr/share/man/man1/cpub.1 > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to copy binary into packing dir.\n"
+    exit 1
+else
+    printf "."
+fi
+
+if ! cp ${MAN_BASE}/man5/cpub.5 ${BUILD_BASE}/USR_PART/usr/share/man/man5/cpub.5 > /dev/null 2>&1
+then
+    printf "Failed.\n"
+    printf "ERROR: Failed to copy binary into packing dir.\n"
+    exit 1
+else
+    printf "."
+fi
+printf "Done.\n"
+
+
+# -----------------------------------------------------------------------------
+printf "Moving to the traditional AIX buildit.\n"
+cd ${BUILD_BASE}
+# Look for a few unique & expected files
+if [[ -e buildit.conf && -e liblppa.usr ]]
+then
+    exec bin/buildit
+fi
+
+# Fall through to an error
+printf "ERROR: Unable to find ourselves in the build directory.\n" >&2
+exit 1

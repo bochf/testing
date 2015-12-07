@@ -1,0 +1,7 @@
+#!./memspeed
+
+#set UNIT=G
+#set SIZE=2
+set INTER=0
+set VERBOSITY=false
+go

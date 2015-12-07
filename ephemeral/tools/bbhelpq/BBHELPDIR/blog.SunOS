@@ -1,0 +1,7 @@
+Name: blog
+Description: Circular logger
+Keylist: admin
+Location: /bb/admin/blog
+Platform: SunOS
+Impact: low
+Owner: wfavorit

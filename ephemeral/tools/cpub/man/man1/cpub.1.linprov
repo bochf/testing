@@ -1,0 +1,22 @@
+.\" Process this file with
+.\" groff -man -Tascii cpub.5
+.\"
+.\"=============================================================================
+.SH LINUX PROVIDERS
+.IP "meminfo"
+This provider pulls data from
+.I /proc/meminfo.
+The data is served ( from 
+.I /proc
+) as KB. It is passed through the framweork as KB values. The writer option "factor=ktoa" can be used to convert this into an alternate format.
+
+.IP proc.stat
+This pulls CPU data (only) from
+.I /proc/stat.
+This provider supports a provider argument of the CPU number or a wildcard '*' for all CPUs.
+
+.IP proc.pid.stat
+This provider supplies all the data items from
+.I /proc/PID/stat
+(where PID is a numeric). A provider argumet (the PID) is required for these data items.
+

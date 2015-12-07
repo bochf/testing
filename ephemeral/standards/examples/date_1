@@ -1,0 +1,6 @@
+#!/bin/ksh
+
+# Replaces date
+
+printf "My date is: %T\n"
+printf "Hand-picked date format is %(%Y/%m/%d)T\n"

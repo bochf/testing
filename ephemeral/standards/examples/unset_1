@@ -1,0 +1,24 @@
+#!/bin/ksh93 -u
+
+
+typeset emptyvar=
+typeset -i anint=
+
+
+if [[ -z ${emptyvar} ]]
+then
+    echo "Empty var is empty."
+fi
+
+
+if [[ -z ${anint} ]]
+then
+    echo "An integer is empty"
+fi
+
+
+if [[ -z ${notavar} ]]
+then
+    echo "Not a var is empty"
+fi
+

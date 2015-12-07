@@ -1,0 +1,46 @@
+#!/bin/bash
+
+# ABOUT BLOCK BEGIN____________________________________________________________
+# Number: 999
+# Name: End
+# Description: Wrap it up and call it a day
+# Severity: N/A - Always PASSes
+# Quality: N/A
+# Notes: Takes a timestamp - that is it.
+# ABOUT BLOCK END______________________________________________________________
+
+# DEBUG: Temp hack for BL pathing issues.
+#cd /opt/linqc
+
+# Source our functions
+# NOTE: The path is obviously wrong. This would be a pre-determined location,
+#       likely one that is fully, not relatively pathed.
+if [[ -e lib/qcfunctions.bash ]]
+then
+    . lib/qcfunctions.bash
+fi
+
+# Validate that the sourcing was successfull
+if [[ ! ${was_successfully_sourced} ]]
+then
+    # Not much we can do here. No telling what is going on. Exit with the
+    # most appropriate error value and message for both BL and CL environment.
+    echo "ERROR: Failed to source functions." >&2
+    exit 1
+fi
+
+# Bring in the config file
+SourceGlobalConfig
+
+# Print the header for the test
+VPrintHeader "QC Finish"
+
+# See if we should run or not
+GroupCheck always
+
+# DO NOT check for overrides - this test cannot be overridden
+
+# Do the one thing we came here to do
+VPrint "QC ended on "$(date)
+
+QCExit ${QCRV_PASS}

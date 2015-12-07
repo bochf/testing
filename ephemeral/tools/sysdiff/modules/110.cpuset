@@ -1,0 +1,90 @@
+#!/bin/ksh93
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+### This reads in whatever paramaters may have been passed on command line
+shift
+while [[ -n ${1} ]]
+do
+    eval ${1}
+    shift
+done
+
+
+dot
+
+ostype=$(uname -s)
+dot
+
+typeset -i cscnt=0
+
+# --------------------
+if [[ ${ostype} == AIX ]]
+then
+    
+    lsrset -a | while read rset_name
+    do
+        # Filter default entries
+        if [[ ${rset_name} == sys/cpu.* ]] ; then continue ; fi
+        if [[ ${rset_name} == sys/node.* ]] ; then continue ; fi
+        if [[ ${rset_name} == sys/sys0 ]] ; then continue ; fi
+        if [[ ${rset_name} == sys/mem.00000 ]] ; then continue ; fi
+
+        rset_name=${rset_name}
+
+        cpus=$(lsrset -vr ${rset_name} 2>/dev/null | grep CPU:)
+        cpus=${cpus#*CPU: }
+
+        printf "CPUSet[%02d]   : %s -- %s\n" ${cscnt} ${rset_name} ${cpus} >> ${outfile}
+
+        dot
+        (( cscnt++ ))
+    done
+fi
+
+# --------------------
+# [ ] Steal from /bb/admin/cpuset_chk.sh
+# [ ] Check for where cpuset is mounted using "mount" before you look for the
+#     the directory on "disk".
+# [ ] Look on njmktdstbeta02
+if [[ ${ostype} == Linux ]]
+then
+    if grep cpuset /proc/filesystems > /dev/null 2>&1
+    then
+        if [[ -d /dev/cpuset ]]
+        then
+            for entry in $(ls /dev/cpuset)
+            do
+
+                dot
+                (( cscnt++ ))
+            done
+        fi
+    else
+        unset cscnt
+        typeset cscnt="Not supported"
+    fi
+fi
+
+# --------------------
+if [[ ${ostype} == SunOS ]]
+then
+    for entry in $(psrset -i)
+    do
+        dot
+        (( cscnt++ ))
+    done
+fi
+
+dot
+printf "CPUSet Count : %s\n" "${cscnt}" >> ${outfile}
+

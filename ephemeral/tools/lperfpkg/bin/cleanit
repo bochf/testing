@@ -1,0 +1,118 @@
+#!/bin/bash
+
+# cleanit (for Linux)
+#
+# Version History:
+#  0.1.0  10/7/15 - Original creation
+
+# =============================================================================
+printf "Checking my environment.."
+if [[ $(uname -s) != "Linux" ]]
+then
+    echo "Failed."
+    echo "ERROR: This is not a Linux system. Exiting." >&2
+    exit 1
+fi
+# We are on Linux, change over to the -n EOL suppression method
+echo -n "."
+if [[ $(pwd) == */bin ]]
+then
+    echo "Failed."
+    echo "ERROR: We are running from the bin directory. Exiting." >&2
+    exit 1
+fi
+echo -n "."
+
+if [[ ! -d SPECS ]]
+then
+    echo "Failed."
+    echo "ERROR: Missing the SPEC file directory. Exiting." >&2
+    exit 1
+fi
+echo "Good."
+
+# =============================================================================
+echo "Unconditionally cleaning some directories."
+# SRPMS - Not used, don't bother checking work
+echo -n "  SRPMS.........."
+rm -rf SRPMS > /dev/null 2>&1
+mkdir SRPMS > /dev/null 2>&1
+echo "Done."
+
+# BUILD - Used. Delete it, and buildit will re-create.
+echo -n "  BUILD.........."
+rm -rf BUILD > /dev/null 2>&1
+echo "Done."
+
+# BUILDROOT - Unknown. Just delete it.
+echo -n "  BUILDROOT......"
+rm -rf BUILD > /dev/null 2>&1
+echo "Done."
+
+# SPECS - Keep as is
+echo -n "  SPECS.........."
+# noop
+echo "Done."
+
+# RPMS - Clean it up
+echo -n "  RPMS..........."
+rm -rf RPMS > /dev/null 2>&1
+mkdir RPMS > /dev/null 2>&1
+echo "Done."
+
+# The last build
+echo -n "  .rpm files....."
+rm -rf *.rpm > /dev/null 2>&1
+echo "Done."
+
+# The output from the last rpm build command
+echo -n "  Build output..."
+rm -f rpmbuild.status > /dev/null 2>&1
+echo "Done."
+
+# =============================================================================
+echo -n "Sourcing config file..."
+if [[ ! -e buildit.conf ]]
+then
+    echo "Failed."
+    echo "ERROR: Unable to source the buildit.conf config file." >&2
+    exit 1
+else
+    . ./buildit.conf
+fi
+echo "Done."
+
+# =============================================================================
+# Do we have dependencies?
+echo -n "Looking for dependencies/library requirements..."
+if [[ ! -z ${DEPENDENT_DIR} ]]
+then
+    echo "Found \"${DEPENDENT_DIR}\"".
+    if [[ ${DEPENDENT_DIR} == "common" ]]
+    then
+        echo "Cleaning the \"common\" directory."
+        if ! cd ../common/procperf
+        then
+            echo "ERROR: Unable to change directories. I have lost track of where I am." >&2
+            exit 1
+        fi
+
+        if ! make clean
+        then
+            exit 1
+        fi
+        if ! cd - > /dev/null 2>&1
+        then
+            echo "ERROR: Unable to change directories. I have lost track of where I am." >&2
+            exit 1
+        else
+            echo "Done cleaning common dependencies."
+        fi
+    else
+        echo "ERROR: The dependency \"${DEPENDENT_DIR}\" is unknown. Exiting." >&2
+        exit 1
+    fi
+else
+    echo "None."
+fi
+

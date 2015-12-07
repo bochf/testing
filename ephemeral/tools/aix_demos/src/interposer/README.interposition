@@ -1,0 +1,135 @@
+Method for creating an Interposition Library on AIX
+===================================================
+Document version 1.0,  2/23/2015
+Author:  Eugene Schulman <ESchulman6@bloomberg.net>, R&D Systems Performance (G325)
+Ref: {DRQS 45733405 <go>} (method) and {DRQS 62377221 <go>} (application)
+
+This demo illustrates a method for constructing an interposition library on AIX.  This
+type of library allows the developer to interpose a function in place of a 
+library call during run-time linking.
+
+Injecting a interposed library function into an application opens up interesting
+possibilities for performance analysis, testing, or augmenting functionality.
+The interposed code is uniquely situated in that it is actually *part* of the 
+program, and therefore has direct "white-box" access to the code and data.  This
+gives it a potential native performance and access advantage over "block-box" methods
+such as Probevue or the proc tools.
+
+The demo consists of:
+ - GNU Makefile ("Makefile"), with XL C compile & link directives for creating a
+	shared object.  The specific xlc directives (-qmkshrobj and -bE:) tells the linker
+	to make an object with shared text but private data; and that the object exports 
+	specific functions defined by the .exp file.
+	
+	An alternative method is shown in the comments using ld linker directives only,
+	for integration with builds preferring GCC.
+
+ - An interposition function.  This will be the front-end function linked in place of 
+	the established library call.  It is the responsibility of this function to call
+	out, as needed, to the established library call.
+
+	The interposed function can look up the pointer to the established library function
+	via a dynamic library call to dlsym(RTLD_NEXT,function_name), and then selectively
+	use it.
+
+	The demo presents "interposer-open.c", a function that intercepts libc's open()
+	function, and selectively adds Direct I/O functionality.
+
+Once the interposition library is built, (i.e. "libinterposer.a" constructed by the demo), 
+the new functionality is activated though a loader directive in the environment.  The library
+will need to supply a 32-bit object to link with a 32-bit application, and a 64-bit
+object with a 64-bit application.  (A library constructed with 'ar' can optionally contain both.)
+
+ - For the 32-bit case
+	export LDR_PRELOAD='library.a(object32.o)'
+	/Path/To/Program
+	unset LDR_PRELOAD
+
+ - For the 64-bit case
+	export LDR_PRELOAD64='library.a(object64.o)'
+	/Path/To/Program
+	unset LDR_PRELOAD64
+
+Caveats
+=======
+Preloading an interposition library will not necessarily intercept every call to that
+function (such as open/open64 presented in the demo).
+
+ 1- Only the interface functions exported by the linker at build time can be intercepted.
+	 For full coverage of a facility, care has to be taken to cover all of the different
+	 accessor functions.  The OS System call API will have multiple interfaces for 
+	 key functionality.
+
+	 Case in point:  Intercepting open() alone will not catch explicit calls to
+	 open64(), openx() or openat().  A development project that wants to capture all opens
+	 will have to capture these too, unless developed with knowledge of the content
+	 in the application code.
+
+ 2- Only the references to the library function that are linked at run-time can be
+	 intercepted.   Intra-library references will most likely not be intercepted because
+	 of the way that link editing and symbol resolution is done.
+
+	 Case in point:  libc.a:opendir() will make an internal call to libc.a:open().  Since this
+	 linkage is fixed when libc.a is built, it cannot be interposed.
+
+ 3- The method used here for interposition of a library is not the same as for permanent linking.
+	 The behavior of dlsym(RTLD_NEXT, ...) will not support reuse verbatim in the permanent linking 
+	 context.
+
+ 4- The interposition library can grossly change the behavior of execution in a way that was
+	 not envisioned (and not supportable) for the application.
+
+    For Commerical Off-the-Shelf (COTS) packages - using an interposition library could call
+    into question the supportability of the configuration.  (i.e. If the vendor catches it
+	 they would have standing to say, "Oh!  You're using the product in a way we didn't intend and
+	 cannot support.  We will not support the product while you continue to run that configuration."
+
+	 Long term use of interposition isn't sustainable.  The interposition *is* an override.
+	 For long-term use, whatever special functionality is in the interposition module should
+	 be baked into the application permanently.
+
+ 5- Use of the interposition library will be highly sensitive to OS patching and application upgrades.
+
+
+Building
+========
+To build:
+	gmake clean all
+
+To run the test driver: 
+	gmake test
+
+
+The Demo
+========
+The libinterposer.a built by the demo, for {DRQS 62377221 <go>},
+is meant to modify the behavior of NetBackup (or, frankly, any application)
+to selectively promote use of Direct I/O (DIO).  This proof-of-concept was
+done to show it was possible to reduce or eliminate the impact of the backups
+on the file cache.
+
+Some conditions are imposed on the path to open:
+
+- Must be an absolute reference, and must be in a subdirectory of "/bb"
+- Refers to a regular file
+- There cannot be an open handle held by any other process (because, on AIX, 
+  a file opened for DIO by any process forces all access to be DIO)
+
+If the conditions above aren't met, a standard open call is used, with no embellishment.
+
+
+Integrating the demo with NetBackup:
+1.  Copy ibm4:/home/eschulma/script/myopen/libinterposer.a to target:/bb/pm
+2.  Update /etc/rc.netbackup.aix
+	 From:         ${NBPATH}/bpcd -standalone
+    To:           LDR_PRELOAD64='/bb/pm/libinterposer.a(opendio64.o)' ${NBPATH}/bpcd -standalone
+3.  Restart Netbackup client services
+                  /etc/rc.netbackup.aix stop; /etc/rc.netbackup.aix start
+
+IBM References
+==============
+"Creating a Shared Library", http://www-01.ibm.com/support/knowledgecenter/ssw_aix_71/com.ibm.aix.genprogc/create_shared_lib.htm
+
+"Shared Objects and Run Time Linking", http://www-01.ibm.com/support/knowledgecenter/ssw_aix_71/com.ibm.aix.genprogc/shared_object_runtime_linking.htm
+
+"Preloaded Shared Libraries", http://www-01.ibm.com/support/knowledgecenter/ssw_aix_71/com.ibm.aix.performance/preloading_shared_libraries.htm

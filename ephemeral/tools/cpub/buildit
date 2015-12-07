@@ -1,0 +1,38 @@
+#!/bin/sh
+
+# Use brute-force Bourne-capable code here
+
+FILEXT=
+
+printf "Determining OS..."
+BUILD_OS=`uname -s`
+printf "${BUILD_OS}.\n"
+
+case ${BUILD_OS} in
+    "Linux"|"AIX"|"SunOS")
+        printf "Launching the platform-specific build.\n"
+        FILEXT=${BUILD_OS}
+        ;;
+    *)
+        printf "ERROR: This is an unsupported build platform.\n" >&2
+        exit 1
+        ;;
+esac
+
+printf "Looking for bin/buildit.${FILEXT}..."
+
+if [ -x bin/buildit.${FILEXT} ]
+then
+    printf "Found.\n"
+    printf "Launching now.\n"
+    exec bin/buildit.${FILEXT}
+else
+    printf "Failed.\n"
+    printf "ERROR: Unable to find platform-specific build script.\n" >&2
+    exit 1
+fi
+
+# This code is unreachable
+exit 1
+
+

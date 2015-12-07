@@ -1,0 +1,13 @@
+#!/usr/bin/ksh
+
+input_file=lorem_ipsum
+
+# Simple case of field splitting.
+# Replaces awk '{print $1}' $input_file 
+
+while read -A line_array
+do
+    print -- "${line_array[0]}"
+done < "$input_file"
+
+unset line_array

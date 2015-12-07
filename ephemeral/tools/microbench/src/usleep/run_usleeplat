@@ -1,0 +1,9 @@
+#!./usleeplat
+
+
+
+set CYCLE=100000
+
+set NSEC=5000
+set VERBOSITY=true
+go

@@ -1,0 +1,7 @@
+Name: bbhelp
+Description: This is the bbhelp tool for helping bbs
+Keylist: help
+Location: /usr/local/bin/bbhelp
+Platform: AIX Linux SunOS
+Impact: low
+Owner: mclarkso

@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!---
+    TickerFEPrimer.html - A non-perm (read: non-saved) Ticker and FE term Primer
+
+    Authors:
+       Ted Roosevelt <troosevelt3@gobernador.pr>
+       Michael Liebskind <mliebskind@bloomberg.net>
+       Dan Akselrod <dakselrod1@bloomberg.net>
+       William Favorite <wfavorite2@bloomeberg.net> - Primary contact for errors.
+       
+       
+-->
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <style type="text/css">
+      body
+      {
+      font-size: 10px;
+      background-color: #FAFAFA;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      }
+
+      .arttitle
+      {
+      font-size: 28px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      .artstitle
+      {
+      font-size: 12px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      .artsstitle
+      {
+      font-size: 10px;
+      text-align:center;
+      }
+
+
+      .defblock
+      {
+      padding-left: 50px;
+      padding-right: 30px;
+      text-indent: -20px;
+      text-align:justify;
+      margin-top: 5px;
+      margin-bottom: 5px;
+
+      }
+
+      .subdef
+      {
+      padding-left: 80px;
+      padding-right: 40px;
+      text-indent: -20px;
+      text-align:justify;
+      }
+
+      .debug
+      {
+      color: red;
+      }
+
+      .oscmd
+      {
+      font-family: Monaco, monospace;
+      font-weight:bold;
+      color: #333300;
+      }
+      
+      .bbtermcmd
+      {
+      font-family: Monaco, monospace;
+      font-weight:bold;
+      color: orange;
+      background-color: black;
+      padding:0px 2px 0px 2px;
+      }
+      
+      .subjhead
+      {
+      font-size: 12px;
+      margin-left: 20px;
+      font-weight:bold;
+      }
+
+      .subjsect
+      {
+      margin-left: 50px;
+      font-weight:bold;
+      }
+
+      .subjcont
+      {
+      margin-left: 50px;
+      margin-right: 20px;
+      }
+      
+      .footnote
+      {
+      font-size: 10px;
+      margin-left: 70px;
+      margin-right: 70px;
+      text-align:justify;
+      }
+      
+      .exponent
+      {
+      font-size: 8;
+      position:relative;
+      top:-5px;
+      }
+
+      .thintable
+      {
+      margin-left: 55px;
+      margin-right: 40px;
+      border-collapse: collapse;
+      }
+
+      .thintd
+      {
+      padding: 5px;
+      border: 1px solid black;
+      vertical-align:text-top;
+      }
+
+      /* List table is like a thin table without borders */
+      .listtable
+      {
+      margin-left: 55px;
+      margin-right: 40px;
+      border-collapse: collapse;
+      }
+
+      .listtd
+      {
+      padding: 4px;
+      vertical-align:text-top;
+      }
+
+      /* internal table is like a thin table without margins */
+      .internaltable
+      {
+      border-collapse: collapse;
+      }
+
+      .internaltd
+      {
+      padding: 4px;
+      vertical-align:text-top;
+      border: 1px solid black;
+      }
+
+      /* This is because Chrome decides to print one cell larger than all others! */
+      @media print, screen {
+      .fctexttd /* Fucking Chrome text td */
+      {
+      padding: 4px;
+      vertical-align:text-top;
+      border: 1px solid black;
+      height: 10px;
+      min-width: 110px;
+      }
+
+      .fcflvrtd /* Fucking Chrome flvr td */
+      {
+      padding: 4px;
+      vertical-align:text-top;
+      border: 1px solid black;
+      height: 10px;
+      min-width: 5px;
+      }
+
+      .emptytd
+      {
+      padding: 4px;
+      vertical-align:text-top;
+      height: 10px;
+      }
+      }
+
+      .textit { font-style:italic; }
+      .texttt { font-family: Monaco, monospace; }
+      .textbf { font-weight:bold; }
+      .underline { text-decoration: underline; }
+
+      a:link { text-decoration: underline; color: #994499; }
+      a:visited { text-decoration: underline; color: #994499; }
+      /* Active is more like "visited" than immediate feedback. */
+      a:active { text-decoration: underline; color: #994499; }
+      a:hover { text-decoration: underline; color: #994499; }
+    </style>
+
+    <title>A Short Primer on Ticker &amp; Feed Terminology</title>
+  </head>
+  <body>
+
+    <p class="arttitle">A Short Primer on Ticker &amp; Feed Terminology</p>
+    <!-- <p class="artstitle">for system administrators and non-developers</p> -->
+
+    <p class="artsstitle">Version: 1.0.1</p>
+
+    <!-- <p class="footnote"><span class="textbf">Note:</span> Some of the terms are used as concepts, operational processes, and commands. I have tried to differentiate the usage when possible. But the distinctions are sometimes elusive as the terminology is frequently reused in multiple contexts.</p> -->
+
+     <!-- <hr style="width: 90%;" /> --><!-- =========================================================== -->
+
+    <p class="defblock"><span class="textbf">Blackhole</span> - This is a ticket that is held open to consume repeated alarms. The &quot;{Blackhole}&quot; string is typically found in the title of the ticket.</p>
+
+    <p class="defblock"><span class="textbf oscmd">chase</span> - Chase is a script that moves fallback and monitoring to another machine in the same flavor. Chase includes safety checks and attempts to do the correct things with monitoring and fallback-master/submaster. <span class="oscmd">chase</span> is used here as a reference to a script. It is also used in an action/verb context where monitors are &quot;chased&quot; - This refers to moving the designated monitor from one system to another.</p>
+
+    <p class="defblock"><span class="textbf">Contributor pricing</span> - This is a method (primarily for fixed income instruments) where pricing is provided by multiple sources. Information is fed from multiple sources and the user may choose to filter the Pricing Contributor Source (PCS). Compare with Exchange Pricing.</p>
+
+    <p class="defblock"><span class="textbf oscmd">copyblk</span> - This is the process to copy the front end stream position of one ticker to another. This is needed when syncing data from one ticker to another. Note: This only applies for tkrsender and <span class="textit">not</span> xreceiver</p>
+
+    <p class="defblock"><span class="textbf">Day-0</span> - This is data for today. History is divided into regular, deep and superdeep. Regular history is located on SAN storage of normal ticker plant machines. Deep is located on NFS, attached to normal ticker plants. Super deep is located on NFS, attached to a separate set of machines dedicated to serving these requests. Normally break down is 0-30 Regular (in order to speed up GIP 30), 31-~280 deep, ~60- year 2008 super deep. NOTE: Ticker is moving more towards a &quot;tier&quot; based terminology and the breakdown will change.</p><!-- This is data for today. &quot;History&quot; is days 1 - 29. &quot;Deep&quot; is days 30 - 235. &quot;Superdeep&quot; is days 30 to the first data. deepmasters and sdeepmasters are responsible for writing historical data, while simple deep and sdeep systems are read-only of the data. Data is rolled from (SAN based) Day-29 files to (NFS based) deep/sdeep files via the <span class="oscmd">disk_shuffle</span> command.== http://itickersweb.corp.bloomberg.com/wiki/index.php/Sdeep_/_Superdeep -->
+
+    <p class="defblock"><span class="textbf oscmd">disk_shuffle</span> - A script that moves date based files around (pre-creates new, deletes old, migrates to NFS).</p>
+
+    <p class="defblock"><span class="bbtermcmd">ECO</span> - This is a calendar of economic releases. Watching these releases can give some indication of pending market volatility and heavy volume days.</p>
+
+    <p class="defblock"><span class="bbtermcmd">EPCM</span> - Ticker Plant (and FE) capacity monitor. Displays stats such as %idle, tick rate, and current monitor for tickers. Displays %idle and system state for FE systems.</p>
+
+    <p class="defblock"><span class="bbtermcmd">EPLA</span> - This is a terminal function to view front end and ticker latencies by flavor, exchange, and type.</p>
+
+    <p class="defblock"><span class="textbf">Exchange pricing</span> - This is a method (primarily for equities) where an exchange provides pricing information. This is a single stream from an <span class="textit">authoritative</span> source. Compare with Contributor Pricing.</p>
+
+    <p class="defblock"><span class="bbtermcmd">FECC</span> - Feeds Control Center. This is a dashboard view for the state of feeds. The terms used to classify state are:</p>
+
+    <table class="thintable">
+      <tr>
+        <td class="thintd">Live/Live</td>
+        <td class="thintd">Both feed frontends are in their normal mode serving both sides and may or may not be updating production tickers</td>        
+      </tr>
+      <tr>
+        <td class="thintd">Live/Backup</td>
+        <td class="thintd">One side is sending to test/beta, the other is not sending ticks</td>        
+      </tr>
+      <tr>
+        <td class="thintd">Liveprod/Live</td>
+        <td class="thintd">Liveprod side is sending to at least one prod ticker, live side is sending to only test/beta</td>        
+      </tr>
+      <tr>
+        <td class="thintd">Liveprod/Backup</td>
+        <td class="thintd">One side is running normal production data, the other is not sending <span class="textit">any</span> ticks</td>        
+      </tr>
+      <tr>
+        <td class="thintd">Liveall/Backall</td>
+        <td class="thintd">The liveall side is serving data for both sides, backall side is down</td>        
+      </tr>
+      <tr>
+        <td class="thintd">Backup/Backup</td>
+        <td class="thintd">Neither side is sending ticks to tickerplant</td>        
+      </tr>
+    </table>
+    <!-- The descriptions vary... This is the best: http://itickersweb.corp.bloomberg.com/wiki/index.php/LIVE/BACKUP/LIVEALL/BCKALL -->
+
+    <p class="defblock"><span class="bbtermcmd">FEMT</span> - FrontEnd Metrics. This is a dashboard of tkrsendr and xsender ticks, queues, and ticks behind.</p>
+
+    <p class="defblock"><span class="textbf">FETS</span> - Front End Technical Support. Responsible for operational support of FE systems from QC, problem determination, and items such as holiday maintenance (marking a feed as holiday so it will not alarm for &quot;NO DATA FOR&quot; alarms).</p>
+
+    <p class="defblock"><span class="textbf">Flavor</span> - Ticker systems are divided into &quot;flavors&quot; to scale out capacity and to simplify code distribution. (A ticker only runs code of a specific class of tick data.) Flavors are listed in the following table. They can also be listed using <span class="bbtermcmd">VSAT7</span> - (That lists what systems are providing <span class="textit">your</span> ticks).</p>
+
+    <table class="thintable">
+      <tr>
+        <td class="fcflvrtd">0</td>
+        <td class="fctexttd">Equities, Currencies...</td>        
+        <td class="emptytd">&nbsp;</td>
+        <td class="fcflvrtd">5</td>
+        <td class="fcflvrtd">MSG - MSG scraping</td>        
+        <td class="emptytd">&nbsp;</td>
+        <td class="fcflvrtd">10</td>
+        <td class="fctexttd">OPRA2 - US Options</td>        
+        <td class="emptytd">&nbsp;</td>
+        <td class="fcflvrtd">15</td>
+        <td class="fctexttd">GOVIE2 - Bonds</td>        
+      </tr>
+      <tr>
+        <td class="fcflvrtd">1</td>
+        <td class="fcflvrtd">OPRA - US Options</td>        
+        <td class="emptytd">&nbsp;</td>
+        <td class="fcflvrtd">6</td>
+        <td class="fctexttd">BBO - Market depth</td>        
+        <td class="emptytd">&nbsp;</td>
+        <td class="fcflvrtd">11</td>
+        <td class="fctexttd">OPRA3 - US Options</td>        
+        <td class="emptytd">&nbsp;</td>
+        <td class="fcflvrtd">16</td>
+        <td class="fctexttd">Commodities</td>        
+      </tr>
+      <tr>
+        <td class="fcflvrtd">2</td>
+        <td class="fctexttd">GOVIE - Bonds</td>        
+        <td class="emptytd">&nbsp;</td>
+        <td class="fcflvrtd">7</td>
+        <td class="fctexttd">Equity volatility</td>        
+        <td class="emptytd">&nbsp;</td>
+        <td class="fcflvrtd">12</td>
+        <td class="fctexttd">OPRA4 - US Options</td>        
+        <td class="emptytd">&nbsp;</td>
+        <td class="fcflvrtd">17</td>
+        <td class="fctexttd">Equities</td>        
+      </tr>
+      <tr>
+        <td class="fcflvrtd">3</td>
+        <td class="fctexttd">US - Securities</td>        
+        <td class="emptytd">&nbsp;</td>
+        <td class="fcflvrtd">8</td>
+        <td class="fctexttd">TRAK</td>        
+        <td class="emptytd">&nbsp;</td>
+        <td class="fcflvrtd">13</td>
+        <td class="fctexttd">Commodities</td>        
+        <td class="emptytd">&nbsp;</td>
+        <td class="fcflvrtd">18</td>
+        <td class="fctexttd"><span class="textit">Pending flavor</span></td>        
+      </tr>
+      <tr>
+        <td class="fcflvrtd">4</td>
+        <td class="fctexttd">MSG - MSG scraping</td>        
+        <td class="emptytd">&nbsp;</td>
+        <td class="fcflvrtd">9</td>
+        <td class="fctexttd">Currencies</td>        
+        <td class="emptytd">&nbsp;</td>
+        <td class="fcflvrtd">14</td>
+        <td class="fctexttd">BBO2 - Market depth</td>
+        <td class="emptytd">&nbsp;</td>
+        <td class="emptytd">&nbsp;</td>
+        <td class="emptytd">&nbsp;</td>
+      </tr>
+    </table>
+
+    <p class="defblock"><span class="textbf">LTP</span> - Local Ticker Plant. This is a system that is placed local to the exchange (distant from our NY/NJ data centers) with the purpose of reducing (some) tick latency for users local to that geography / exchange. For a list and status of all LTP systems, run: <span class="bbtermcmd">LTPM</span>.`</p> 
+
+    <!-- <p class="defblock"><span class="bbtermcmd">LTPM</span> - This is a &quot;dashboard&quot; for LTP systems and the feeds they serve.</p> -->
+
+    <p class="defblock"><span class="textbf">MktDst</span> - (Market Distribution) These systems take a full ticker input stream and send out only what subscribing hosts can handle (a subscribed / subset of the full stream).</p>
+
+    <p class="defblock"><span class="textbf">Monitor</span> - This is a chosen node for each flavor that is responsible for pushing (publishing) real-time data to subscribers. The monitor is managed via the <span class="oscmd">chase</span> script and process. <span class="bbtermcmd">EPCM</span> tells the current monitor for each flavor. There are &quot;monitor eligible machines&quot; (can be queried via <span class="oscmd">tpls canmonitor</span>) only those should ever have monitors chased to them.</p><!-- This is a chosen node for each flavor that is responsible for pushing (publishing) real-time data to subscribers. The monitor is managed via the <span class="oscmd">chase</span> script and process. <span class="bbtermcmd">EPCM</span> tells the current monitor for each flavor.</p> -->
+
+    <p class="defblock"><span class="textbf texttt">NO DATA FOR</span> - This is a pattern seen in the <span class="texttt">act.log</span> that suggests that a feed is down and that the ticker has &quot;NO DATA FOR&quot; that stream.</p>
+
+    <p class="defblock"><span class="textbf">OPRA</span> - <a href="http://www.opradata.com/default.jsp">OPRA</a> data is US Equity options data. OPRA systems have FE parsers on the system with the tickers. OPRA streams are sent into the environment via PGM and are high volume (HVM) streams. Each flavor of OPRA processes a range of equities based on the following breakdown:</p>
+
+
+    <table class="listtable">
+      <tr>
+        <td class="listtd">
+          <!-- ================================================== -->
+          <table class="internaltable">
+            <tr>
+              <td class="thintd">flvr 1</td>
+              <td class="thintd">A - EDM</td>
+            </tr>
+          </table>
+        </td>
+        <td class="listtd">
+          <table class="internaltable">
+            <tr>
+              <td class="thintd">flvr 10</td>
+              <td class="thintd">KR - SLM</td>        
+            </tr>
+          </table>
+        </td>
+        <td class="listtd">
+          <!-- ================================================== -->
+          <table class="internaltable">
+            <tr>
+              <td class="thintd">flvr 11</td>
+              <td class="thintd">EDN - KQ</td>        
+            </tr>
+          </table>
+        </td>
+        <td class="listtd">
+          <table class="internaltable">
+            <tr>
+              <td class="thintd">flvr 12</td>
+              <td class="thintd">SLN - Z</td>        
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+
+    <p class="defblock"><span class="textbf">PGM</span> - PGM is a local implementation of <a href="http://tools.ietf.org/html/rfc3208">RFC 3208</a> / <a href="http://en.wikipedia.org/wiki/Pragmatic_General_Multicast">Pragmatic General Multicast</a>. This is a protocol that allows data to be sent to multiple systems (multicast) at the same time. The protocol allows for limited error detection and resend of dropped packets. Most tick data distributed internally to Bloomberg applications is sent via PGM.</p>
+
+    <p class="defblock"><span class="textbf">Plug Machines</span> - These are systems used to convert a stream of incoming feed data from one protocol to another. For example: the input may be local UDP traffic while the output could be a TCP stream more appropriate for communication across longer (geographically distant) links.</p>
+
+    <p class="defblock"><span class="textbf oscmd">qc_tool</span> - This is the process that is run from the GSRV systems to QC one ticker system against another, known good, system.</p>
+
+    <p class="defblock"><span class="textbf oscmd">recarea</span> - This is a ticker plant process that takes an incoming stream of ticks and fans the stream out to a parallel set of <span class="oscmd">ticupd</span> updaters.</p><!-- <a href="http://itickersweb.corp.bloomberg.com/wiki/index.php/Recarea">http://itickersweb.corp.bloomberg.com/wiki/index.php/Recarea</a> -->
+
+    <p class="defblock"><span class="textbf oscmd">redirect</span> - This is a command run on ticker plants to redirect user load away from a specific TP node.</p>
+
+    <p class="defblock"><span class="textbf">&quot;Release and put online&quot;</span> - This is the message to CONR that states that a system has recovered from a WP and can go back to production. If it is a beta system the request is &quot;Release and rescpu&quot;</p>
+
+    <p class="defblock"><span class="textbf oscmd">rtcpu</span> / <span class="textbf oscmd">rescpu</span> - These commands mark the environment up (rescpu) and down (rtcpu). Actual user load is redirected via the <span class="oscmd">redirect</span> command.</p>
+
+    <p class="defblock"><span class="textbf oscmd">system_up</span> - This is the main script to start a ticker plant.</p>
+
+    <p class="defblock"><span class="textbf">TDMON</span> - This is a process that runs on User systems that looks for timing ticks (special ticks with timing information). It reports the latencies back to ticker as a monitored statistic.</p>
+
+    <p class="defblock"><span class="textbf oscmd">tkrsendr</span> - TCP based tick streaming process. Contrast with <span class="oscmd">xsender</span>.</p>
+
+    <p class="defblock"><span class="textbf">Ticker plant</span> - Receives normalized data from exchanges, performs calculations, and monitors the data in real-time in a variety of apps. Stores info in db.</p><!-- STUB: Stolen from presentation - not ideal wording. -->
+
+    <p class="defblock"><span class="textbf">Tickhash</span> - This is a concept not specific to feeds or TP, but to User systems that do not wish to get a &quot;full stream&quot; of data. Tickhash is the method by which a system can subscribe only the securities (streams) that they want to see, while the remainder are not sent. Market distribution (MKTDST) systems are responsible for sending only the subscribed objects to the requesting systems.</p>
+
+    <p class="defblock"><span class="textbf oscmd">tpenvdwn</span> - This is the command to bring down the <span class="textit">ticker</span> environment. This is different than <span class="oscmd">bbenvdwn</span> to bring down the Bloomberg environment.</p>
+
+    <p class="defblock"><span class="textbf oscmd">xsender</span> - PGM based tick streaming process. Contrast with <span class="oscmd">tkrsendr</span>.</p>
+
+    <!-- <p class="defblock"><span class="bbtermcmd">TPVU</span> - A terminal command to view the status of ticker plant systems. <span class="debug">Expand - Current description offers no value.</span></p> -->
+
+    <br />
+
+    <hr width="65%" />
+
+    <!-- <p class="artsstitle">Version: 0.6.0 <span class="debug">[Move to top - to manage the table breaking over page]</span></p> -->
+
+    <br />
+    <br />
+
+    <p class="defblock">Resources:</p><!-- defblock is not the most appropriate, but it works here -->
+    <ul style="padding-left: 60px;">
+      <li><span class="bbtermcmd">ITKR&lt;go&gt;</span> [Login: bbuser; Password: wiki4all]</li>
+      <li><a href="http://itickersweb.corp.bloomberg.com/wiki/index.php/Main_Page">http://itickersweb.corp.bloomberg.com/wiki/index.php/Main_Page</a> (URL for <span class="bbtermcmd">ITKR</span> page)</li>
+      <li><a href="http://itickersweb.corp.bloomberg.com/wiki/index.php/Feeds_Training_Resources">http://itickersweb.corp.bloomberg.com/wiki/index.php/Feeds_Training_Resources</a></li>
+      <li><a href="http://itickersweb.corp.bloomberg.com/wiki/index.php/Feeds_Tools">http://itickersweb.corp.bloomberg.com/wiki/index.php/Feeds_Tools</a></li>
+      <li><a href="https://cms.prod.bloomberg.com/team/display/rs/FE+Metrics">https://cms.prod.bloomberg.com/team/display/rs/FE+Metrics</a></li>
+      <li><a href="https://cms.prod.bloomberg.com/team/display/sysi/MKTDST">https://cms.prod.bloomberg.com/team/display/sysi/MKTDST</a></li>
+      <li><a href="http://itickersweb.corp.bloomberg.com/wiki/index.php/Timing_Ticks_Overview">http://itickersweb.corp.bloomberg.com/wiki/index.php/Timing_Ticks_Overview</a></li>
+      <li><a href="https://cms.prod.bloomberg.com/team/display/rs/Trainings">https://cms.prod.bloomberg.com/team/display/rs/Trainings</a></li>
+    </ul>
+
+ </body>
+</html>
+
+
+
+
+
+
+

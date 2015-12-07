@@ -1,0 +1,486 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!-- 
+     ######################################################################
+     Python RFC - An open discussion on installation, maintenance, and
+                  use of Python at BLP.
+
+     Emilio Aguinaldo <magdalo@malolos.ph>
+     William Favorite <wfavorite2@bloomberg.net>
+
+     Notes:
+     - Stolen from the Scripting Standards document
+     - ToDos are at the *end* of the document!
+
+     Version History:
+      0.1.0  11/23/14 - First documented version
+      0.4.0   12/2/14 - Continued work
+     ######################################################################
+-->
+
+
+  <!-- **********************************************************************
+       This is what an inline comment looks like.
+       ********************************************************************** -->
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+  <meta http-equiv="Content-type" content="text/html;charset=UTF-8" />
+  <style type="text/css">
+  <!--
+  body, table { 
+               font-family: "Times", serif;
+               font-size: 10pt;
+               background-color: #fafafa; 
+               }
+ 
+  a:link { text-decoration: none; color: #000000; }
+  a:visited { text-decoration: none; color: #000000; }
+  /* Active is more like "visited" than immediate feedback. */
+  a:active { text-decoration: none; color: #000000; }
+  a:hover { text-decoration: none; color: #aa00aa; }
+
+  .thintable {
+               margin-left:25px;
+               margin-right: 5px;
+               border-style: solid;
+               border-collapse:collapse;
+               border-width:1px;
+               border-color: #888888;
+             }
+  .thintr {
+           border-style: solid;
+           border-width:1px;
+           border-collapse:collapse;
+          }
+
+  .thintd {
+            border-style: solid;
+            border-width:1px;
+            border-collapse:collapse;       
+            padding: 5px;
+          }
+
+  .invisitable {
+                margin-left:20px;
+                border-style: none;
+             }
+  .invisitr {
+             border-style: none;
+            }
+
+  .invisitd {
+            border-style: none;
+            text-align: left;
+            vertical-align:text-top;
+            }
+        
+  .sectiontitle {
+               font-weight: bold;
+               font-size: 14pt;
+               text-decoration:underline;
+               background-color: #cccccc;
+                 }
+  
+  .sectionhead {
+               font-weight: bold;
+               font-size: 10pt;
+               margin-left: 10px;
+               background-color: #e8e8e8;
+                }
+
+  .sectiontext { margin-left:20px; }
+
+  .bartlettext {
+               padding-top: 2px;
+               padding-bottom: 2px;
+               padding-right: 20px;
+               padding-left: 20px;
+               border-style: solid;
+               border-color: #777777;
+               border-width: 1px;
+               margin-left: 30px;
+               margin-right: 30px;
+               font-style:italic;
+               }
+
+  .bartlettbody {
+                text-align: justify;
+                }
+  .bartlettauth {
+                text-align: right;
+                }
+
+
+  .oscmd { font-family: "Courier New", "Lucida Console", Monospace; color: green; }
+
+  .osword { font-family: "Courier New", "Lucida Console", Monospace; color: #990033; }
+
+  @media screen,print
+  {
+     .codeblock
+     {
+          padding-top: 2px;
+          padding-bottom: 2px;
+          padding-right: 16px;
+          padding-left: 16px;
+
+          font-family: "Courier New", "Lucida Console", Monospace;
+          font-size: 9pt;
+          margin-left: 25px;
+          /* margin-right: 15px; */
+          width: 50em;
+          color: #00cc00;
+          background-color: black;
+          border-style: solid;
+          border-color: #777777;
+          border-width: 2px;
+          font-weight: bold;
+      }
+
+      .codenote { color: #aaaadd; }
+  }
+
+  /* These are LaTeX concepts */
+  .textit { font-style: italic; }
+  .textbf { font-weight: bold; }
+  .texttt { font-family: "Courier New", "Lucida Console", Monospace; }
+  .underline { text-decoration:underline }
+
+  .debug { font-weight: bold; color: red; }
+
+  .linkcontent { margin-left: 10px; }
+
+  .footnote { margin-left: 30px; margin-right: 30px; font-size: 9pt; }
+  /* Note: This is the definiton of the "sup" tag. It is best to just use that. */
+  .reference { vertical-align: super; font-size: smaller; }
+ 
+ @-webkit-keyframes cursorbl
+ { 
+     from { opacity: 1.0; } to { opacity: 0.2; }
+ }
+ .cursor {
+    -webkit-animation-name: cursorbl;
+    -webkit-animation-iteration-count: infinite;
+    -webkit-animation-timing-function: cubic-bezier(1.0,0,0,1.0);
+    -webkit-animation-duration: .75s;
+    }
+  -->
+  </style>
+
+<title>Python RFC - The Bloomberg SA Viewpoint</title>
+</head>
+
+<body>
+  <div style="border-bottom:thick solid #aaaaaa; width:95%; text-align:center; margin-right: auto; margin-left: auto;">
+  <p style="text-align:center; font-size:20pt; font-weight:bold">Python RFC - The Bloomberg SA Viewpoint</p>
+  </div>
+
+  <p />
+  <p style="text-align:center; font-size:9pt;">Ver: 0.4.0</p>
+  <p />
+  <p />
+
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">Overview</p>
+
+  <p class="sectionhead">Purpose of this document</p>
+
+  <p class="sectiontext">This document is intended as a follow-up to the &quot;Exploring Python&quot; Monthly Technology Update that was an investigation into the use of Python as a SA, perf, or other &quot;low-level&quot; tool. That paper investigated language intracacies and finding ones way through the new language. This paper, instead deals with the <span class="textit">operational</span> considerations of using this language in our environment.</p>
+
+  <p class="sectiontext">The applicability of the use of Python at the application layer, or even at the Bloomberg environment layer is not in question here. The application layer can rely on application installs, or potentially the /bb/util install<sup>X</sup>.</p>
+
+  <p class="footnote">[X. While this is <span class="textit">possible</span> it is not <span class="textit">recommended</span>. Dependencies between applications and this version are not tracked. Unexpected changes in the installed distribution could have profound effects on the ability of applications to successfully run. ]</p>
+
+  <p class="sectionhead">Premise of this document</p>
+
+  <p class="sectiontext">Python as a cross-platform, low-level, SA language is extremely problematic and is likely not an option. Python as a low-level, single-platform, tool environment 
+
+
+
+
+
+
+
+
+
+
+  <p class="sectiontext">This document is intended to open a discussion on how Python is deployed and used within the SA community at Bloomberg. There is not a consistency between Python distributions on the various operating systems, and this complicates cross-platform coding efforts.</p>
+
+  <p class="sectiontext">Growing popularity of Python for sysadmin tasks. Python for system utilities - <span class="debug">(Such as Halstead's 2nd pass QC)</span>.</p>
+
+
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">Statements of Fact</p>
+
+  <p class="sectiontext">Things we should all agree on - the background of this paper.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">There are up to three installs of Python on BB Unix systems.</p>
+
+  <!-- <p class="sectiontext">The OS distribution may ship an install, /bb/util has an install, and the app space may have an install.</p> -->
+
+
+  <table class="thintable">
+    <tr class="thintr">
+      <td class="thintd">OS install</td>
+      <td class="thintd">&bull;&nbsp;Always availaible (to lower level OS commands)<sup>X</sup><br />
+      &bull;&nbsp;OS upgrades may break apps<br />
+      &bull;&nbsp;Inconsistent versions across OSes<br />
+      &bull;&nbsp;Not availaible on AIX</td>
+    </tr>
+    <tr class="thintr">
+      <td class="thintd">/bb/util/bin</td>
+      <td class="thintd">&bull;&nbsp;Ubiquitious<br />
+      &bull;&nbsp;Static<br />
+      &bull;&nbsp;Cross-platform consistent<br />
+      &bull;&nbsp;Install denoted by bitness, not version<br />
+      &bull;&nbsp;2.6</td>
+    </tr>
+    <tr class="thintr">
+      <td class="thintd">App install</td>
+      <td class="thintd">&bull;&nbsp;Specifically tailored for app needs<br />
+      &bull;&nbsp;May or may not actually exist</td>
+    </tr>
+    <tr class="thintr">
+      <td class="thintd">/opt/swt/bin</td>
+      <td class="thintd">&bull;&nbsp;Unique to the dev environment<br />
+      &bull;&nbsp;Versions vary by OS</td>
+    </tr>
+  </table>
+
+  <p class="footnote">[X. &quot;always available&quot; means that once you write for a specific OS, then you can expect to find Python in the same location at all stages of the system lifecycle - specifically when the application mounts do not exist. For example, this install can be used to perform a post-install modifiction, DR operation, or a disk migration involving the mounts containing the other install types. ]</p>
+
+
+
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">AIX does not have an OS-based install.</p>
+
+  <p class="sectiontext">This means that things like OS install &quot;finish&quot; scripts, DR / OS migration tools, and similar tools tied closely to the OS cannot be written in Python on AIX. </p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">OS based installs of interpreters / languages are entirely appropriate for SAs to write against.</p>
+
+  <p class="sectiontext">System administrators should <span class="textit">expect</span> to re-validate low-level tools for each OS upgrade / patching session. It is not uncommon for low-level APIs, tools, and features to change with even minor upgrades. As the OS administrator lives closer to the OS, his knowledge of change in this domain is much more current than his application level counterpart.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Bloomberg applications are not packaged. We do not (properly) track interpreter dependencies.</p>
+
+  <p class="sectiontext">There is no concept of a dependency count by non-packaged applications on our platforms.</p> 
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">There are significant compatibility issues between major versions of Python.</p>
+
+  <p class="sectiontext">Some features of Python 2.x <span class="textit">are not</span> forward compatible with 3.x installs. Some features of Python 3.x <span class="textit">are</span> compatible with <span class="textit">some</span> versions of 2.x. <span class="debug">Fix this</span></p> 
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Python installs use a python<span class="textit">XY</span> version specification in the name. The python link is only by local or OS vendor created convention.</p>
+
+  <p class="sectiontext">This statement borders on untruth. Some clarifications:</p> 
+  <ul>
+    <li>Linux /usr/bin/python is a hard link to /usr/bin/python2.4 (on RHEL 5.6).</li>
+    <li>Solaris /usr/bin/python is a soft link to /usr/bin/python2.6 (in 10 and 11).</li>
+    <li>/opt/swt/bin/python soft links to 2.6.2 or 2.7.2 depending on the platform.</li>
+  </ul>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Shell script dependencies are not directly compariable to that of Python (or Perl).</p>
+
+  <p class="sectiontext">The most obvious issues between shell variants are resolved by invoking the correct shell. Bourne, Korn(88), Bash, and Korn93 are the options - with a base language that is <span class="textit">mostly</span> forward compatible. Cross platform scripting, while generally not recommended*, is not particularly challenging.</p> 
+
+  <p class="footnote">[* See the Bloomberg Shell Scripting Guidlines for the reasoning against cross-platform scripting. ]</p>
+
+
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Python 2.7 is the only &quot;supported&quot; 2.<span class="textit">x</span> version</p>
+
+
+
+  <p class="sectiontext">Python 2.5 (and earlier) documentation returns 404 errors at python.org.<sup>X</sup> So if you are looking for language implementation details for these versions, you will not find documentation from the Python source.</p>
+
+  <p class="footnote">[X. The older content still exists but in an &quot;archival&quot; area. Most links in the active content area referencing versions prior to 2.6 return 404 errors. <a href="https://www.python.org/doc/versions/">https://www.python.org/doc/versions/</a> can get you to the previous documentation, <a href="https://docs.python.org/2/">https://docs.python.org/2/</a> will not. ]</p>
+
+  <p class="sectiontext">Python 2.6 documentation is still viewable, but this version is &quot;unsupported&quot; which means that it is not getting patches, and will likely be &quot;undocumented&quot; like 2.5.</p>
+
+
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead"></p>
+
+  <p class="sectiontext"></p> 
+
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">Statements of Opinion</p>
+
+  <p class="sectiontext">Things we might not agree on - the point of this paper.</p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Applications must not use OS supplied versions of Python.</p>
+
+  <p class="sectiontext"></p>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">SA authored OS utilities should use the OS supplied Python. SA authored OS &quot;finish scripts&quot; and similar <span class="textit">run anytime</span> utilities must use the OS supplied versions of Python.</p>
+
+  <p class="sectiontext"></p> 
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">/opt/swt/bin installs are of minimal relevance to system administrators and should not be used - unless the scope is limited to the dev environment.</p>
+
+  <p class="sectiontext"></p> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">Arguments to the Contrary</p>
+
+  <div class="bartlettext"><p class="bartlettbody">These are arguments against premises in this paper - and this paper's reply.</p></div>
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Every Python script should use the OS supplied version of Python.</p>
+
+  <p class="sectiontext">The basis of the argument here is that the OS is part of the &quot;stack&quot; and that all applications on the system should move with the OS install <span class="textit">cadence</span> of the OS lifecycle. The value here is that maintaining application space installs of interpreters like Python is a pain.</p> 
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Python is not an appropriate language for SA tasks.</p>
+
+  <p class="sectiontext">Lower level system tools should be written in Shell, C, or possibly Perl.</p> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <!-- ============================================================================ -->
+  <p class="sectionhead">Example: Handling exceptions</p>
+
+  <p class="sectiontext">Fundamental structual / syntatical elements have changed between versions</p>
+
+  <p class="sectiontext">Why this is a problem:</p>
+  
+  <ul>
+   <li>Not forward compatible with 3.x (will require modification)</li>
+   <li>Developer must explicitly source a version</li>
+   <li>Very common code / usage scenario (you can't write around this)</li>
+   <li>Requires specific versions of 2.x (will break on Linux OS installed Python)</li>
+  </ul>
+   
+  <div class="codeblock">
+    <p>
+      <span class="codenote">--- Used: &lt; 2.5; Compatibility: &lt; 3.x --- </span><br />
+      ...<br />
+      <br />
+      try:<br />
+      &nbsp;&nbsp;&nbsp;...<br />
+      except OSError, err:<br />
+      &nbsp;&nbsp;&nbsp;...<br />
+      <br />
+      <span class="codenote">--- Used: &gt; 2.5; Compatibility: &gt; 2.5 --- </span><br />
+      ...<br />
+      <br />
+      try:<br />
+      &nbsp;&nbsp;&nbsp;...<br />
+      except OSError as err:<br />
+      &nbsp;&nbsp;&nbsp;...<br />
+     </p>
+  </div>
+
+
+
+
+
+
+
+
+
+   
+  <!-- ############################################################################ -->
+  <p class="sectiontitle">About this document</p>
+
+    <div class="bartlettext"><p class="bartlettbody">&quot;You know... pmp does that for you!&quot;</p>
+<p class="bartlettauth">- William Favorite</p></div>
+
+  <p class="sectiontext">This document is maintained by group 325. Contact one of the members of the group for any issues, questions, or concerns arising from this document.</p>
+
+  <!-- **********************************************************************
+       wfavorit:
+       I wanted to...
+        (1) order based on arbitrary (sort) order
+        (2) have Petrov at the top (that is what I do)
+       so... I orderd by sorting on the email address.
+       ********************************************************************** -->
+
+  <p class="sectiontext">Contributors to this document:</p>
+
+  <ul>
+    <li>Emilio Aguinaldo &lt;magdalo@malolos.ph&gt;</li>
+    <li>William Favorite &lt;wfavorite2@bloomberg.net&gt;</li>
+  </ul>
+
+  <p class="sectiontext">Additional &quot;commentary&quot; can be found in the comments within the (X)HTML of this document. This is a <span class="textit">living</span> and <span class="textit">collaborative</span> document; we continually seek improvements / refinements to the recommendations herein. All feedback is appreciated.</p>
+
+  <!-- ############################################################################ -->
+  <!--
+      ToDos
+
+      [ ] Modular design
+      [ ] Set CSS styles for all "OS Words" and "OS Commands". (The actuall CSS
+          can be refined later)
+      [ ] Define data vs code
+      [ ] The point of re-entrancy in the shell
+      [ ] No mention of variable discipline
+      [_] No mention of pass by reference
+      [ ] No mention of complex variables
+      [_] No mention of array usage
+      [ ] Proposed: When to use "sane"; defaults for parameters, when not to
+      [W] Re-org all the major sections to include name changes
+
+      Done
+  -->
+
+</body>
+</html>

@@ -1,0 +1,99 @@
+#!/bin/ksh93
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+### This reads in whatever paramaters may have been passed on command line
+shift
+while [[ -n ${1} ]]
+do
+    eval ${1}
+    shift
+done
+
+### Bring in required functions
+. ${MODULES_DIR}/functions/rounding.ksh
+
+# Some notes on the data:
+# - Load averages are rounded so that they can be compared properly
+# - User count is simarly averaged. It is just not useful here for
+#   comparisons. A more telling value would be
+#    --> # of unique users running processes
+#    --> # of unique users logged in (?)
+# - Uptime is averaged to 10 days. Hours is dropped.
+
+dot
+
+uptime_line=$(uptime)
+dot
+
+uptime=${uptime_line#*up }
+uptime=${uptime% users*}
+uptime=${uptime%,*}
+if [[ ${uptime} == *day* ]]
+then
+    uptime=${uptime% day*}
+    uptime=$(simple_round ${uptime})
+else
+    uptime=0
+fi
+case ${uptime}
+in
+    0)
+        uptime=${uptime}" days" ;;
+    1)
+        uptime=${uptime}" day" ;;
+    [2-9])
+        uptime=${uptime}" days" ;;
+    [1-9][0-9])
+        uptime=${uptime}" days" ;;
+    *)
+        uptime=NAN ;;
+esac
+dot
+
+ucnt=${uptime_line% users*}
+ucnt=${ucnt##*,}
+ucnt=${ucnt## }
+ucnt=${ucnt## }
+ucnt=$(simple_round ${ucnt})
+dot
+
+lavg=${uptime_line#*age: }
+
+# Break out the 1 min avg
+tval=${lavg%%, *}
+tval=${tval%.*}
+typeset -i one=$(simple_round ${tval})
+
+# Break out the 5 min avg
+tval=${lavg#*, }
+tval=${tval%, *}
+tval=${tval%.*}
+typeset -i five=$(simple_round ${tval})
+
+# Break out the 15 min avg
+tval=${lavg##*, }
+tval=${tval%.*}
+typeset -i ften=$(simple_round ${tval})
+dot
+
+# NOTE: The %d format specifier in the printf statement will filter the
+#       fractional part... We chopped off the decimal part so there is really
+#       no need for the typeset.
+#       then average it.
+
+echo "Uptime       : "${uptime} >> ${outfile}
+echo "Users        : "${ucnt} >> ${outfile}
+# This is the raw load average line. It is not desirable here.
+#echo "Load Average : "${lavg} >> ${outfile}
+# This is the cooked load average line. This is what we want.
+printf "Load Average : %d, %d, %d\n" ${one} ${five} ${ften} >> ${outfile}

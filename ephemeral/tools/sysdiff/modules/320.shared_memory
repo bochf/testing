@@ -1,0 +1,84 @@
+#!/opt/swt/bin/perl
+
+my $ostype=`uname -s`;
+chomp($ostype);
+
+my $outfile = $ARGV[0];
+my $PRINTF = $ENV{'PRINTF'};
+my $beverbose = 0;
+
+if ( $PRINTF =~ /printf/ )
+{
+    $beverbose = 1;
+}
+
+my $ipcs_cmd="";
+my $nattch_loc=0;
+
+if ( $ostype eq "Linux" )
+{
+    $ipcs_cmd="ipcs -m |";
+    $nattch_loc=5;
+
+}
+
+if ( $ostype eq "AIX" )
+{
+    $ipcs_cmd="ipcs -mo |";
+    $nattch_loc=6;
+
+}
+
+if ( $ostype eq "SunOS" )
+{
+    $ipcs_cmd="ipcs -mo |";
+    $nattch_loc=6;
+
+}
+
+#print $ipcs_cmd, "\n";
+#print $nattch_loc, "\n";
+
+if (( $beverbose )) { print "."; }
+
+open(SHMOUT, $ipcs_cmd) || exit(1);
+open(OUTFILE, ">>$outfile") || exit(1);
+
+if (( $beverbose )) { print "."; }
+
+my $anon=0;
+my $noattach=0;
+my $totalcnt=0;
+
+while (<SHMOUT>)
+{
+    # Filter out stupid header stuff
+    #chomp;
+    if ($_ =~ /^IPC.*/) { next; }
+    if ($_ =~ /^T.*/) { next; }
+    if ($_ =~ /^Share.*/) { next; }
+    if ($_ =~ /^key.*/) { next; }
+    if ($_ =~ /----.*/) { next; }
+    if ($_ =~ /^\n/) { next; }
+
+    @items = split " "; 
+    
+    # Solaris and AIX cases (but only AIX uses this)
+    #if ( $items[2] =~ /0xffffffff/ ) { $anon++; }
+    if ( $items[$nattch_loc] == 0 ) { $noattach++; }
+    $totalcnt++;
+}
+
+close(SHMOUT);
+
+if (( $beverbose )) { print "."; }
+
+#printf "SHM Anon Cnt : %s\n", $anon;
+printf OUTFILE "SHM NoAttach : %s\n", $noattach;
+printf OUTFILE "SHM TotalCnt : %s\n", $totalcnt;
+
+close(OUTFILE);
+
+if (( $beverbose )) { print "."; }
+
+exit(0);

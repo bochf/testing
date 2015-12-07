@@ -1,0 +1,98 @@
+Writers are the 2nd module type for CPUB. Writers are the part of the framework
+that are responsible for pushing the data to disk, stdout, or whatever
+destination desired. The concepts are significantly easier than the provider
+interfaces, but equally "structured".
+
+First, some concepts...
+ - The writers must parse their own arguments.* The config file parser simply
+   takes the arguments it reads, and passes them to the writer module to 
+   parse. It would be too complicated for the config file parser to rip through
+   all the possible config options for each writer.
+   [* quad arguments required by the writer may be parsed by the config file
+   parser. (See: configfile.c/h). ]
+ - The arguments come from the config file in option=value pairs. If your
+   writer has simple "boolean" values, then they come with an option, but
+   no value. If the arguments come as option=value=something, then the first
+   "=" sign is the one that counts (for where the option:value split happens).
+ - The arguments to the writer are bracketed by WRITER_ARGS_BEGIN and 
+   WRITER_ARGS_END. Whatever the config file parser finds in this bracket
+   will be passed to the writer's init() function via a linked list of
+   cfg_wm_arg structs. Each struct has two strings: option and value. These
+   are simply a break-down of the line based on the *first* "=" sign.
+ - The writer needs to register an "init" function that takes both the parsed
+   proot struct (providers.h) and a config struct (configfile.h) and turn it
+   into an optimized value that it can use. Generally this will be a struct
+   of various items from the user input (config file) as well as state values
+   (such as the number of lines it has dumped) for the output. The struct is
+   returned from the init() function as a void pointer! It does this because
+   the framework will not have access to the writer's data and we want to 
+   turn these writer modules into "objects".
+ - The writer MUST insure that it has all config items it needs when it
+   calls init(). Some things it has to check are (but not limited to): the
+   mandatory options for the writer (such as output file for a file writer),
+   any provider quad settings that may be incompatible with the writer (for
+   example: the alarm module does not alarm on string output), and any quad
+   arguments that may be required (such as headers or alarm conditions that
+   may be required).
+ - By convention the first member of the struct returned from init() is an
+   int that contains the define for the writer. (More on this in a moment.)
+   This allows the writer to confirm that it is getting the data that it
+   expects. It is a "magic" on the (void) struct.
+ - The writer also needs to create and register a writer() function. This
+   function is responsible for outputting a "line"/iteration of stat data.
+   The writer should utilize the previously described struct to maintain
+   state. It will be passed to the writer() each time it is called. The
+   writer() function will be called in the thread spawned for the writer.
+
+Steps for writing a writer implementation:
+ 1. Create a "magic" define in configfile.h.
+    This should follow the following convention: WM_xxxxxx_TYPE
+    where xxxx is a string of your making. The "reference implementation is
+    the stdout writer. It uses: WM_STDOUT_TYPE. The recommendation is to use
+    a prime or non-"default" number for this value. The reference stdout
+    implementation uses 37. This is because it is quite likely that the 
+    first member of a bad struct might be 0 or 1. (Yes, this is entirely 
+    pedantic - but it is only a recommended convention.)
+ 2. Specify a string specifier to represent the writer in the config file.
+    This will be the argument used with the "send_to" option. The configfile.c
+    parsing in "add_equality()" needs to convert this string into the define
+    that was created in step 1. Add the parsing code in add_equality() just
+    like the reference stdout implementation. Note: StrStr() is used as a
+    case-insensitive version of strstr().
+    NOTE: No additional changes are (usually) required for configfile.c. It
+    will take all arguments in the arg block and pass them to the init()
+    funciton in a later step. On the other hand, if the writer significantly
+    changes functionality of the framework and requires some NEW type of
+    parsing to the configfile.c/h infrastructure, then that should be handled
+    as appropriate.
+ 3. Write an init() function. Read everything required from the config struct
+    and the proot struct (if required) and set up for the writer(). Obviously
+    the point here is to validate user input and turn unwieldy strings into
+    more "accessable" data types. If the input is bad - then the init() 
+    function should write and ERROR: message to *stderr* and return a NULL
+    value. There is no need to free memory or clean up - a NULL is going to
+    end things quickly once it gets back to the calling function.
+    Once again, it is worth noting... The init() function is responsible for
+    reading the config items - it is the only one that is expected to 
+    understand the arguments - which might be quite complex.
+ 4. Write a writer() function. This should be self explanatory and of course
+    implementation specific. The sole input will be a void pointer to a 
+    location of memory that contains the data returned from init(). As 
+    mentioned before - state can be saved in this data structure.
+ 5. Write a Finish/Close() function. This will be responsible for any clean-
+    up that the writer may be responsible for (such as closing, moving, or
+    managing any files).
+ 6. Register all three of these functions in main() (main.c). These three
+    functions all "stich" in differently:
+    - Init() is called (and return value checked)
+    - Write() is registered via SetWriterData() along with the writer data
+      returned from Init()
+    - Finish() is registered in a *local* (to main()) function pointer and
+      will be called when the program exits.
+    All of this happens in a switch() inside main(). Follow the example code
+    or do the following in the switch():
+      writer_data = MyInit(p, cfg);
+      writer_state = SetWriterData(tr, writer_data, MyWrite);
+      writer_finish = MyFinish;
+    The error handling will happen after the switch() where writer_state 
+    and writer_data will be checked for bad values.

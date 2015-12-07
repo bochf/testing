@@ -1,0 +1,72 @@
+
+---------------------
+How the output works:
+
+Using a *very* simple 4 CPU (2 core, 2 ht) layout with only three interrupts.
+
+        CPU0   CPU1   CPU2   CPU3   TOTAL
+[123]      5      0      0      1       6  i8042
+[175]      0      0      0      0       0  serial
+[226]      0    345      0    347     692  eth0-q0
+TOTAL      5    345      0    348     698
+
+The [xxx] values are the interrupt numbers. They are refered to as TAGs in the
+source. On the far right of the same line is the description of the interrupt,
+which I refer to as label and type in the source. In the output above, only
+the label is displayed. (This is done with the -s option.) These rows represent
+a specific interrupt/handler. So you can view where all interrupts for that
+device are firing. The last (far right) numeric field is the total of all
+interrupts for that device that have fired on all CPUs.
+
+The bottom line is the totals line for all the CPUs. From this you can see
+how many interrupts are firing on each CPU. This will allow you to correlate
+a hot CPU with interrupt handling... potentially.
+
+The bottom right "cell" is the total of totals. This is the number of
+interrupts that have fired across the entire system during the interval.
+
+This layout is (intentionally) very similar to the format of /proc/interrupts.
+
+-------------------
+How the code works:
+
+gather.c   - Responsible for reading /proc/interrupts into a common data
+             structure that all other parts will be using. The data struct
+             is defined in datastruct.h.
+munge.c    - This does summs and then derived data (ie: heat coloring) for
+             all the cells. There are two functions that do this. One that
+             does the basic summing. The other does the heat coloring (or
+             more appropriately, the data required for the heat coloring).
+basicdiff.c - This is the code that displays the output. I would have 
+             called this "scatter" like naming conventions in other tool
+             source code but I was thinking of using more than one output
+             format. The one above is "basic" and is a iteration-to-iteration
+             diff of the numbers in /proc/interrupts - hence the name. The
+             actual heat coloring is done here.
+options.c  - This is used to parse all options as expressed by the user.
+
+-----------------------
+How the coloring works:
+
+For totals ---
+
+To establish color boundaries find the following values:
+ minimum - Minimum count
+ maximum - Maximum count
+ range   - Distance from min and max
+
+ I break the range up into the following "percentiles":
+  0         grey
+  1 - 33%   green
+  33 - 66%  yellow
+  66 - 90%  orange
+  90 - 100% red
+
+For CPU/interrupt cells (not totals) ---
+
+  0's are grey
+  non-0's are "normal" white
+
+
+
+

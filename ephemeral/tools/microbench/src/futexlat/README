@@ -1,0 +1,6 @@
+work in progres needs clean up
+this is a basic semiping pong on semwait sempost 
+
+the busy is with sem_trywait
+
+need to add option, check min max cpu

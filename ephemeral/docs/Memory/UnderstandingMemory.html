@@ -1,0 +1,478 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!---
+    UnderstandingMemory.html -
+
+    Authors:
+       Xxxxxx X. Xxxxxx <xxxxxxxxxx@xxxxxxxx.xxx>
+       William Favorite <wfavorite2@bloomberg.net>
+-->
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <style type="text/css">
+      /* Soften the background colour and move to a nice seriffed font */
+      body
+      {
+      font-size: 12px;
+      background-color: #FAFAFA;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      }
+
+      /* This is a title line. Very bold, very large, used once. */
+      .arttitle
+      {
+      font-size: 28px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      /* Subtitle, used to provide a second, smaller block of text */
+      .artstitle
+      {
+      font-size: 12px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      /* Used for the version string */
+      .artsstitle
+      {
+      font-size: 10px;
+      text-align:center;
+      }
+
+      /* def is used for definitions - where the indent is reversed */
+      .defblock
+      {
+      padding-left: 50px;
+      padding-right: 30px;
+      text-indent: -20px;
+      text-align:justify;
+      }
+
+      .subdef
+      {
+      padding-left: 80px;
+      padding-right: 40px;
+      text-indent: -20px;
+      text-align:justify;
+      }
+
+      /* Used as a markup tag - easily identifyable when proofing */
+      .debug
+      {
+      color: red;
+      }
+
+      /* Weighted, colored, and monospace - texttt is an alternate option */
+      .oscmd
+      {
+      font-family: Monaco, monospace;
+      font-weight:bold;
+      color: #333300;
+      }
+      
+      /* Designed to look like the terminal - background is lost when printing */
+      .bbtermcmd
+      {
+      font-family: Monaco, monospace;
+      font-weight:bold;
+      color: orange;
+      background-color: black;
+      padding:0px 2px 0px 2px;
+      }
+      
+      .subjhead
+      {
+      font-size: 12px;
+      margin-left: 20px;
+      font-weight:bold;
+      }
+
+      .subjsect
+      {
+      margin-left: 50px;
+      font-weight:bold;
+      }
+
+      .subjcont
+      {
+      margin-left: 50px;
+      margin-right: 20px;
+      }
+      
+      .footnote
+      {
+      font-size: 10px;
+      margin-left: 70px;
+      margin-right: 70px;
+      text-align:justify;
+      }
+      
+      .reference
+      {
+      font-size: 8px;
+      position:relative;
+      top:-5px;
+      }
+
+      .exponent
+      {
+      font-size: 8px;
+      position:relative;
+      top:-5px;
+      }
+
+      .thintable
+      {
+      margin-left: 55px;
+      margin-right: 40px;
+      border-collapse: collapse;
+      }
+
+      .thintd
+      {
+      padding: 5px;
+      border: 1px solid black;
+      }
+
+      /* List table is like a thin table without borders */
+      .listtable
+      {
+      margin-left: 55px;
+      margin-right: 40px;
+      border-collapse: collapse;
+      }
+
+      .listtd
+      {
+      padding: 4px;
+      vertical-align:text-top;
+      }
+
+      /* Green on black box to put monospace code */
+      .codeblock
+      {
+      padding-top: 2px;
+      padding-bottom: 2px;
+      padding-right: 16px;
+      padding-left: 16px;
+      font-family: "Courier New", "Lucida Console", Monospace;
+      font-size: 9pt;
+      margin-left: 56px;
+      /* margin-right: 15px; */
+      width: 50em;
+      color: #00cc00;
+      background-color: black;
+      border-style: solid;
+      border-color: #777777;
+      border-width: 2px;
+      font-weight: bold;
+      }
+
+      .codenote { color: #aaaadd; }
+
+      /* This sits under a code block (or similar box) with the name of the
+         file or text such as "Figure 1."  */
+      .boxnote
+      {
+      margin-top: 0; /* Pull it in tight with the box above */
+      font-size: 10px;
+      margin-left: 70px;
+      margin-right: 70px;
+      text-align:justify;
+      }
+
+
+      .textit { font-style:italic; }
+      .texttt { font-family: Monaco, monospace; }
+      .textbf { font-weight:bold; }
+      .underline { text-decoration: underline; }
+
+
+      a:link { text-decoration: underline; color: #0000FF }
+      a:visited { text-decoration: underline; color: #0000FF }
+      /* Active is more like "visited" than immediate feedback. */
+      a:active { text-decoration: underline; color: #0000FF }
+      a:hover { text-decoration: underline; color: #0000FF }
+    </style>
+
+    <title>Unix Memory</title>
+  </head>
+  <body>
+
+    <p class="arttitle">Unix Memory Utilization</p>
+    <p class="artstitle">Making Sense of Unix Memory Management</p>
+
+    <p class="artsstitle">Version: 0.4.0</p>
+
+    <hr width="65%" />
+
+ 	<!-- ================================================================= -->
+    <p class="subjhead">Introduction</p>
+
+	<p class="subjcont">When discussing Unix memory management, people often seek <span class="textit">simplified</span> answers to what is one of the most complex parts of a modern kernel. First, one has to make sense of how memory works, then it can be determined what the current memory stats might mean to <span class="textit">you</span>. This document is an attempt to introduce the fundamentals of Unix memory management and to tie that understanding to what the OS performance tools are telling you. <span class="debug">Additional text here lays out scope of this document.</span></p>
+	
+ 	<!-- ================================================================= -->
+    <p class="subjhead">The Fundamentals</p>
+
+	<p class="subjcont">The primary goal of memory management systems is to keep data required by the CPU in the fastest tier of memory. To this end, the VM subsystem, along with the cache will endeavour to keep your data as close to the CPU as possible. With unlimited resources, this is a very easy task - everything would be placed in super fast RAM that sits very close to the CPU. But what is typical with computational capabilities, the system must make trade-offs on how to best utilize the limited physical resources available to the operating system.</p>
+	
+	<p class="subjcont">With large amounts of free memory the virtual memory subsystem simply loads everything into memory. As physical memory begins to become constrained, the virtual memory subsystem tries to <span class="textit">predict</span> which pieces of memory will be required going forward.</p>	
+	
+	<p class="subjcont debug">Continue here explaining the compromises that a system must make.</p>
+	
+ 	<!-- ================================================================= -->
+    <p class="subjhead">How Applications Use Memory</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">Stack</p>
+
+    <p class="subjcont">Stack memory growth is based upon the depth of calls in a program as well as the size of automatic<span class="reference">X</span> variables in and the return values of the functions called. Managing this type of memory is typically not considered problematic for most programs, but can be problematic when recursing deep, or more likely when there is other memory constraints in an application. The size of the stack can be observed with the <span class="texttt">ssiz</span> argument to the <span class="texttt">-o</span> option in <span class="texttt">ps</span>.</p>
+
+	<p class="footnote">[X. The stack creates (allocates space for) and frees variables as the function scope changes. For this reason, they are referred to as <span class="textit">automatic</span> variables - because memory management for stack based variables is automatic. ]</p>
+
+    <p class="subjcont">Thread stacks are independent of the primary thread / application stack. They are allocated out of the heap with specific memory requirements and do not count against stack memory.</p>
+	
+	<!-- ======================== -->
+	<p class="subjsect">Heap</p>
+
+    <p class="subjcont">The heap is typically the primary consumer of memory in an application. It is consumed on calls to <span class="texttt">malloc()</span><span class="reference">X</span>. Application memory boundaries are managed by the brk()/sbrk() or mmap() system calls, but the intra-application memory layout itself is dependent on the memory allocation implementation specific to your application.</p>
+
+	<p class="footnote">[X. <span class="texttt">malloc()</span> is but one example of a call to allocate memory from the heap. This paper assumes a bias towards C. ]</p>
+	
+	<!-- ======================== -->
+	<p class="subjsect">Data</p>
+
+    <p class="subjcont">Variables (or data structures) that are application globals (declared outside of main() or other functions) are considered &quot;data&quot;. These variables are broken down into initialized and uninitialized<span class="reference">X</span>. The size of the text memory can be observed with the <span class="texttt">dsiz</span> argument to the <span class="texttt">-o</span> option in <span class="texttt">ps</span>.</p>
+
+	<p class="footnote">[X. Uninitialized data (defaults to all zeroed) is also called BSS (block started by symbol). ]</p>
+
+   <p class="subjcont">While not measured against, or considered part of the data segment, the environmental space 
+	<!-- ======================== -->
+	<p class="subjsect">Text</p>
+
+    <p class="subjcont">Application executable code is called &quot;text&quot;. It is not something that is runtime manageable. The size of the text memory can be observed with the <span class="texttt">tsiz</span> argument to the <span class="texttt">-o</span> option in <span class="texttt">ps</span>.</p>
+ 	<!-- ======================== -->
+	<p class="subjsect">Shared</p>
+
+    <p class="subjcont">Shared memory counts against your application size (as it is mapped into the application address space), but does not count (more than once) against total memory used in the system. Memory types such as text and heap<span class="reference">X</span> can also be shared.</p>
+
+	<p class="footnote">[X. Heap allocations may be satisfied via PRIVATE ANONYMOUS mmap() calls. <span class="debug">I dont think this adds any value - just confusion. Should it stay or go?</span> ]</p>
+
+
+
+
+ 	<!-- ======================== -->
+	<p class="subjsect">File Cache</p>
+
+    <p class="subjcont">While applications leverage files cached in memory, this does not count against the application unless the memory is mapped into the application's address space. File cache becomes a <span class="textit">global</span> measure of memory usage.</p>
+	
+ 	<!-- ================================================================= -->
+    <p class="subjhead">Measuring Application Memory</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">Using <span class="texttt">ps</span> to view memory utilization</p>
+
+	<p class="subjcont">
+	<table class="thintable">
+      <tr>
+        <td class="thintd">ps -o</td>
+        <td class="thintd">&nbsp;</td>
+        <td class="thintd">Description</td>
+     </tr>
+      <tr>
+        <td class="thintd">ssiz</td>
+        <td class="thintd">stack</td>
+       <td class="thintd">orem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</td>
+      </tr>
+     <tr>
+        <td class="thintd">rss</td>
+        <td class="thintd"></td>
+        <td class="thintd">RSS (Resident Set Size) is the total physical memory consumed by the application.</td>
+      </tr>
+     <tr>
+        <td class="thintd">dsiz</td>
+        <td class="thintd"></td>
+        <td class="thintd">This is the data area size.</td>
+      </tr>
+     <tr>
+        <td class="thintd">vsz</td>
+        <td class="thintd">virtual</td>
+        <td class="thintd">This is the size of virtual memory consumed. This would include mapped files and shared memory locations.</td>
+      </tr>
+     <tr>
+        <td class="thintd">stack</td>
+        <td class="thintd">ssiz</td>
+        <td class="thintd">orem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</td>
+      </tr>
+	</table>
+	<p class="boxnote">A table of <span class="texttt">ps -o</span> options</p>
+	
+	
+	
+	
+	
+	
+	
+ 	<!-- ================================================================= -->
+    <p class="subjhead">How The System Uses Memory</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">File Cache</p>
+
+    <p class="subjcont">Files opened by a process may be cached in memory using the file cache. The backing store for the file cache is the file system. The file cache works in three fundamental ways; by keeping frequently accessed files in faster memory, by holding read-ahead pages that an application <span class="textit">may</span> use, and by allowing write() calls to return control back to the application without having to wait on slower disk.</p>
+	
+	<p class="subjcont"><span class="debug">Linux free still refers to buffer cache as well as an obsolete column for shared memory.</span></p>
+
+	<!-- ======================== -->
+	<p class="subjsect">Anonymous Memory</p>
+
+    <p class="subjcont">Anonymous memory refers to memory that is not backed by a file or device. If and when anonymous memory is paged, it is paged to swap space.</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">Paging space</p>
+
+    <p class="subjcont">On systems using a &quot;deferred&quot; paging space allocation, the swap space is not allocated (marked) for use until the page is sent to disk. On systems using an &quot;early&quot; <span class="debug">(This is an AIX term, no?)</span> allocation method, the pages are allocated on paging space once they are allocated to the application. On deferred systems you create as much paging space as you ever expect to use. On early systems you create as much paging space as <span class="textit">memory</span> you expect to use. (This is &ge; The amount of RAM in the system.</p>
+	
+
+ 	<!-- ================================================================= -->
+    <p class="subjhead">Monitoring Memory from AIX</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">Application Memory</p>
+
+    <p class="subjcont">Application memory usage can be monitored via several sources that break down into two primary methods. The first is via several tools such as <span class="texttt">ps</span>, <span class="texttt">topas -P</span>, and <span class="texttt">procmap</span>. The second is via AIX provided APIs to viewing per-process stats.</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">System Memory</p>
+
+    <p class="subjcont">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+
+ 	<!-- ================================================================= -->
+    <p class="subjhead">Monitoring Memory from Linux</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">Application Memory</p>
+
+    <p class="subjcont">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">System Memory</p>
+
+    <p class="subjcont">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+
+ 	<!-- ================================================================= -->
+    <p class="subjhead">Monitoring Memory from Solaris</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">Application Memory</p>
+
+    <p class="subjcont">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">System Memory</p>
+
+    <p class="subjcont">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+	
+ 	<!-- ================================================================= -->
+    <p class="subjhead">Terms</p>
+
+    <p class="defblock"><span class="textbf">Swap cache</span>&nbsp;&mdash;&nbsp;This is a Linux-specific reference to a list of pages that have been paged out to backing store, but have not yet been reused. They are in a short lived state of being ready for reuse, but not yet reused. If those pages are needed again, the page can be retrieved from the swap cache without needing to go to disk. <span class="debug">This does not appear to be true.</span></p>
+
+    <p class="defblock"><span class="textbf">Backing store</span>&nbsp;&mdash;&nbsp;This is a name for the non-volatile (disk) that holds a page when it is paged out. It is a generic term in that anonymous / computational pages are backed by swap space, while file cache and text pages are backed by files in the file system.</p>
+
+	<p class="defblock"><span class="textbf">Wired</span>&nbsp;&mdash;&nbsp;Another name for pinned memory. This is memory that cannot be paged out. The is typically, but not exclusive to, kernel memory pages.</p>
+	
+    <p class="defblock"><span class="textbf">Demand paging</span>&nbsp;&mdash;&nbsp;The primary characteristics of demand paging are:</p>
+	
+	<p class="subdef">&bull;&nbsp;Individual pages are moved to/from backing store, not the <span class="textit">swapping</span> of entire application memory spaces.</p>
+	
+	<p class="subdef">&bull;&nbsp;Anonymous pages are sent to backing store as need arises, because of memory pressure.</p>
+	
+	<p class="subdef">&bull;&nbsp;Backing store is not allocated for anonymous pages until it is required. <span class="debug">Es verdad?</span></p>
+	
+	<p class="defblock"><span class="textbf">Free list</span>&nbsp;&mdash;&nbsp;This is a list of pages that are free for use for any purpose <span class="textit">immediately</span>. This is typically a small list, as most systems will seek to use &quot;free&quot; (non-computational) pages as file cache. File cache can be released for use as computational pages, but must first be written to a backing store, while free pages can immediately be consumed upon need.</span></p>
+
+    <p class="defblock"><span class="textbf">OOM</span>&nbsp;&mdash;&nbsp;When memory is critically low, Linux will launch an OOM (Out Of Memory) killer that will selectively kill processes based on a weighted value assigned to each process.</p>
+
+    <p class="defblock"><span class="textbf">Large pages</span>&nbsp;&mdash;&nbsp;(Used here in the generic sense.) When an application wishes to access data referenced by a pointer, the system needs to perform several lookups to find the <span class="textit">actual</span> page that memory location sits on. With a standard size page this lookup process can happen quite frequently as <span class="textit">many</span> locations are referenced. The system caches this information in the TLB (<a href="http://en.wikipedia.org/wiki/Translation_lookaside_buffer">Translation Lookaside Buffer</a>). This cache is of a limited size, and must constantly be turned to handle all the smaller pages held by an application. The alternative for an application to improve performance is to utilize larger pages, thereby requiring less page lookups. Standard page size differs by OS &amp; hardware, as does the definition of a &quot;large&quot; or &quot;huge&quot; page.</p>
+
+    <p class="defblock"><span class="textbf">Major fault</span>&nbsp;&mdash;&nbsp; A major fault is when the system must go to disk to get a page. This can be either a file backed page, or a paged out page.</p>
+	
+    <p class="defblock"><span class="textbf">Minor fault</span>&nbsp;&mdash;&nbsp; A minor fault is when the system allocates a page for an application, but does not require fetching it from backing store. A zero-fill is a minor fault, where a page is allocated in memory (for an application) and filled with zeroes.</p>
+	
+    <p class="defblock"><span class="textbf">Copy-on-write fault</span>&nbsp;&mdash;&nbsp; This is where two processes share a page, and one changes the page. (The distinction here is between pages of shared memory, and a page that is shared - likely after a fork() call.) The shared page must be copied before it can be modified (locally) by the process.</p>
+	
+    <p class="defblock"><span class="textbf">SLAB</span>&nbsp;&mdash;&nbsp; (SLAB is used here in the generic sense. Linux has several different implementations (SLAB/SLOB/SLUB)) This is a pool of objects that are pre-allocated for frequent reuse. The benefit is that memory does not need to be allocated and freed in tight loops, when an object can be retrieved and quickly returned to the SLAB allocator (list).</p>
+	
+    <p class="defblock"><span class="textbf">RSS</span>&nbsp;&mdash;&nbsp;(Resident Set Size) This is a measure of physical memory used by an application. RSS is generally a factor of how much memory is currently being <span class="textit">used</span>. Memory that has been allocated but not used or inactive pages that have been paged out do not show up here.</p>
+	
+    <p class="defblock"><span class="textbf"></span>&nbsp;&mdash;&nbsp;</p>
+
+	<!-- ================================================================= -->
+    <p class="subjhead">Q-n-A</p>
+
+    <p class="defblock"><span class="textbf">Q:</span>&nbsp;I see that FMEM is low, should I be concerned?</p>
+
+    <p class="defblock"><span class="textbf">A:</span>&nbsp;Low FMEM <span class="textit">suggests</span> that computational memory is placing pressure on the file cache and possibly the free list. If the pressure is only on the file cache, and your application is not heavily dependent on that cache, then you will likely not be effected. What is not said here is how constrained is the file cache and the free list. As computational memory places stress on these pools, then the system must work harder to satisfy file I/O as well as keep the free list at the appropriate size. This will cause system time to spike as the kernel works to continually free pages. In the extreme case, computational pages will begin to page which will be very bad for our workload.</p>
+	
+ 	<!-- ----------------------------------------------------------------- -->
+	<!-- -------------------- DOCUMENT ENDS HERE ------------------------- -->
+ 	<!-- ----------------------------------------------------------------- -->
+	<hr />
+	
+	<!-- ================================================================= -->
+    <p class="subjhead">Word Salad</p>
+
+	<p class="subjcont debug">This is a temporary section that is a list of words to be used</p>
+		
+    <p class="subjcont">Backing store; Size;  MMU;   shared memory; BSS; associative cache methods?; page scan; pinned; wired; PAE PSE; major vs minor page faults; demand paging; </p>
+
+	<!-- ================================================================= -->
+    <p class="subjhead">Link Salad</p>
+
+	<p class="subjcont debug">This is a temporary section that is a list of links to be used</p>
+		
+	<ul class="subjcont">
+		<li>http://en.wikipedia.org/wiki/Page_table</li>
+		<li>http://www.memorymanagement.org/glossary/index.html - 500 memory related terms defined</li>
+		<li>http://events.linuxfoundation.org/sites/events/files/slides/slaballocators.pdf - Presentation on Linux SLAB allocators</li>
+	</ul>
+
+	<!-- ================================================================= -->
+    <p class="subjhead debug">Blocks of stolen text</p>
+
+	<pre>
+	FreeBSD malloc() man page (also in Linux man page):
+	
+	By  default, Linux follows an optimistic memory allocation strategy.
+       This means that when malloc() returns non-NULL there  is	 no  guarantee
+       that  the  memory  really  is available.	 This is a really bad bug.  In
+       case it turns out that the system is out	of memory, one	or  more  pro-
+       cesses  will  be	 killed	 by the	infamous OOM killer.  In case Linux is
+       employed	under circumstances where it would be less desirable  to  sud-
+       denly lose some randomly	picked processes, and moreover the kernel ver-
+       sion is sufficiently recent, one	can  switch  off  this	overcommitting
+       behavior	using a	command	like:
+
+	   # echo 2 > /proc/sys/vm/overcommit_memory
+
+       See  also  the  kernel  Documentation  directory,  files	vm/overcommit-
+       accounting and sysctl/vm.txt.
+	   </pre>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+</body>
+</html>

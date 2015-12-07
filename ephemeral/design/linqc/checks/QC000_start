@@ -1,0 +1,52 @@
+#!/bin/bash
+
+# ABOUT BLOCK BEGIN____________________________________________________________
+# Number: 000
+# Name: Start
+# Description: Take starting timestamp, check framework environment
+# Severity: N/A - Either PASS or BAIL
+# Quality: N/A
+# Notes:
+# ABOUT BLOCK END______________________________________________________________
+
+# DEBUG: Temp hack for BL pathing issues.
+#cd /opt/linqc
+
+
+# Source our functions
+# NOTE: The path is obviously wrong. This would be a pre-determined location,
+#       likely one that is fully, not relatively pathed.
+if [[ -e lib/qcfunctions.bash ]]
+then
+    . lib/qcfunctions.bash
+fi
+
+# Validate that the sourcing was successfull
+if [[ ! ${was_successfully_sourced} ]]
+then
+    # Not much we can do here. No telling what is going on. Exit with the
+    # most appropriate error value and message for both BL and CL environment.
+    echo "ERROR: Failed to source functions." >&2
+    exit 1
+fi
+
+# Pull in the global config
+SourceGlobalConfig
+
+# Print the header for the test
+VPrintHeader "QC Start"
+
+# See if we should run or not
+GroupCheck always
+
+# DO NOT check for overrides - this test cannot be overridden
+
+# Do the one thing we came here to do
+VPrint "QC started on "$(date)
+
+# What should (also) happen here:
+# - Validate that expected global settings are set (BAIL if not set)
+# - Echo (expected) global settings
+
+
+QCExit ${QCRV_PASS}

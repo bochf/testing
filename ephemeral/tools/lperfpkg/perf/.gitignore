@@ -1,0 +1,3 @@
+BUILD
+bb-tools-perf*rpm
+rpmbuild.status

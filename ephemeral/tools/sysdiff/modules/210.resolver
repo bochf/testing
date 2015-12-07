@@ -1,0 +1,133 @@
+#!/bin/ksh93
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+### This reads in whatever paramaters may have been passed on command line
+shift
+while [[ -n ${1} ]]
+do
+    eval ${1}
+    shift
+done
+
+# [X] Put data into array (so it can be normalized)
+# [X] Add line count
+# [ ] Denote non-blank, non-handled, non-comment entries (as a count)
+# [X] Strip off name[space]value using a second ${line## } filter
+# [ ] One extra option on sundev63 - not clear why.
+
+dot
+
+typeset -i d_cnt=0
+typeset -i n_cnt=0
+typeset -i s_cnt=0
+typeset -i o_cnt=0
+typeset -i l_cnt=0
+
+typeset -a domain
+typeset -a options
+typeset -a nameserver
+typeset -a other
+
+typeset content
+
+while read line
+do
+    if [[ ${line} == domain* ]]
+    then
+        content=${line#domain}
+        content=${content##[[:space:]]} # This seems more reliable
+        domain+=( ${content} )
+    fi
+
+    if [[ ${line} == nameserver* ]]
+    then
+        content=${line#nameserver}
+        content=${content##+( )}
+        nameserver+=( ${content} )
+    fi
+
+    if [[ ${line} == options* ]]
+    then
+        content=${line#options}
+        content=${content##+( )}
+        options+=( ${content} )
+    fi
+
+    (( l_cnt++ ))
+    dot
+done < /etc/resolv.conf
+
+set -sA sorted_list ${domain[@]}
+for content in ${sorted_list[@]}
+do
+    printf "Domain[%02d]   : [%s]\n" ${d_cnt} "${content}" >> ${outfile}
+    (( d_cnt++ ))
+done
+
+set -sA sorted_list ${nameserver[@]}
+for content in ${sorted_list[@]}
+do
+    printf "Namesrvr[%02d] : [%s]\n" ${n_cnt} "${content}" >> ${outfile}
+    (( n_cnt++ ))
+done
+
+set -sA sorted_list ${options[@]}
+for content in ${sorted_list[@]}
+do
+    printf "Options[%02d]  : [%s]\n" ${o_cnt} "${content}" >> ${outfile}
+    (( o_cnt++ ))
+done
+
+
+
+
+
+
+
+
+
+
+exit 0
+
+
+
+while read line
+do
+    if [[ ${line} == domain* ]]
+    then
+        printf "Domain[%02d]   : %s\n" ${d_cnt} "${line#domain }" >> ${outfile}
+        (( d_cnt++ ))
+    fi
+
+    if [[ ${line} == nameserver* ]]
+    then
+        printf "Namesrvr[%02d] : %s\n" ${n_cnt} "${line#nameserver }" >> ${outfile}
+        (( n_cnt++ ))
+    fi
+
+    if [[ ${line} == options* ]]
+    then
+        printf "Options[%02d]  : %s\n" ${o_cnt} "${line#options }" >> ${outfile}
+        (( o_cnt++ ))
+    fi
+
+    (( l_cnt++ ))
+    dot
+done < /etc/resolv.conf
+
+printf "resolv.conf#l: %d\n" ${l_cnt} >> ${outfile}
+
+
+
+
+

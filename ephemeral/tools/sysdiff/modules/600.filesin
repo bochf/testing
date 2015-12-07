@@ -1,0 +1,38 @@
+#!/bin/ksh93
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+### This reads in whatever paramaters may have been passed on command line
+shift
+while [[ -n ${1} ]]
+do
+    eval ${1}
+    shift
+done
+
+# NOTE: Rounding is debateable here. I will not round. These directories 
+#       should be exactly the same - even if they contain kruft. The user
+#       will have to evaluate the magnitude of the differences.
+
+for dirname in /tmp /bb/data /bb/bin
+do
+    dicnt="N/A"
+    if [[ -d ${dirname} ]]
+    then
+        dicnt=$(ls ${dirname} | wc -l)
+    fi
+
+    printf "#%-12s: %s\n" ${dirname:0:12} ${dicnt} >> ${outfile}
+    dot
+done
+
+

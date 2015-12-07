@@ -1,0 +1,951 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+   
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<!--
+No spell-check in (emacs for) Winders. So... deal with it.
+-->
+<style type="text/css">
+/*
+table,tr
+{
+border-collapse:collapse;
+border: 1px solid black;
+}
+*/
+th,td
+{
+text-align: left;
+vertical-align: top;
+}
+
+.textbf {font-style:bold;}
+.textit {font-style:italic;}
+</style>
+
+   <title>Phone Screen Questions</title>
+</head>
+<body>
+
+<table>
+   <!-- ================================================================== -->
+	<tr><th colspan="5" style="background-color: #D0D0D0">General Questions</th></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>1.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I am reviewing some code that spawns a thread; specifically the pthread_create() API. When looking at this API, what is one of the required parameters I should see used?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>The two required parameters are a reference to the thread ID and a function pointer to the thread &quot;main()&quot; function. Thread options and function arguments are both optional items.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>This is a question to start with that is designed to set the pace for questions that follow. It is not difficult at all if you know the API, and really not difficult if you think about the API. This API is documented <a href="http://pubs.opengroup.org/onlinepubs/009695399/functions/pthread_create.html">here</a>.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>This is about as simple as the API to threads gets. It is an attempt to see if the candidate has worked in the API at all and to start the interview with a set direction in questions. Some of the harder questions should sit up front to intentionally <span class="textit">frustrate</span> the candidate and punch a hole in their confidence. (We are looking for people that press on through this part of the questions.) While this question is not in itself by any means &quot;devastating&quot; in this respect, it is designed to break from an &quot;admin&quot; interview.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>2.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I am designing a replacement for an I/O intensive system. It does some sequential I/O to one set of disks, random I/O to another set, and frequently moves data back and forth between some of the differing sets of disks on the system. The current system uses HDDs. I am considering SSDs for the new system, what are some considerations of this change that I should be aware of?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>Some key differences that may be discussed:
+		<ul>
+			<li>SSDs are &quot;faster&quot; and more expensive are obvious answers.</li>
+			<li>SSDs will not scale the same as HDDs, RAID stripes will behave differently.</li>
+			<li>Write amplification will be a problem (particularly on small writes).</li>
+			<li>Not all SSD technology is equal in price or performance.</li>
+			<li>Performance may degrade over time on busy write disks.</li>
+		</ul>
+	  </td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>I am looking for someone who does not view SSDs as a black box / object.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>This is an indication that the candidate has worked with, or thought about the technology. Additionally, this question lays down some factoids that the candidate needs to sort through and not get hung up on.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>3.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I have a process that is using shared memory. For what reason would an application use shared memory? --follow up--&gt; What are some other IPC mechanisms that the process may be using?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>This is a means of interprocess communication. This is (primarily) so two applications can access the same piece of memory. Because the type and method of shared memory is not specified, it can have additional uses - one popular method is to mmap() a file to make it look like a location in memory, rather than using read() and write() calls.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>This is a trial question. I am curious as to what some applicants will say. I would expect that someone who describes the purpose of shared memory has investigated why it exists - and this may be indicative of curiosity about the technology.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>This is a product / technology question. Product people may answer Oracle uses it, technology people will discuss the actual purpose. (This is a question left over (unchanged) from the admin interview.)</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>4.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I see two syscalls being called heavily on a system I am monitoring. One is fork() and the other is exec(). What is the primary difference between these two commands? --follow up--&gt; What is happening on this system?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>fork() creates a <span class="textit">new</span> process, exec() modifies the purpose and nature of the <span class="textit">existing</span> process.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>This may prompt a discussion on why, or the point of the high rates of the two syscalls being called. This offers an opportunity to let the candidate talk a bit about what this means.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>Strictly about weeding out someone who does not understand the concepts. This is a fundamentally basic question that all should get right. In the admin interviews I found (even talented) candidates did not know this simple question. This is William's version of &quot;What is file magic?&quot;.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>5.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I have an application that manages a large amount of data and is extremely performance sensitive. I would like to put the entire data set into memory, but that is not possible due to the size of the data. What can I do to solve this problem?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>This is a very open question that has many possible answers. Some possible answers / discussion directions:<br />
+		<ul>
+			<li>Map Reduce or similar big data parallelization</li>
+			<li>SSDs as a tiered memory solution</li>
+			<li>Indexing or organizing data for faster retrieval</li>
+		</ul>
+	  </td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>On questions like this I like to let the candidate take the line in any direction they want (or at least not in a <span class="textit">specific</span> direction). For example if the candidate asks about specifics about X, I reply with a question that asks for the implications of X - having the candidate first relate that he knows the forks in the road, not just one path to the solution.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>This is a thought problem that indicates the candidates ability to brainstorm complex issues.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>6.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I am working in a new language that has a dynamic array data type. I am not required to specify the size of the array when creating it. What might be a good way of implementing such a type  so that either performance or simplicity is achieved?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>Multiple answers exist - some discussion points:<br />
+		<ul>
+			<li>linked list - expensive in offset lookups, simple to implement</li>
+			<li>simple array - simple to add items, predictable lookup, occasional expensive copy-on-add operations</li>
+			<li>linked list of arrays - balanced approach but dependent on &quot;chunk&quot; size</li>
+		</ul>
+	  </td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>Free form opportunity to discuss data structures.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>Shows knowledge of language internals.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>7.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I just ran traceroute to a remote host. How does it find the intermediate routers, and how does it get them to respond?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>traceroute sends multiple packets with differing TTL values. The packets time (hop-count) out at different parts of the network.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>I tend to dwell on this question, often re-asking in multiple ways... &quot;How does this binary find its way through the network, does it have some sort of database it queries?&quot;, &quot;So if this is in the routing table, then the routing table must include entries for the third, fourth, and fifth hops?&quot; The question is about understanding networking and how these tools work. The point is that traceroute does not know (beforehand) some map of the network. It is also important to understand that traceroute does not necessarily generate an accurate map of the path to the remote host.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>A proper understanding of networking can be challenging for admins to grasp - most will not properly answer this. (This is a question left over (unchanged) from the admin interview.)</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>8.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I want to open a file. I see that I can use fopen() and open(). What are some differences between these two calls?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>fopen() is library based, has the concept of buffering, and has &quot;higher level&quot; read and write calls associated with it. open() is a system call (possibly thinly wrapped by library) that returns a different type of integer file descriptor than a file handle pointer, is designed with read() and write() in mind - both lower level calls.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>This is an attempt to have a question 8.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>This should be quite fundamental for qualified candidates.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>9.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I have created a variable that is on the stack, and another that is on the heap. How did I do this? Follow-up --&gt; What are the implications of each?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>Not looking for anything complex here such as globals or BSS... Just looking to hear that one was allocated from memory (heap) and the other was declared in scope. One can be seen from anywhere (including other threads), the other is transient and scoped.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>Another basic filtering question.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>Basic understanding of process memory.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>10.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I want to put regular and frequent wall-clock timestamps in my application output. I need to know what the system must do in order to generate these values. How is this done?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>Candidate should relate:<br />
+		<ol>
+			<li>Get Unix epoch offset (Unix system time) via the time() call.</li>
+			<li>Convert this time into a localized offset.</li>
+			<li>Subtract any leap seconds (if looking to past).</li>
+			<li>Convert the offset to localized representations (strings)</li>
+		</ol>
+		Also:
+		<ul>
+			<li>Time server is not (directly) part of this process.</li>
+			<li>Posix and Olsen are different here. TZ or OS specific implementations.</li>
+			<li>gettimeofday() and clock_gettime() are higher resolution options.</li>
+		</ul>
+	  </td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>Looking here for the candidate to walk through the process.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>Candidates should know how time is handled in the system.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+    <!-- ================================================================== -->
+	<tr><th colspan="5" style="background-color: #D0D0D0">Linux Specific Questions</th></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>11.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I want to define (or instantiate) an integer in bash, how can I do that?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>Bash uses the &quot;declare&quot; keyword with the -i option for integers. Bash also accepts the Korn &quot;typeset&quot; with the same -i option. Additionally, Korn's typeset -i offers an option for a base modifier.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>Either key word is correct. The answer may indicate a background in Korn or more <span class="textit">pure</span> Linux.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>Whatever the answer, there is an expectation that a shell developer declares his variables (or at least know how).</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+	
+   <!-- ================================================================== -->
+   <tr>
+      <td>12.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I have these two tunables on my system; rmem_max and rmem_default. What is the difference between these two and, how do I check them?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>Those parameters set socket rx buffer size and maximum size, if socket is open without setsockopt() (SO_RCVBUF) the kernel assigns socket memory double of rmem_default up to double of rmem_max, if it app uses SO_RCVBUF option the kernel assigns double of requested up to double of rmem_max.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>Set (via sysctl) with net.core.rmem_max and net.core.rmem_default.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>Understanding of Linux socket tunables.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>13.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I have heard discussion of a tickless kernel. What does that mean? What is the alternative to a tickless kernel, or even <span class="textit">is</span> there an alternative? </td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>Tickless kernel, dynamic ticks or NO_HZ is a config option that enables a kernel to run without a regular timer tick. The timer tick is a timer interrupt that is usually generated HZ times per second, with the value of HZ being set at compile time and varying between around 100 to 1500. Running without a timer tick means the kernel does less work when idle and can potentially save power because it does not have to wake up regularly just to service the timer. The configuration option is CONFIG_NO_HZ and is set by Tickless System (Dynamic Ticks), on the Kernel Features configuration menu.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>CONFIG_NO_HZ was replaced in later kernels with three config options. They are CONFIG_HZ_PERIODIC (the original method - all ticks all the time), CONFIG_NO_HZ_IDLE (default - no ticks only when a CPU is idle), and CONFIG_NO_HZ_FULL (the most recent development - no ticks all the time). At least one (boot) CPU will always get ticks. Ticks come back when there are multiple processes contending for the CPU.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>rhel5 vs rhel6</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>14.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I have two identical applications under the same load running on two identically configured machines (same hw model, same OS version and packages, same tunable) but on one it takes consistently double the time to complete. What might be the problem here? Where should I start to work this problem?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>Check the current CPU frequency (some time lower due power supply failure) and possible deep cstate.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td></td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>While the hardware may be configured the same, it may have different transient states we need to be aware of.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>15.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">An application team has moved a binary from an older hardware onto a newer system with a later model CPU. I notice the mention of AVX support on the hardware data sheet. What might this mean to me and what should I recommend to the application developer? --&gt; what is AVX?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>Advanced Vector Extensions (AVX) SIMD instructions for x86 instruction set architecture is supported by newer compiler (gcc 4.6 and above). Suggest the application owner to recompile. A fallback question might be to ask about SIMD - this should be recognized by most applicants.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>This showed up in Sandy Bridge / Ivy Bridge as well as Bulldozer / Piledriver... all in early 2011 and later. Intel compiler picket is up at 11.1.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>Little understanding of compiler flags.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>16.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">An application owner called me and wants his app to run in a cpuset. What is a cpuset, and how would I verify if his application is actually running in a set?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>The mount command tells if cpuset is mounted (&amp; active) and where. In the cpuset mount are folders that represent sets. The &quot;tasks&quot; file in the sub-folder contains the LWP bound to the cpuset. </td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>Follow up question: What happens if I just echo the main pid in tasks file? What happen if the current shell is in the set? (Children then start in that set.)</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td></td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>17.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I have this application that gets sequentially ordered UDP packets that is alerting about lost data. What should I check at the system level to see where this data loss is occurring?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>nic stats (ethtool -S, sar -n EDEV with time stamp etc etc) to see if drops are at card level like crc, overrrun) or protocol level /proc/net/snmp (more complete) netstat -s or with time stamp like sar -n UDP</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>follow up question: what action can you take? increase ring buffer, replace the card, increasing socket etc etc depends on where the error is.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>Common network troubleshooting but the main aim to see if the errors are at protocol level if he thinks off SA mentality.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>18.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">There is this application on a system that keeps crashing. Error logs shows that the OOM killer is active. What is going on? --follow up--&gt; If I wanted to find out who is likely to be killed, what would I look at?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>OOM (out of memory killer) can happen when an application uses memory allocated in is virtual address space loading in the physical memory. If the memory is not big enough to allocate more the kernel try to kill processes as self protection from crashing. A good way is disable overcommitting. The &quot;dstat --top-oom&quot; can tell me who is a candidate for killing. /proc/PID/oom_score is your value as viewed by the OOM killer. The higher the score, the more likely you are to be killed. This value can be adjusted via /proc/PID/oom_score_adj using values between -1000 and 1000. (/proc/PID/oom_adj is the old interface.)</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td></td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>OOM kills based on resident memory, not virtual memory.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>19.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I have zombies on my system. What system call should I me making to prevent this?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>The wait() calls (wait() / waitpid()) reap zombies.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>This might be too obvious of a question - ask and find out.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>I frequently ask about the wait() call directly. Most confuse it with yield - as in &quot;wait for I/O&quot; or a process is &quot;in a wait state&quot;. This is just a different way of asking - and applicants should know where zombies come from and how to kill them.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>20.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I just successfully malloc()d a gig of memory into my application. I see that my &quot;size&quot; has changed but my &quot;RSS&quot; has not changed. What is going on?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>malloc() increases sz and vsz. Actually dirtying the pages effects rss.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>See: /home/wfavorit/proj/memq20</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>Looking to flush out an understanding of VM and understanding of memory usage statistics. This should be fundamentally understood.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+	<!-- ================================================================== -->
+	<tr><th colspan="5" style="background-color: #D0D0D0">Solaris Specific Questions</th></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>11.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">What are the key differences between Korn 88 and Korn 93?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>Associative arrays, builitins...</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>This is a lame question</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>This shows that the candidate has dealt with porting issues to Solaris 11.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+	<!-- ================================================================== -->
+	<tr><th colspan="5" style="background-color: #D0D0D0">Retired, Deprecated, &amp; Trial Questions</th></tr>
+
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>xx.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">[Trial] In IPv4 networking, what is an IP Address, a Subnet, and a Netmask?  What is the relationship between them?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>At a high level, the Subnet and Netmask define a scope that incorporates several IP Addresses.
+		The relationship is one of the criteria used by IPv4 networks to help determine whether a source node and a destination node are members of a common local network, or if they are remote from one another.
+		It further helps determine if packets should be delivered by Layer 2 (switched) or Layer 3 (routed) means.
+		Digging deeper: the binary AND of the IP Address and the Netmask is a mathematical transformation that yields the Subnet.  This relationship can be used to determine if any 2 addresses are members of the same Subnet.
+		</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>The IP addresses in a subnet are always contiguous.  There are specific mathematical rules governing the construction of a legal Netmask.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>Topic is fundamental to understanding how IPv4 networks work and how packets are routed.</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>xx.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">[Trial] Explain what is meant by an &quot;atomic operation&quot;?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td></td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td></td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td></td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>xx.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I have two file names hard linked to the same file. I rename one file, what happens to the other? I chown one file, what happens to the other? I write 16 bytes into the first file, what happens to the other?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>Rename, only one renamed. Chown, both are chowned. Write, both get the data.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>Typically it is necessary to clarify and re-state this question. This is difficult to parse and process over the phone. It is ok to re-state the question - but I tend to repeat it verbatim as the question is percisely worded.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>This shows the distinction between directory entry, inode, and file data. This is a fundamental Unix question. All applicants <span class="textit">should</span> understand this. (This is a question left over (unchanged) from the admin interview.)</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>xx.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">Most programs begin life with three &quot;standard&quot; file descriptors. What are they?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>stdin - 0. stdout - 1. stderr - 2.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>Follow up/on questions:<br /><br />1. When viewing truss output I see reads/writes on these file descriptors. Where is this I/O going?<br /><br />What am I doing when I specify these file descriptors in the shell?<br /><br />These follow-up questions may help clarify some, but unfortunately tend only to reenforce the need for the applicant to understand the original request.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>I find that this tends to confuse applicants. I think it represents the difference between re-directing stdout/stderr in the shell and really understanding what these numbers &amp; symbols actually mean. (This is a question left over (unchanged) from the admin interview.)</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>xx.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">What does the ldd command tell me? Follow up ==&gt; Some (executable) binaries return no results from ldd, why?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>What libraries / objects a binary is linked against. Statically linked binaries return no ldd results.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>Following up might be tabling this and then refering to it again in question # 19.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>This is a wheat/chaff question targeting admins with developer support background. Most &quot;vanilla&quot; admins do not get this. There is an expectation that Bloomberg admins understand this - so follow-up questions about application dependencies and dynamic (run-time) linking are important. (See # 19) (This is a question left over (unchanged) from the admin interview.)</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>xx.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">What is file magic?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>This is a pattern of bytes that begin a file that gives indication of what kind of file it is. These patterns are kept in a database (/etc/magic) and used primarily by the file command.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>I tend to follow up with &quot;What is the /etc/magic file used for?&quot; This is not necessarily a great follow-up as MANY applicants simply say &quot;It contains file magic?&quot; If things simply go nowhere, I ask what is the file command used for? - To which I <span class="textit">expect</span> an answer. Then I ask, how file knows what it knows. Once again, this borders on coaching - as most applicants start guessing. So, in short, I have not found a solid means of following up on this question.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>A reactionary question. A recent applicant missed this on upper management interviews. Most AIX admins seem to NOT know this. (This is a question left over (unchanged) from the admin interview.)</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>xx.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I have written a signal handler into a daemon that performs a task on receipt of a specific signal. How can I send a signal to that daemon?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>kill</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>The question explicitly does not mention the signal (typically HUP). I have worded the question carefully to draw out the applicants understanding of what kill does. Modify the wording of this question with care.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>This is indicative of someone understanding what kill actually does. The way it is worded, it sounds &quot;developer-ish&quot;, but I think it is a fair question as it is in line with what would be asked of a Bloomberg admin. (This is a question left over (unchanged) from the admin interview.)</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>xx.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">I have a developer that has written a utility to monitor the system. The utility excessively forks to do its work, and the excessive forks are a load on the system. What advice can I offer the developer to alleviate the load?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>Shell: Do more tasks in shell using language capabilities - not forking helper apps, or write in Perl to have less fork/exec activity, or write as a C binary for efficiency. C/Binary: Use a threaded model or pre-spawn generic workers to handle sub tasks.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>Applicant may ask what is the utility written in. I maintain that it does not matter - there is an answer in each instance - whatever the language. Many developers say &quot;Use exec() instead of fork().&quot;</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>I believe this is another BB-relative question that speaks to the applicants ability to answer to fundamental performance problems. (This is a question left over (unchanged) from the admin interview.)</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>xx.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">An earlier question referred to static/dynamic linking... Which is preferred for a binary? What is the most popular / acceptable method today? Why?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>Dynamic is by far the more popular method. Static is rarely used (except possibly for /sbin &amp; /bin binaries (on some Unicies) - and this is now rare). The benefits of dynamic linking are generally seen with faster load times (object code is already in memory), and memory saving. The &quot;negative&quot; side effect is performance / locality of code - this is in most cases statistically insignificant.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>The way this is worded references the <span class="textit">assumption</span> that static/dynamic linking was covered in the previous ldd question.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>This should be common knowledge for an admin who has ever supported non-COTS applications. The way it is asked is a bit unfair for AIX admins - as this is just so non-typical for and AIX admin to encounter. I think it is more indicative of an admin that has cross-Unix experience. (This is a question left over (unchanged) from the admin interview.)</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>xx.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">[AIX] topas is telling me that Faults and PageIn/PageOut is high, but PgspIn/PgspOut is 0. What is going on? What should I do?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>You are faulting on file pages. This is normal. The system is healthy. The system is not memory constrained.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>I typically have to read the question at least twice - and I frequently warn the applicant of the complexity before asking it.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>It is important to understand that when the kernel goes to disk to get a (client/persistent) memory page, it is not necessarily one that was paged there under (working) memory constraint. The question is targeting the difference between types of page faults and may be a <span class="textit">bit</span> unfair in how it is asked. (This is a question left over (unchanged) from the admin interview.)</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>xx.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">The system dumped core, and I have recovered the dump and uncompressed it. What tool would I next use to find out what the kernel was doing when it crashed?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>kdb. AIX does not (currently) ship a crash command. dbx is used for process cores.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>This could go in depth - but really should not. We are really just looking for &quot;kdb&quot; here.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>We are seeking someone who is at least aware of this capability. The ability to read dumps and understand stack traces is a common necessity for people working in this environment. (This is a question left over (unchanged) from the admin interview.)</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+
+   <!-- ================================================================== -->
+   <tr>
+      <td>xx.</td>
+      <td>&nbsp;</td>
+      <td colspan="3">What is a TCP SACK?</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Answer:</td>
+      <td>&nbsp;</td>
+      <td>SACK = selective acknowledgement. This is used when a packet is dropped, it allows the resend of just one dropped packet.</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Notes:</td>
+      <td>&nbsp;</td>
+      <td>This is a non-standard setting on AIX - but it is popular. I think it is important to ask a TCP question. (I am not sure this is the best.)</td>
+   </tr>
+   <tr>
+      <td colspan="2">&nbsp;</td>
+      <td valign="top">Applicability:</td>
+      <td>&nbsp;</td>
+      <td>Nobody seems to know this. I think it is indicative of someone who has more extensive TCP / networking knowledge. (This is a question left over (unchanged) from the admin interview.)</td>
+   </tr>
+   <tr><td colspan="5">&nbsp;</td></tr>
+   
+</table>
+
+
+
+
+<p>Version: 0.1.1 - 10/30/14</p>
+</body>
+</html>

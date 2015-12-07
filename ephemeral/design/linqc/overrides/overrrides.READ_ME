@@ -1,0 +1,16 @@
+Rules for overrides:
+
+- Tests will skip (with OVRR return) whenever it sees a related override file
+- There is no override-all option
+- There is no override REGEX (some) option
+- Some (reserved) tests cannot be overridden (000 and 999)
+- A test MUST be written to validate all overrides
+  Why? Because overrides are good and need to be obeyed. But overrides are
+  ripe for abuse.
+- The following fields are required for an override
+  Placed by: Your name
+  DRQS: The DRQS that explains this override
+  Expires utime: The utime (time()/date +%s) for compares
+  Expires ctime: The ctime (ctime()/date) for human readable needs
+  Notes: Completely optional text that might be useful to the reader
+- Overrides are best created and managed with a tool

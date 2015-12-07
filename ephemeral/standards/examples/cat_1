@@ -1,0 +1,7 @@
+#!/usr/bin/ksh93
+
+typeset input_file=lorem_ipsum
+
+exec 9< "$input_file" 9<##EOT
+exec 9<&-
+

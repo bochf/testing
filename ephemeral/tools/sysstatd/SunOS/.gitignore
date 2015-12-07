@@ -1,0 +1,5 @@
+*.o
+libbuild.*
+libosspecific.a
+*~
+kstat.dump

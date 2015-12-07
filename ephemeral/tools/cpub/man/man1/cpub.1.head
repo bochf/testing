@@ -1,0 +1,58 @@
+.\" Process this file with
+.\" groff -man -Tascii cpub.5
+.\"
+.\"=============================================================================
+.TH CPUB 1 "2/21/14" "BB Manpage" "Perf Tools"
+.SH NAME
+.B cpub
+.SH DESCRIPTION
+The
+.B cpub
+command is a lightweight framework to collect performance statistics from 
+a varied set of providers and present the data in a single timestamped view.
+.SH COMMAND LINE OPTIONS
+.IP -h
+Show the help information.
+.IP -a
+Show about (author/version) information.
+.IP -D
+Run "dangerously".
+.B cpub
+will warn when it is run with settings that may have adverse effects on 
+system performance (such as collecting too much information). When these
+warnings are encountered,
+.B cpub
+will not run unless the "danger" is acknowledged with the -D option.
+.IP -p
+List all providers (but not the individual data items), and exit.
+.IP -l
+List all providers and their associated data items, and exit.
+.IP "-d <provider>"
+LIst all data items for a named provider.
+.IP -t
+This is a modifier for the -l and -d options to specify the returned data
+types for the data items. It is not valid with any other option.
+.IP -v
+This is a verbose modifier that will display additional information on load.
+.SH COMMON PROVIDERS
+.IP "core"
+The core provider supports a number of timestamps and iterative values for
+referencing and indexing data. It also supports an "echoarg" item that will
+simply echo whatever data item argument as the output. This can be used as
+an alternate method to label the data.
+.IP file.perfops
+The file.perfops provider will time one or all of the following operations on
+a named file: open(), read(), lseek(), write(), and close(). Time is based on
+gettimeofday()/struct timeval granularity but is returned in unsigned 64bit
+integer value (microseconds (1/1000000th of a second) granularity).
+.IP file.stat
+This provider will stat a named file and return some of the stat() struct
+items as data items. The (required) provider argument is the file name that
+is the argument to the stat() call. The file name must be fully pathed.
+.IP mount.df
+This provider serves mount information found in tools like the
+.B df
+command. A required provider paramater is the name of the mount. The mount
+will be checked against a list of existing (mntab) mounts. So if the supplied
+mount argument is not actually mounted, then the provider data item will fail
+to register.

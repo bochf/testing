@@ -1,0 +1,11 @@
+#!./mallocspeed
+
+
+set UNIT=k
+set NARENA=0
+set NMALL=2000000
+set NTHREAD=56
+set MS=4
+set VERBOSITY=false
+set DOMEMSET=false
+go

@@ -1,0 +1,38 @@
+#!/bin/sh
+
+echo "Building package.listing file.\c"
+
+# Validate BUILD_ROOT
+if [[ -z ${BUILD_ROOT} ]]
+then
+    echo "Failed."
+    echo "ERROR: Unable to determine BUILD_ROOT directory. Var not set." >&2
+    exit 1
+fi
+
+if [[ ! -d ${BUILD_ROOT} ]]
+then
+    echo "Failed."
+    echo "ERROR: No ${BUILD_ROOT} directory." >&2
+    exit 1
+fi
+
+# Change to this directory
+echo ".\c"
+cd ${BUILD_ROOT}
+
+# Start off the file with a single . (like find would produce)
+echo ".\c"
+echo . > ../package.listing
+
+# Next line is the lpp_name (it goes at the top)
+echo ".\c"
+echo ./lpp_name >> ../package.listing
+
+# Now the contents (minus a repeat of the first two lines)
+echo ".\c"
+find . | grep -v lpp_name | grep -v "^.$" | grep -v ".gitignore" >> ../package.listing
+
+echo "Done."
+
+exit 0

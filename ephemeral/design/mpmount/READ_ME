@@ -1,0 +1,15 @@
+The API list
+
+
+             fstab                                     mntab
+$(uname -s)  startfs       listfs        closefs       startfs       listfs        closefs       statfs
+
+Linux        setmntent     getmntent     endmntent     setmntent     getmntent     endmntent     statvfs
+AIX          setfsent      getfsent      endfsent                    mntctl                      statfs64
+SunOS
+
+
+
+
+
+AIX supports the Linux APIs for (5L) compatibility.

@@ -1,0 +1,9 @@
+#!./forkmmap
+
+set FORK_CHILDREN = 32
+set MMAP_FILE_COUNT = 32
+set OPS_PER_PID = 100
+
+set VERBOSITY = verbose
+
+go

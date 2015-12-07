@@ -1,0 +1,62 @@
+This file describes what all the required global config options are, and why.
+
+Note: All items in this file begin with QC_. This seems redundant ("QC" in
+      a QC config file), but is primarily about keeping the names simple, but
+      avoiding name collisions. For example: VERBOSE or VERBOSITY has many
+      collisions with sub-scripts that you may call - but QC_VERBOSITY can
+      be safely exported (if one desires) without much fear of collisions.
+
+-------------------------------------------------------------------------------
+Item: QC_GROUP
+Type: enum/string
+Description: The name of the group of tests to run
+Notes: This is used to limit the tests run and to (implicitly) classify the
+       "severity" of the tests in that group. The possible values are:
+          online - Tests that must pass for the system to go online. These
+             are wake you in the night WP type tests
+          daily  - Tests that are run daily for healthy quality control. These
+             are IW or OU type tests. (Of course auto-remediation is supported
+             if called from BL)
+          weekly - Tests that are run weekly. These are generally just items
+             in a report in BL. No ticket is generated. This is a good place
+             to introduce new tests
+       New groups can be added at any time (but tests must be then added to
+       the group definition).
+
+-------------------------------------------------------------------------------
+Item: QC_VERBOSITY
+Type: define(ed) int
+Description: This is simply the level of verbosity to send to the terminal
+Notes: This uses one of the named define values (the actual value is an int).
+         QCVL_BSILENT   - For BladeLogic output. The only thing that goes to
+            stdout is the printed return code (PASS/FAIL/etc...)    
+         QCVL_REGULAR   - Regular verbosity (print all stdout messages). This
+            also means print tables and various reporting info.     
+         QCVL_SUMMARY   - Show qc_conr PASS/FAIL only
+       Note that "verbosity" is not *just* the levels of noise to send to the
+       terminal, but also encapsulates the entire *methods* of operation
+       such as BL-based and qc_conr compatibility.
+
+
+-------------------------------------------------------------------------------
+Item: QC_RESULTS_FILE
+Type: string
+Description: This is the name of the file to write verbose information to 
+Notes: This exists primarily for code reuse. The original design always wrote
+       to the same location and the wrapper was responsible for time-stamping
+       the final results file. When it is passed, the results to not need to
+       be managed at the end of the wrapper run. The primary benefits are:
+       - Tests can be run independently (outside of the framework) without
+         results by setting this to /dev/null.
+       - A failed/killed/crashed run does not leave a non-uniquie results file
+         hanging.
+
+-------------------------------------------------------------------------------
+Item: QC_WRAPPER_IS_BL
+Type: boolean [true|false] - [OPTIONAL]
+Description: Tell the framework it is running in a specific (BL/CL mode)
+Notes: This serves two purposes:
+       - Force the framework to behave as though it is running one way or
+         another. Potentially useful for debuggery.
+       - Because each test must determine context (and context is determined
+         by two calls to ps), this can all be avoided by setting this value.

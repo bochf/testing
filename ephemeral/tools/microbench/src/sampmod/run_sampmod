@@ -1,0 +1,21 @@
+#!./sampmod
+
+
+set verbosity = true
+
+set RUN_CYCLES = 100
+
+
+set run_pattern = "abcedfghijklmnopqrstuvwxyzabcedfghijklmnopqrstuvwxyz"
+
+set run_threads=16
+
+set fork_for_threads = 0
+set fork_for_threads = 1
+set fork_for_threads = false
+
+go
+
+set fork_for_threads = 3
+set fork_for_threads = 4
+set fork_for_threads = 5

@@ -1,0 +1,34 @@
+#!/bin/ksh93
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+### This reads in whatever paramaters may have been passed on command line
+shift
+while [[ -n ${1} ]]
+do
+    eval ${1}
+    shift
+done
+
+### Bring in required functions
+. ${MODULES_DIR}/functions/rounding.ksh
+
+dot
+
+pcnt=$(ps -e| wc -l)
+pcnt=$(simple_round ${pcnt})
+dot
+
+printf "Process Cnt  : %s\n" ${pcnt} >> ${outfile}
+dot
+
+

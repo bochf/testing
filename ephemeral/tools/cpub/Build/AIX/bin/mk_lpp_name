@@ -1,0 +1,139 @@
+#!/bin/sh
+
+find_usr_root ()
+{
+    if [[ -f liblppa.root ]]
+    then
+        # B := usr and root
+        echo B
+    else
+        # U := just usr
+        echo U
+    fi
+}
+
+
+if [[ -f buildit.conf ]]
+then
+    . ./buildit.conf
+else
+    echo "ERROR: Unable to source in config file." >&2
+    exit 1
+fi
+
+if [[ -z ${1} ]]
+then
+    echo "ERROR: Missing version paramater to mk_lpp_name." >&2
+    exit 1
+fi
+
+if [[ -f lpp_name ]]
+then
+    echo "Found lpp_name file. Using it...\c"
+    cp lpp_name ${file_name}
+    echo "Done."
+    exit 0
+fi
+
+
+echo "Building lpp_name...\c"
+# Some re-mapping is done here because this did not originally read from a
+#  config file. version_string is NOT passed from VERSION_STRING, because
+#  the upper case version may be modified post the config file (version info
+#  may be stored elsewhere)
+version_string=${1}
+file_name=${BUILD_ROOT}/lpp_name
+echo ".\c"
+
+# Clear the file
+cat /dev/null > ${file_name}
+echo ".\c"
+
+# Line 1
+Format=4                    # Version of the OS
+Platform=R                  # RISC
+PType=I                     # Installation
+PName=${PACKAGE}
+printf "%d %c %s %s {\n" ${Format} ${Platform} ${PType} ${PName} >> ${file_name}
+echo ".\c"
+
+# Fileset info
+Fileset=${FILESET}          # Fileset name
+FVersion=${version_string}  # Fileset version
+Volume=1                    # What volume the media is on
+Bosboot=N                   # Does this package require a BosBoot?
+Content=$(find_usr_root)    # U=/usr B=/usr and root
+Language=en_US              # Language
+Description=${FILESET_DESC} # 60 char description of the package
+
+printf "%s %s %d %c %c %s %s %s\n" ${Fileset} ${FVersion} ${Volume} ${Bosboot} ${Content} ${Language} "${Description}" >> ${file_name}
+echo ".\c"
+
+# Begin fileset
+printf "[\n" >> ${file_name}
+echo ".\c"
+
+# Basic requisite
+printf "*coreq bos.rte\n" >> ${file_name}
+echo ".\c"
+
+printf "%\n" >> ${file_name}
+echo ".\c"
+
+# Size requirements
+# - Size is in 512 byte blocks
+# - Completely guestimated
+for dir in usr opt
+do
+    dir_size=
+
+    if [[ -d BUILD_ROOT/${dir} ]]
+    then
+        dir_size=$(du -s BUILD_ROOT/${dir})
+        dir_size=${dir_size%%[[:space:]]*}
+
+        if [[ -n ${dir} && -n ${dir_size} ]]
+        then
+            printf "/%s %s\n" ${dir} ${dir_size} >> ${file_name}
+        fi
+    fi
+done
+echo ".\c"
+
+for dir in etc
+do
+    dir_size=
+
+    if [[ -d ROOT_PART/${dir} ]]
+    then
+        dir_size=$(du -s ROOT_PART/${dir})
+        dir_size=${dir_size%%[[:space:]]*}
+
+        if [[ -n ${dir} && -n ${dir_size} ]]
+        then
+            printf "/%s %s\n" ${dir} ${dir_size} >> ${file_name}
+        fi
+    fi
+done
+echo ".\c"
+
+printf "%\n" >> ${file_name}
+echo ".\c"
+
+# Licensing
+printf "%\n" >> ${file_name}
+echo ".\c"
+
+# Supercede
+printf "%\n" >> ${file_name}
+echo ".\c"
+
+# Fixes
+
+# End fileset
+printf "]\n" >> ${file_name}
+echo ".\c"
+
+# Last line
+printf "}\n" >> ${file_name}
+echo "Done."

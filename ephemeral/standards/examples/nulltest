@@ -1,0 +1,13 @@
+#!/bin/ksh
+
+if [[ -z ${1} ]]
+then
+    echo "ERROR: No parameter specified." >&2
+    #return 1
+fi
+
+if [ -z ${1} ]
+then
+    echo "ERROR: No parameter specified." >&2
+    #return 1
+fi

@@ -1,0 +1,165 @@
+#!/bin/sh
+
+liblppa_config=${1}
+start_dir=$(pwd)
+
+# Source in the config
+if [[ -z ${liblppa_config} ]]
+then
+    echo "ERROR: No config file specified." >&2
+    exit 1
+fi
+
+if [[ -f ${liblppa_config} ]]
+then
+    . ./${liblppa_config}
+else
+    echo "ERROR: Unable to source in config file." >&2
+    exit 1
+fi
+
+if [[ -z ${liblppa_type} ]]
+then
+    echo "ERROR: Missing required liblppa_type setting" >&2
+    exit 1
+fi
+
+if [[ -z ${liblppa_tmp} ]]
+then
+    echo "ERROR: Missing required liblppa_tmp setting" >&2
+    exit 1
+fi
+
+if [[ -z ${liblppa_debug} ]]
+then
+    echo "ERROR: Missing required liblppa_debug setting" >&2
+    exit 1
+fi
+
+if [[ -z ${BUILD_ROOT} ]]
+then
+    echo "ERROR: Required BUILD_ROOT variable is not set." >&2
+    exit 1
+fi
+
+if [[ -z ${buildit_bin_dir} ]]
+then
+    echo "ERROR: Required buildit_bin_dir variable is not set." >&2
+    exit 1
+fi    
+
+if [[ ! -d ${BUILD_ROOT} ]]
+then
+    echo "ERROR: mk_liblppa called from unexpected location. Unable to find build root." >&2
+    exit 1
+fi
+
+echo "Building liblpp.a for ${liblppa_type}.\c"
+# Freshen the tmp directory
+echo ".\c"
+rm -rf ${liblppa_tmp}
+echo ".\c"
+if [[ ! -d ${liblppa_tmp} ]] ; then mkdir -p ${liblppa_tmp} ; fi
+
+# Copy in all our scripts
+if [[ -n ${liblppa_src} ]]
+then
+    if [[ -d ${liblppa_src} ]]
+    then
+        for FILE in $(ls ${liblppa_src} | grep -v svn)
+        do
+            echo ".\c"
+            cp ${liblppa_src}/${FILE} ${liblppa_tmp}
+        done
+        echo ".\c"
+    fi
+fi
+
+# THE NEW WAY --- BEGIN
+echo ".\c"
+case ${liblppa_type} in
+    usr|USR)
+        cd ${BUILD_ROOT} ;;
+    root|ROOT)
+        cd ${ROOT_PART} ;;
+esac
+
+# When USR:
+#  - Include all files (including root part),
+#  - except liblpp.a and lpp_name
+#  - Full path (of all files, including root part files)
+# When ROOT:
+#  - Only include root part files
+#  - except liblpp.a
+#  - Relative path (do not include the /usr/lpp business, just /etc..)
+
+/usr/bin/find . \( -type l -o -type f \) | grep -v "/.svn/" | grep -v "/.gitignore" | grep -v "liblpp.a$" | grep -v lpp_name > ${start_dir}/${liblppa_tmp}/${liblppa_fileset}.al
+# THE NEW WAY --- END
+
+echo ".\c"
+cd ${start_dir}
+echo ".\c"
+
+if [[ ! -f ${liblppa_tmp}/${liblppa_fileset}.inventory ]]
+then
+    if ${buildit_bin_dir}/mk_inventory ${liblppa_type} > ${liblppa_tmp}/${liblppa_fileset}.inventory
+    then
+        echo ".\c"
+    else
+        echo "Failed."
+        exit 1
+    fi
+fi
+
+if [[ ! -d ${liblppa_dir} ]] ; then mkdir -p ${liblppa_dir} ; fi
+echo ".\c"
+rm -f ${liblppa_dir}/liblpp.a
+echo ".\c"
+ar -q ${liblppa_dir}/liblpp.a $(find ${liblppa_tmp} -type f) > /dev/null 2>&1
+echo ".\c"
+
+if (( ${liblppa_debug} == 0 ))
+then
+    rm -rf ${liblppa_tmp}
+fi
+echo "Done."
+
+
+
+
+
+
+
+
+
+
+
+
+exit 0
+
+
+
+# THE OLD WAY
+
+
+# Begin the catalog of files (relative to the root - so change to root)
+if [[ ! -f ${liblppa_tmp}/${liblppa_fileset}.al ]]
+then
+    cd ${BUILD_ROOT} > /dev/null
+    echo ".\c"
+
+    case ${liblppa_type} in
+        usr|USR)
+            /usr/bin/find . \( -type l -o -type f \) | grep -v "/.svn/" | grep -v "liblpp.a$" > ../${liblppa_tmp}/${liblppa_fileset}.al
+            ;;
+        root|ROOT)
+            /usr/bin/find . \( -type l -o -type f \) | grep inst_root | grep -v "/.svn/" | grep -v "liblpp.a$" | sed -e 's|usr.*inst_root/||g' > ../${liblppa_tmp}/${liblppa_fileset}.al
+            ;;
+        *)
+            echo "Failed."
+            echo "ERROR (mk_liblppa): Internal script fault. Unknown \"part\" specification." >&2
+            exit 1
+            ;;
+    esac
+fi
+

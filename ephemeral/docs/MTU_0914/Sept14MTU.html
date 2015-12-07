@@ -1,0 +1,815 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!---
+    MTUStyleGuide.html - A discussion on style in MTU documents
+
+    Authors:
+       Mike Brown <jaywalker@ferguson.mo.us>
+       William Favorite <wfavorite2@bloomberg.net>
+-->
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <style type="text/css">
+      /* Soften the background colour and move to a nice serifed fornt */
+      body
+      {
+      font-size: 12px;
+      background-color: #FAFAFA;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      }
+
+      /* This is a title line. Very bold, very large, used once. */
+      .arttitle
+      {
+      font-size: 28px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      /* Subtitle, used to provide a second, smaller block of text */
+      .artstitle
+      {
+      font-size: 12px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      /* Used for the version string */
+      .artsstitle
+      {
+      font-size: 10px;
+      text-align:center;
+      }
+
+      /* def is used for definitions - where the indent is reversed */
+      .defblock
+      {
+      padding-left: 50px;
+      padding-right: 30px;
+      text-indent: -20px;
+      text-align:justify;
+      }
+
+      .subdef
+      {
+      padding-left: 80px;
+      padding-right: 40px;
+      text-indent: -20px;
+      text-align:justify;
+      }
+
+      /* Used as a markup tag - easily identifyable when proofing */
+      .debug
+      {
+      color: red;
+      }
+
+      /* Weighted, colored, and monospace - texttt is an alternate option */
+      .oscmd
+      {
+      font-family: Monaco, monospace;
+      font-weight:bold;
+      color: #333300;
+      }
+      
+      /* Designed to look like the terminal - background is lost when printing */
+      .bbtermcmd
+      {
+      font-family: Monaco, monospace;
+      font-weight:bold;
+      color: orange;
+      background-color: black;
+      padding:0px 2px 0px 2px;
+      }
+      
+      .subjhead
+      {
+      font-size: 12px;
+      margin-left: 20px;
+      font-weight:bold;
+      }
+
+      .subjsect
+      {
+      margin-left: 50px;
+      font-weight:bold;
+      }
+
+      .subjcont
+      {
+      margin-left: 50px;
+      margin-right: 20px;
+      }
+      
+      .footnote
+      {
+      font-size: 10px;
+      margin-left: 70px;
+      margin-right: 70px;
+      text-align:justify;
+      }
+      
+      .reference
+      {
+      font-size: 8px;
+      position:relative;
+      top:-5px;
+      }
+
+      .exponent
+      {
+      font-size: 8px;
+      position:relative;
+      top:-5px;
+      }
+
+      .thintable
+      {
+      margin-left: 55px;
+      margin-right: 40px;
+      border-collapse: collapse;
+      }
+
+      .thintd
+      {
+      padding: 5px;
+      border: 1px solid black;
+      }
+
+      /* List table is like a thin table without borders */
+      .listtable
+      {
+      margin-left: 55px;
+      margin-right: 40px;
+      border-collapse: collapse;
+      }
+
+      .listtd
+      {
+      padding: 4px;
+      vertical-align:text-top;
+      }
+
+      /* Green on black box to put monospace code */
+      .codeblock
+      {
+      padding-top: 2px;
+      padding-bottom: 2px;
+      padding-right: 16px;
+      padding-left: 16px;
+      font-family: "Courier New", "Lucida Console", Monospace;
+      font-size: 9pt;
+      margin-left: 56px;
+      /* margin-right: 15px; */
+      width: 50em;
+      color: #00cc00;
+      background-color: black;
+      border-style: solid;
+      border-color: #777777;
+      border-width: 2px;
+      font-weight: bold;
+      }
+
+      .codenote { color: #aaaadd; }
+
+      /* This sits under a code block (or similar box) with the name of the
+         file or text such as "Figure 1."  */
+      .boxnote
+      {
+      margin-top: 0; /* Pull it in tight with the box above */
+      font-size: 10px;
+      margin-left: 70px;
+      margin-right: 70px;
+      text-align:justify;
+      }
+
+
+      .textit { font-style:italic; }
+      .texttt { font-family: Monaco, monospace; }
+      .textbf { font-weight:bold; }
+      .underline { text-decoration: underline; }
+
+
+      a:link { text-decoration: underline; color: #0000FF }
+      a:visited { text-decoration: underline; color: #0000FF }
+      /* Active is more like "visited" than immediate feedback. */
+      a:active { text-decoration: underline; color: #0000FF }
+      a:hover { text-decoration: underline; color: #0000FF }
+    </style>
+
+    <title>Exploring Python</title>
+  </head>
+  <body>
+
+    <p class="arttitle">Exploring Python</p>
+    <p class="artstitle">Using Python to Unpack Binary cpub Data</p>
+
+    <p class="artsstitle">Version: 0.10.0</p>
+
+    <hr width="65%" />
+
+    <p class="subjhead">Introduction</p>
+
+	<!-- ======================== -->
+	<p class="subjcont textbf">The Problem</p>
+
+    <p class="subjcont"><span class="texttt">cpub</span> is a tool that collects statistics from a system and either prints or stores the results to a text file. In long running <span class="texttt">cpub</span> data collection scenarios, it is necessary to find a more compact format for the collected data. The task is to create a binary file format for saving <span class="texttt">cpub</span> performance data. The binary format would naturally be more compact than text and could also use up to two different types of compression: either standard gzip compression and/or redundant data elimination (aka: &quot;skip&quot; compression). This means that the output would need to be de-compressed via some sort of tool that understood the format.</p>
+
+	<p class="subjcont">In this project I created a PoC of the file encoder (that can later be plugged into the cpub framework), and then to focus on extracting that data while using the oppurtunity to explore a new language.</p>
+		
+	<p class="subjcont textbf">The Implementation</p>
+
+    <p class="subjcont">Creating the data would be done within <span class="texttt">cpub</span> so would be subject to C (the language of the <span class="texttt">cpub</span> framework). This would allow me to engineer a binary file format in a comfortable language then focus on the new language when extracting data that I could be sure was of the correct, to spec, format.</p> 
+
+    <p class="subjcont">This seemed like an opportunity to explore Python as a language for tool creation. The project was not significant in size, was a known domain, and would be fairly straightforward to someone familiar with Python.</p>
+ 
+    <p class="subjcont">...only I was not familiar with Python.</p>
+	
+    <p class="subjcont">This paper will lightly document the tool and file format, but then focus primarily on my first impressions and issues adapting to the new language.</p>
+
+    <p class="subjhead">The File (Header) Format</p>
+	
+    <p class="subjcont">The file format discussed here is the &quot;CBCD format&quot;. If the file is gzip compressed (using gzopen(), gzwrite(), and gzclose()), then it would of course actually begin with gzip magic (0x1f and 0x8b) and header data. The implicit assumption here is that the gzip library / API would handle its own header. The CBCD header would live <span class="textit">within</span> the gzip data. For this reason, I will not cover the gzip header and only discuss the CBCD header. Determining file type (sniffing the header magic) in Python will be discussed later in the document.</p>
+	
+	<p class="subjcont">The output file needs to describe a few important data items:</p>	
+	
+	<table class="listtable">
+      <tr>
+        <td class="listtd">Magic</td>
+        <td class="listtd">The file should begin with some magic identifier that denotes what format the data is in. I used a four byte value holding the &quot;CBCD&quot; characters (for cpub Binary Compressed Data). The magic is a fairly standard method of identifying a file, but also a means to prevent my decompression tool from trying to decompress files that are not compressed.</td>
+      </tr>
+      <tr>
+        <td class="listtd">Version</td>
+        <td class="listtd">It is always good to encode the version of the encoding so if I want to change the format in the future, I can do so without breaking compatibility with the decompression tool.</td>
+      </tr>
+      <tr>
+        <td class="listtd">Endianess</td>
+        <td class="listtd">Because the data is in a raw binary format, it is important to capture what endianess the data is saved in. I could always save in a specific byte-order (such as network byte order / big endian) but that would unnecessarily burden the Linux implementations that would need to byte-swap to save the data, then byte-swap to extract the data. Decompression on a different endian architecture would be an edge case, so the choice was to take on the additional computational load / annoyance only when necessary. </td>
+      </tr>
+      <tr>
+        <td class="listtd">Data Key</td>
+        <td class="listtd">A data definition needs to be encoded at the head of the file so that the decompression tool can know what the data is. This data key also has some simple check-safes to insure that the data is correct (and not just a text file beginning with the string &quot;CBCD&quot;). The data key consists of a count of data items and then a NULL terminated list of data items. Each data item would be a byte holding the data type, a byte holding the data length (effectively a checksum<span class="reference">1</span>), a byte holding the length of the column name, and a non-terminated string holding the name of the column. The final item would be 0 for the data type, 0 for the data length, and 0 for the data description length. The count of data items could be compared against the parsed data items to insure data header integrity.</td>
+      </tr>
+     </table>
+
+	<p class="footnote">[1. Originally the idea was to catch bitness &amp; implementation dependent data types. (The <span class="texttt">time_t</span> type is an example of a type that could be 32 bit or 64 bit.) The data size would be an explicit sizing of these variable data types. The alternative was to be more explicit in the types as they are inserted into the file. This means that <span class="texttt">time_t</span> would always be 64 bit when in the file. Leaving the size in the header was now redundant as the &quot;type&quot; item perfectly captured size, signed/unsigned, and in the case of <span class="texttt">time_t</span>, the applicability of the data. ]</p>
+	
+	<p class="subjcont">Here is a more explicit definition of the header. The data starting at offset 8 is repeats until the data list ends.</p>
+	
+	<table class="thintable">
+      <tr>
+        <td class="thintd">Offset</td>
+        <td class="thintd">Length</td>
+        <td class="thintd">Notes</td>
+      </tr>
+      <tr>
+        <td class="thintd">0</td>
+        <td class="thintd">4</td>
+        <td class="thintd">Always contains the ASCII string 'CBCD'.</td>
+      </tr>
+      <tr>
+        <td class="thintd">4</td>
+        <td class="thintd">1</td>
+        <td class="thintd">One byte value containing the file format version.</td>
+      </tr>
+      <tr>
+        <td class="thintd">5</td>
+        <td class="thintd">1</td>
+        <td class="thintd">One byte value containing endianess. 0 = big (Power &amp; SPARC), 1 = Little (x86). This is effectively a bit-field with 7 unused bits. Extensions to the file format could be placed here.</td>
+      </tr>
+      <tr>
+        <td class="thintd">6</td>
+        <td class="thintd">2</td>
+        <td class="thintd">Two byte value containing the count of data items. To prevent needing to use the endianess encoding while still in the header, the first byte is a 256 multiplier, and the second is values between 0 and 255. (Effectively forcing big endianess.)</td>
+      </tr>
+      <tr>
+        <td class="thintd">8</td>
+        <td class="thintd">-</td>
+        <td class="thintd">This is the beginning / offset of the data description list. The list begins at this location and repeats until NULL values are retrieved for the data type, data length, and the header length. Actual data would begin immediately after the &quot;three nulls&quot;.</td>
+      </tr>
+      <tr>
+        <td class="thintd">8</td>
+        <td class="thintd">1</td>
+        <td class="thintd">One byte pre-defined value encoding the data type. (0 means end of the data item list. Offset 9 &amp; 10 would also have 0 values.)</td>
+      </tr>
+      <tr>
+        <td class="thintd">9</td>
+        <td class="thintd">1</td>
+        <td class="thintd">One byte length of the data type. (Strings have 0 value for length.)</td>
+      </tr>
+      <tr>
+        <td class="thintd">10</td>
+        <td class="thintd">1</td>
+        <td class="thintd">One byte length of the column (header) name.</td>
+      </tr>
+      <tr>
+        <td class="thintd">11</td>
+        <td class="thintd">(value at offset 10)</td>
+        <td class="thintd">Beginning of string containing the column (header) name.</td>
+      </tr>
+
+     </table>
+
+    <p class="subjhead">The File (Data Skip) Format</p>
+	
+    <p class="subjcont">The method of non-gzip compression is the elimination of non-unique values in the data stream. This is what I call data-skip compression.<span class="reference">2</span> The first iteration of the data items is always complete, while any subsequent data is only inserted into the stream if it changed from the last iteration. The decompression tool knows if the data is missing if a bit relative to the data item is set. If the bit is set, then the decompression tool will utilize the last read value. Using this method, low cardinality data compresses very well, while high cardinality data compresses poorly.</p>
+
+	<p class="footnote">[2. A <span class="textit">complete</span> approach to data compression would attempt to reduce stored data through a more complete algorithm. The data skip format is a minor extension on a format that would be required to support the data encoding without &quot;compression&quot;. At the cost of the addition of a &quot;skip bit&quot;, up to eight bytes (a 64 bit long) can be eliminated on each write of a basic data type. So the approach here is a simple trade-off to reduce data on disk as opposed to a full compression algorithm. Wrapping the data in zlib compression provides a more complete approach to compression. ]</p> 
+	
+	<p class="subjcont">The data items are inserted into the file behind a bit-field that tells which items were skipped. So this method has an overhead of one byte for each eight output items. If, for example, the second item did not change between iterations, then the second bit (as read from the most significant bit in the first bit-field byte) will be set, and the second data item will not be included in the output. The data items are then simply inserted (or not inserted) into the output stream.</p>  
+	
+	<table class="thintable">
+      <tr>
+        <td class="thintd">00000000</td>
+        <td class="thintd">value 1</td>
+        <td class="thintd">value 2</td>
+        <td class="thintd">value 3</td>
+      </tr>
+	</table>
+	<p class="boxnote">One iteration of non-skip data</p>
+	
+	
+	<table class="thintable">
+      <tr>
+        <td class="thintd">01000000</td>
+        <td class="thintd">value 1</td>
+        <td class="thintd">value 3</td>
+      </tr>
+	</table>
+	<p class="boxnote">The following iteration where value 2 did not change</p>
+	
+	
+    <p class="subjhead">The Basic Algorithm For Unpacking Data</p>
+	
+	<p class="subjcont">The flow of the decompression utility is very straight forward. It works like this:</p>
+	
+	<ol class="subjcont">
+		<li>Parse &amp; validate command line options</li>
+		<li>Sniff the header &amp; determine file type (gzip or CBCD)</li>
+		<li>Open the file based on determined file type (gzopen() or open())</li>
+		<li>Read &amp; validate the (base) file header</li>
+		<li>Read &amp; validate the data list from the file header</li>
+		<li>Print out the header (if requested)</li>
+		<li>Read &amp; print the first line of data (always non-skip)</li>
+		<li>Read the skip-compression bit field</li>
+		<li>(Conditionally) read all the data fields (based on data from previous step)</li>
+		<li>If running on different endian, swap (recently read) bytes to correct endianness</li>
+		<li>Print all the data fields</li>
+		<li>Go to step 8 (until there is no more data)</li>
+		<li>Close the file &amp; exit</li>
+	</ol>
+
+
+	<!-- ================================================================= -->
+	<p class="subjhead">Notes on the Python Implementation</p>
+	
+	<p class="footnote">[Note: The Python implementation, even at 500 lines (with comments and whitespace) is a bit large for this document, so I will focus on the discoveries and lessons taken from the exercise. (The code is currently only a PoC, but available for review upon request.) ]</p>
+
+	<p class="subjcont">When learning a new language, either human or computational, it is important to not <span class="textit">translate</span> from your current language. Instead, one needs to <span class="textit">think</span> in the new language. Simply translating carries forth <a href="http://en.wikipedia.org/wiki/Syntax">syntax</a> that may be sub-optimal, but more importantly may miss important features not possible in the native language. What follows is a documentation of some of the struggles with that experience.</p>
+	
+	<!-- ======================== -->
+	<p class="subjsect">Closures</p>
+
+	<p class="subjcont">When processing the data, the program needs to output in one of several formats based upon command line input. I used (what I call) a <a href="http://en.wikipedia.org/wiki/Strategy_pattern">switch function</a> (aka: strategy function) that routes me to the correct function to handle the desired output. The most obvious<span class="reference">3</span> solution in my native C is to implement a switch in an encapsulating function that routes to the appropriate handler.</p>
+	
+	<p class="footnote">[3. C would allow me to return a function pointer that could be called in a manner similar to a closure. The key difference is that this is not an <span class="textit">obvious</span> solution and not something that is seen as a <span class="textit">part of the language</span>. ]</p>
+	
+	<p class="subjcont">Python offers <a href="http://en.wikipedia.org/wiki/Closure_(computer_science)">closures</a> that can return functions based on input. This is an explicit capability of the language provided by <a href="http://en.wikipedia.org/wiki/Nested_function">nested functions</a>. If I did not <span class="textit">explictily</span> use a closure, I could have returned a reference to a function that could have then been used in processing output.</p>
+	
+	<p class="subjcont">The key takeaway is that I missed an opportunity to properly leverage the language as I was trying to write a C program in Python.</p>
+	
+	<!-- ======================== -->
+	<p class="subjsect">Constants</p>
+	
+	<p class="subjcont">The <span class="textit">creator</span> utility (cpub) encodes data with a type (and size) that is denoted by a single byte in the header. The Python decoder needs to agree on what these values mean. This is a natural place to use constants on both sides of the encoding to capture the agreed values for each field.</p> 
+	
+	<p class="subjcont">Despite having immutable types in Python, the labels are always capable of re-assignment, and the Python interpreter will not warn you if and when the values are modified. The Python approach is to use ALL_CAPS for constants <span class="textit">by convention</span>. (The developer should <span class="textit">know</span> that these values are not to be changed.)</p>
+	
+	<div class="codeblock">
+      <p><span class="codenote">...</span><br />
+DTYPE_UNKNOWN&nbsp;&nbsp;&nbsp;=&nbsp;0<br />
+DTYPE_INT8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;3<br />
+DTYPE_UINT8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;4<br />
+DTYPE_INT16&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;5<br />
+DTYPE_UINT16&nbsp;&nbsp;&nbsp;&nbsp;=&nbsp;6<br />
+<span class="codenote">...</span></p>
+    </div>
+    <p class="boxnote">Use of Python &quot;defines&quot; - from the decoder utility</p>
+	
+	<div class="codeblock">
+      <p><span class="codenote">...</span><br />
+#define&nbsp;PDT_UNKNOWN&nbsp;&nbsp;&nbsp;0<br />
+#define&nbsp;PDT_INT8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3<br />
+#define&nbsp;PDT_UINT8&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;4<br />
+#define&nbsp;PDT_INT16&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;5<br />
+#define&nbsp;PDT_UINT16&nbsp;&nbsp;&nbsp;&nbsp;6<br />
+<span class="codenote">...</span></p>
+    </div>
+    <p class="boxnote">The equivalent C &quot;defines&quot; - from the encoder PoC</p>
+
+	<p class="subjcont">Using ALL_CAPS is a well established concept. (We have established variable naming conventions that describe exactly this in the &quot;Scripting Guidelines for SAs&quot; document.<span class="reference">4</span>) It is a bit unsettling to not have the protection of the language in this matter, but it is one of the Python-isims that the developer just needs to be aware of.</p>
+	
+	<p class="footnote">[4. The convention in shell is backed by the ability to <span class="texttt">typeset -r</span> a variable and make it read-only. ]</p>
+	
+	<p class="subjcont">It is possible to create a class with an <span class="texttt">__init__()</span>, a getter, but no setter to mimic constant behaviour. This can be done using the <span class="texttt">@property</span> <a href="http://en.wikipedia.org/wiki/Decorator_pattern">decorator function</a> to wrap the &quot;constant&quot; attribute. (Sample code is available on request.)</p>
+	
+	<!-- ======================== -->
+	<p class="subjsect">Why isn't my code more readable?</p>
+	
+	<p class="subjcont">In a language like C, I have developed a style that is a minimalistic <span class="texttt">main()</span> that lays out the basic flow of the application with most implementation details pushed out into separate source files. This is a basic top-down coding approach. But <span class="texttt">main()</span> is not a requirement in Python, so my first attempt looked more script-like than a well structured C program.</p>
+	
+	<p class="subjcont">The resulting &quot;core&quot; of the program was a long string of option parsing, app setup, and things that would mostly be pushed to the side had I been using a more structured approach to app design. From this approach I buried what should be a clear Python-forced indentation scheme in a giant run-on block of code that sat at the end of the source file (after my function definitions).</p>
+	
+	<p class="subjcont">There is no reason that I could not continue in a proper top-down approach. In fact, this was a missed opportunity to carry forward solid lessons of app design &amp; discipline that I have picked up over the years.</p>
+	
+	<p class="subjcont">A related design practice I have picked up in C is to gather all app sub-system data into a struct. For example, this means that I would typically ask a function to parse all my command line options and return me a struct that holds every configuration option that the app needs. The value is that I can pass this one struct to any function that might be subject to user requested options. This is clean encapsulation method that keeps related items in one place, and makes passing these options as trivial.</p>	
+	
+	<p class="subjcont">In Python I was confronted with a myriad of differing compound data types<span class="reference">5</span> that only served to confuse the problem. I opted for the shortcut of implementing all option variables as globals (in the main scope) and then passing the ones required to each function to maintain function portability. While the Python compound types are daunting on first sight, the language has a ton of flexibility here that I could have leveraged. One of the coolest options would have been to implement an empty class that would have simply created a new <a href="http://en.wikipedia.org/wiki/Namespace">namespace</a> that would have acted very much like a C struct. This is an opportunity missed, and a lesson learned for the next project.</p>
+	
+	<p class="footnote">[5. Compound types and the empty class concept are covered later in this document. ]</p>	
+	
+	<!-- ======================== -->
+	<p class="subjsect">Using <span class="texttt">struct</span> to sniff file magic</p>
+
+	<p class="subjcont">Upon seeing <span class="texttt">struct</span> mentioned in the documentation I was relieved to see that Python used similar names for a compound data type. A Python <span class="texttt">struct</span> is not a data type, but a means to parse binary data created in a file or stream by something like C. So I got to use <span class="texttt">struct</span> but in a way entirely unexpected from my first impression.</p>
+
+	<p class="subjcont">When Python reads data it is read in as a string. The method to describe what the data is and how to decode it comes from the <span class="texttt">struct</span> library. Decoding also includes endianess byte-swapping. In the following example I am decoding single bytes, so there are no endian issues. Byte swapping by <span class="texttt">struct</span> is not <span class="textit">forced</span>, instead the decoding information passed to <span class="texttt">struct</span> is a statement about <span class="textit">the endianess of the source data</span> - <span class="texttt">struct</span> will determine local endianess and byteswap only as necessary.</p>
+	
+	<p class="subjcont">The following is a code snippet I used to sniff the magic of the file to determine how the data was encoded. (Specifically to see if it was <span class="textit">wrapped</span> in gzip compression.) On line 01 a try block is started so that failures to open and read the file can be caught instead of them rolling up to the global context. Line 02 opens the file for reading. Line 03 reads in two bytes into a string referenced by <span class="texttt">magic</span>. In line 04 the string is converted into a tuple that is stored back into <span class="texttt">magic</span>. Then on line 05 the two bytes are compared against gzip file magic. If the file is gzip data, it is immediately closed and re-opened using <span class="texttt">gzip.open()</span> (in line 06 and 08), if not, then the file is reset to the start (in line 10) for regular header processing.</p>
+	
+	<p class="footnote">[Note: I have used line numbering in the following code snippet. The line numbers, the | character, and the space following are not part of the actual code. Code samples use both numbered and un-numbered representations throughout the document. ]</p>
+	
+	<div class="codeblock">
+      <p>00 | try:<br />
+01 | &nbsp;&nbsp;&nbsp;&nbsp;dbg_print(opt_debug,&nbsp;&quot;Opening&nbsp;file...&quot;)<br />
+02 | &nbsp;&nbsp;&nbsp;&nbsp;fh&nbsp;=&nbsp;open(input_file,&nbsp;&quot;rb&quot;)<br />
+03 | &nbsp;&nbsp;&nbsp;&nbsp;magic&nbsp;=&nbsp;fh.read(2)<br />
+04 | &nbsp;&nbsp;&nbsp;&nbsp;magic&nbsp;=&nbsp;struct.unpack('2B',&nbsp;magic)<br />
+05 | &nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;magic[0]&nbsp;==&nbsp;0x1f&nbsp;and&nbsp;magic[1]&nbsp;==&nbsp;0x8b:<br />
+06 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fh.close()<br />
+07 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dbg_print(opt_debug,&nbsp;&quot;...as&nbsp;gzip&nbsp;data...&quot;)<br />
+08 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fh&nbsp;=&nbsp;gzip.open(input_file,&nbsp;&quot;rb&quot;)<br />
+09 | &nbsp;&nbsp;&nbsp;&nbsp;else:<br />
+10 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fh.seek(0)</p>
+    </div>
+    <p class="boxnote">Using <span class="texttt">struct</span> to sniff magic example</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">Variable reuse</p>
+	
+	<p class="subjcont">In the previous example I used the &quot;<span class="texttt">magic</span>&quot; identifier to hold the same data in two different representations. Python allows me to really wallow in my laziness with variables in this respect. I call it lazy because C would require that I declare several data types to complete the following code that I do with one in Python.</p>  
+	
+	<p class="subjcont">Strings in the binary file output are encoded like Pascal strings with a byte for length, and then a non-terminated string of characters containing the string. To decode this from the stream of binary data, two reads are required. The following snippet reads an encoded string, and does it with a single variable.</p>	
+	
+	<p class="subjcont">Line 01 reads the length byte as a string. Line 02 unpacks that string data into a numeric (an unsigned char in a tuple). Line 03 saves just the first (and only) tuple member in its own object. (This step is really unnecessary as the tuple member could have just been used on the next line.) Line 04 reads in the number of bytes specified in the first byte as a string. Line 05 returns the string object to the calling function.</p>	
+	
+	<div class="codeblock">
+      <p>00 | &nbsp;&nbsp;&nbsp;&nbsp;if&nbsp;dt&nbsp;==&nbsp;DTYPE_STRING:<br />
+01 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gotval&nbsp;=&nbsp;fd.read(1)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;gotval&nbsp;is&nbsp;string<br />
+02 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gotval&nbsp;=&nbsp;struct.unpack('B',&nbsp;gotval)&nbsp;&nbsp;&nbsp;#&nbsp;gotval&nbsp;is&nbsp;tuple<br />
+03 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gotval&nbsp;=&nbsp;gotval[0]&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;gotval&nbsp;is&nbsp;integer<br />
+04 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gotval&nbsp;=&nbsp;fd.read(gotval)&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;#&nbsp;gotval&nbsp;is&nbsp;string<br />
+05 | &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;return(gotval)</p>
+    </div>
+    <p class="boxnote"><span class="texttt">struct</span> and variable reuse example</p>
+
+	<p class="subjcont">There is something inherently nice about not requiring multiple variable declarations to read a single string. That said, I am not sure that the purist in me will ever accept this as an <span class="textit">appropriate</span> method to do so.</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">Defining clear interfaces</p>
+	
+	<p class="subjcont">The following is my initial attempt at defining a clear function interface. In C, I might be inclined to wrap related items such as the file descriptor and the file endainess in the same C struct. Here I defined the interface, with some admittedly bad variable names, and then placed a documentation block above the definition to remind myself what each of the types were<span class="reference">6</span>, and what should be in them.</p>
+
+	<p class="footnote">[6. As another example of a C-isim that does not translate properly into Python, I needed to explicitly specify the expected type - which I failed to do here. ]</p>
+	
+	<div class="codeblock">
+      <p>#&nbsp;=============================================================================<br />
+#&nbsp;Name:&nbsp;read_datatype<br />
+#&nbsp;Description:&nbsp;Read&nbsp;in&nbsp;a&nbsp;(the&nbsp;next)&nbsp;data&nbsp;type<br />
+#&nbsp;Input:&nbsp;fd&nbsp;-&nbsp;File&nbsp;descriptor<br />
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dt&nbsp;-&nbsp;Data&nbsp;type<br />
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dl&nbsp;-&nbsp;Data&nbsp;length&nbsp;(unused&nbsp;at&nbsp;this&nbsp;time)<br />
+#&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fe&nbsp;-&nbsp;File&nbsp;endianness&nbsp;(0&nbsp;=&nbsp;big;&nbsp;1&nbsp;=&nbsp;little)<br />
+#&nbsp;Returns:&nbsp;The&nbsp;data&nbsp;read<br />
+#&nbsp;Side&nbsp;effects:&nbsp;Advances&nbsp;the&nbsp;file&nbsp;pointer<br />
+#&nbsp;Notes:<br />
+def&nbsp;read_datatype(fd,&nbsp;dt,&nbsp;dl,&nbsp;fe):</p>
+    </div>
+    <p class="boxnote">Defining a function</p>
+	
+	<p class="subjcont">Python uses a concept called <a href="http://en.wikipedia.org/wiki/Duck_typing">duck typing</a> to &quot;enforce&quot; type. This means that you should trust that the type is implemented appropriately, and catch the exceptions when it is not. Type errors are something that I feel should be caught at compile time, not with a runtime exception. The 2.0 version of the decoder would likely have clearer function definitions and an assert-like test early in the function to handle exceptions. In this case the risk is minimal, but it is conceivable that the developer could be deep into some sort of process that would be difficult to unwind, only to find that they passed some variables out of order and caused a type exception.</p>
+
+	<!-- ================================================================= -->
+	<p class="subjhead">Notes on Python In General</p>
+	
+	<!-- ======================== -->
+	<p class="subjsect">Python is an Approachable Language, Python is <span class="textit">not</span> as simple as it looks</p>
+ 	
+	<p class="subjcont">Python has a very short ramp-up time. The syntax is very straight forward and easy to comprehend. In fact, the language is so approachable that it is the recommended language for the Raspberry Pi Foundation for &quot;learners&quot;. The language is filled with <a href="http://en.wikipedia.org/wiki/Syntactic_sugar">syntactical sugar</a> and forced formatting rules to make the code more readable.</p>
+
+	<p class="subjcont">Hiding under the approachable surface lies some interesting differences in the language that may not be obvious in the simple project. Variables are implemented differently, functions are referenced and passed unlike other popular languages,  and a host of other differences sit just beneath the surface that can fundamentally deviate from expected behaviour.</p>
+	
+	<!-- ======================== -->
+	<p class="subjsect">Object Reference Variables</p>
+
+	<p class="subjcont">First and foremost the implementation of &quot;variables&quot; is fundamentally different. When you think of variables in most languages you think of storage of data and the representation of that data. In Python, variables are <span class="textit">references to objects</span> that store the data. This means that the &quot;type&quot; of the label/variable is always a reference to something - and that something might be (objects containing) a string, an integer, a function, a class, etc... (An instance of this can be found in the &quot;Variable reuse example&quot; earlier in this document.)</p>
+	
+	<p class="subjcont">When you write a statement such as &quot;<span class="texttt">myval = 5</span>&quot;, instead of placing 5 into myval, what you are saying is &quot;create an object containing '5', and have myval be the reference to that object&quot;. When you then write &quot;<span class="texttt">myval = myval + 5</span>&quot;, you are saying &quot;create an object that is 5 plus the object referenced by 'myval' and store a reference to it in myval.&quot;</p>
+	
+	<p class="subjcont">Variables will <span class="textit">behave as expected</span> in most use cases, but there can be some subtle use issues that might not be immediately apparent if the developer is not aware of the nature of the implementation. (There are multiple examples of this throughout the document.)</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">Pass By Object Reference</p>
+
+	<p class="subjcont">When you pass variables to a function in languages like C, you pass either by <a href="http://en.wikipedia.org/wiki/Evaluation_strategy#Call_by_value">value</a> or by <a href="http://en.wikipedia.org/wiki/Evaluation_strategy#Call_by_reference">reference</a>. Passing by value sends the value into the called function, creating an entirely new variable with the same value but with scope in the called function. Passing by reference puts a reference to the value into the called function. This means that the called function is working with its own copy of the reference that points to the <span class="textit">original</span> value (the original data's location), thus effectively using the scope of the calling function. In both cases you are working with a local variable, but not necessarily local data.</p>
+	
+	<p class="subjcont">In Python you are passing by reference to an <span class="textit">object</span> that may or may not be <a href="http://en.wikipedia.org/wiki/Mutable">mutable</a>. The effect is that some passed data acts much like pass by value, while other data acts like pass by reference. If the data is mutable (typically some sort of array or compound type), then any modifications take place in the original (much like pass by reference). If the data is immutable (atomic data types and some compound types) then any change to the data effectively creates a new, locally scoped, object. In short, the mutability of the object and how the object is modified effectively determines the nature of the reference in the called function. Here, the observed behaviour is mostly like that of C, but the implementation details are different.</p>
+
+	<p class="subjcont">In the following code snippet I have two functions that have two different behaviours based on how the data is manipulated, not how it is passed. In both cases, a list is passed in the same manner. In the <span class="texttt">pass_by_value()</span> function on line 02, the data is replaced with new data. The local reference is a reference to an entirely new, locally scoped, object. In the <span class="texttt">pass_by_reference()</span> function on line 05, the reference is local, but the existing object is <span class="textit">modified</span> instead of replaced. The object created in line 08 is consistent up until line 11. It is at line 12 where calling the <span class="texttt">pass_by_reference()</span> function appends data to <span class="texttt">mylist</span>. At line 13, <span class="texttt">mylist</span> has an additional member that it did not have at line 11. There is absolutely no difference in how the data is passed, but a big difference in how it behaves.<span class="reference">7</span></p>
+	
+	<p class="footnote">[7. In fairness, when using the C comparison, this is exactly how passing a pointer to a piece of memory would <span class="textit">behave</span> in C. The key difference is the <span class="textit">implicit</span> behaviour in Python. ]</p>
+	
+	<div class="codeblock">
+      <p>00 | #!/bb/util/bin/python<br />
+01 | <br />
+02 | def&nbsp;pass_by_value(li):<br />
+03 | &nbsp;&nbsp;&nbsp;&nbsp;li&nbsp;=&nbsp;['a',&nbsp;'new',&nbsp;'list']<br />
+04 | <br />
+05 | def&nbsp;pass_by_reference(li):<br />
+06 | &nbsp;&nbsp;&nbsp;&nbsp;li.append(4)<br />
+07 | <br />
+08 | mylist&nbsp;=&nbsp;[1,2,3]<br />
+09 | <br />
+10 | pass_by_value(mylist)<br />
+11 | <br />
+12 | pass_by_reference(mylist)<br />
+13 |
+      </p>
+    </div>
+    <p class="boxnote">Passing variables - a simplistic example</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">Compound Data Types</p>
+
+	<p class="subjcont">Python has a variety of array and compound data types. This has a tendency to make diving into the language a bit more challenging. There are several key points when looking at these types. They are:</p>
+
+	<table class="listtable">
+      <tr>
+        <td class="listtd">Mutability</td>
+        <td class="listtd">Can members of the object be modified. This relates directly to &quot;hashability&quot; of the object.</td>
+     </tr>
+      <tr>
+        <td class="listtd">Type</td>
+        <td class="listtd">Is the compound data type a set, an indexed array, or a hashable collection. In the following table I have broken <span class="textit">type</span> into &quot;Python Type&quot; (types using Python nomenclature) and simply &quot;Type&quot; (types using more standardized terms).</td>
+      </tr>
+      <tr>
+        <td class="listtd">Sub-types</td>
+        <td class="listtd">This is the kind of data that can be stored in the composite type. While this tends to be an object, some compound types have limitations based on intended usage (such as a string) or on structure (such as sets) where the sub-type is not really stored item, it is a key.</td>
+      </tr>
+      <tr>
+        <td class="listtd">Hashable</td>
+        <td class="listtd">For an item to be a key in an associative (hash) array it must not change its hash value over time. To be hashable here means to be <span class="textit">consistent</span> in the returned hashed value.</td>
+      </tr>
+	</table>
+	
+
+	<table class="thintable">
+      <tr>
+        <td class="thintd">&nbsp;</td>
+        <td class="thintd">Python Type</td>
+        <td class="thintd">Type</td>
+        <td class="thintd">Sub-Type</td>
+        <td class="thintd">Mutable</td>
+        <td class="thintd">Ordered</td>
+        <td class="thintd">Hashable</td>
+     </tr>
+      <tr>
+        <td class="thintd">tuple</td>
+        <td class="thintd">Sequence</td>
+        <td class="thintd">Numerically indexed</td>
+        <td class="thintd">Object</td>
+        <td class="thintd">No</td>
+        <td class="thintd">Yes</td>
+        <td class="thintd">Yes</td>
+      </tr>
+      <tr>
+        <td class="thintd">list</td>
+        <td class="thintd">Sequence</td>
+        <td class="thintd">Numerically indexed</td>
+        <td class="thintd">Object</td>
+        <td class="thintd">Yes</td>
+        <td class="thintd">Yes</td>
+        <td class="thintd">No</td>
+     </tr>
+      <tr>
+        <td class="thintd">named tuple</td>
+        <td class="thintd">Sequence</td>
+        <td class="thintd">Associative array</td>
+        <td class="thintd">Object</td>
+        <td class="thintd">No</td>
+        <td class="thintd">Yes</td>
+        <td class="thintd">No</td>
+      </tr>
+      <tr>
+        <td class="thintd">bytes</td>
+        <td class="thintd">Sequence</td>
+        <td class="thintd">Numerically indexed</td>
+        <td class="thintd">Byte</td>
+        <td class="thintd">No</td>
+        <td class="thintd">Yes</td>
+        <td class="thintd">Yes</td>
+      </tr>
+      <tr>
+        <td class="thintd">bytearray</td>
+        <td class="thintd">Sequence</td>
+        <td class="thintd">Numerically indexed</td>
+        <td class="thintd">Byte</td>
+        <td class="thintd">Yes</td>
+        <td class="thintd">Yes</td>
+        <td class="thintd">No</td>
+      </tr>
+      <tr>
+        <td class="thintd">set</td>
+        <td class="thintd">Set</td>
+        <td class="thintd">Associative array</td>
+        <td class="thintd">hashable<span class="reference">8</span></td>
+        <td class="thintd">Yes</td>
+        <td class="thintd">No</td>
+        <td class="thintd">No</td>
+      </tr>
+      <tr>
+        <td class="thintd">frozenset</td>
+        <td class="thintd">Set</td>
+        <td class="thintd">Associative array</td>
+        <td class="thintd">hashable</td>
+        <td class="thintd">No</td>
+        <td class="thintd">No</td>
+        <td class="thintd">Yes</td>
+      </tr>
+      <tr>
+        <td class="thintd">dict(ionary)<span class="reference">9</span></td>
+        <td class="thintd">Mapping</td>
+        <td class="thintd">Associative array</td>
+        <td class="thintd">Object</td>
+        <td class="thintd">Yes</td>
+        <td class="thintd">No<span class="reference">10</span></td>
+        <td class="thintd">No</td>
+      </tr>
+      <tr>
+        <td class="thintd">string</td>
+        <td class="thintd">Sequence</td>
+        <td class="thintd">Numerically indexed</td>
+        <td class="thintd">(wide) char</td>
+        <td class="thintd">No</td>
+        <td class="thintd">Yes</td>
+        <td class="thintd">Yes</td>
+      </tr>
+	</table>
+	
+	<p class="footnote">[8. Sets are dicts (associative arrays) without the sub-types. For this reason, the input data type must be hashable, meaning: any data type that could be used as the association in an associative array. ]</p>
+	
+	<p class="footnote">[9. In addition to dict, there is a defaultdict. The primary difference between the two is how references to missing keys are handled. ]</p>
+	
+	<p class="footnote">[10. An OrderedDict was introduced in Python 3.1. ]</p>
+
+	<p class="subjcont">For those longing for C struct-like simplicity can just create a new <a href="http://en.wikipedia.org/wiki/Namespace">namespace</a> that will have a usage pattern much like a struct. In the following example I create an empty class (lines 00 and 01) without members. (The secondary point here is that the dynamic nature of the language allows me to add members at any time.) The class is instantiated on line 03 and placed into the <span class="texttt">mp</span> variable where it acts much like a C struct, but is simply a new namespace in Python.</p>
+	
+	<div class="codeblock">
+      <p>00 | class&nbsp;NewNamespace:<br />
+01 | &nbsp;&nbsp;&nbsp;&nbsp;pass<br />
+02 | <br />
+03 | mp&nbsp;=&nbsp;NewNamespace()<br />
+04 | <br />
+05 | mp.x&nbsp;=&nbsp;1<br />
+06 | mp.y&nbsp;=&nbsp;1<br />
+07 | mp.z&nbsp;=&nbsp;3</p>
+    </div>
+    <p class="boxnote">Creating a new namespace</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">Scope - Determined by usage</p>
+ 	
+	<p class="subjcont">In the following code snippet there are three different scoping behaviours. One is intuitive, another is not so intuitive, and the third is helpfully explicit. In line 00 we establish <span class="texttt">g</span> as a global. In line 03 Python looks for <span class="texttt">g</span> in the local scope, and does not find it, so <span class="texttt">g</span> is instantiated in a local scope. In line 06 <span class="texttt">g</span> is looked for in the local scope, and not found. But because we are referencing <span class="texttt">g</span> and not setting it, other scopes are searched and it is found in the global scope. In line 09 we explicitly scope <span class="texttt">g</span> as global and the assignment that follows on line 10 assigns the value to <span class="texttt">g</span> in the global scope.</p>
+
+		<div class="codeblock">
+      <p>00 | g&nbsp;=&nbsp;5<br />
+01 | <br />
+02 | def&nbsp;gislocal(x):<br />
+03 | &nbsp;&nbsp;&nbsp;&nbsp;g&nbsp;=&nbsp;x<br />
+04 | <br />
+05 | def&nbsp;gisglobal():<br />
+06 | &nbsp;&nbsp;&nbsp;&nbsp;x&nbsp;=&nbsp;g<br />
+07 | <br />
+08 | def&nbsp;gforcedglobal(x):<br />
+09 | &nbsp;&nbsp;&nbsp;&nbsp;global&nbsp;g<br />
+10 | &nbsp;&nbsp;&nbsp;&nbsp;g&nbsp;=&nbsp;x</p>
+    </div>
+    <p class="boxnote">Scope differs by usage</p>
+	<!-- ======================== -->
+	<p class="subjsect">Python as the anti-Perl</p>
+
+	<p class="subjcont">Python is in many respects a response to Perl. Perl allows for wide variation in styles and approaches to a problem, while Python effectively enforces a style and limits some of the <span class="textit">diversity</span> that can be found in Perl. (In all fairness the mix of language <a href="http://en.wikipedia.org/wiki/Programming_paradigm">paradigms</a> in Python kind of negates that argument.)</p>
+	
+	<p class="subjcont">Before I embark on the slippery slope of Python vs. Perl, I will leave it at there are some intentional similarities and some intentional differences between the two. Like the emacs vs. vi debate, we will have to agree <span style="text-decoration: line-through">to disagree</span> that emacs is vastly superior to vi in every way.</p>
+	
+	<!-- ======================== -->
+	<p class="subjsect">Python Version Differences</p>
+	
+	<p class="subjcont">Python is an evolving language. Many of the code examples and modules that I ran into were not supported in one version, but then syntax or language features were not supported in the other. Details on the differences can be found at <a href="https://wiki.python.org/moin/Python2orPython3">https://wiki.python.org/moin/Python2orPython3</a></p>
+	
+	<p class="subjcont">The takeaway is to know that there are (at least) three versions of python on most systems: <span class="texttt">python2</span>, <span class="texttt">python3</span>, and <span class="texttt">python</span> that points to one of the two. <span class="underline">Our Python installs are not consistent across the platforms.</span></p>
+
+	<!-- ================================================================= -->
+	<p class="subjhead">Summary View on Python</p>
+	
+	<p class="subjcont">As a frustrated Perl user, Python appeals to me. I think the design is less cluttered than Perl. I also appreciate the ability to use <a href="http://en.wikipedia.org/wiki/Procedural_programming">procedural</a>, <a href="http://en.wikipedia.org/wiki/Functional_programming">functional</a>, and <a href="http://en.wikipedia.org/wiki/Object-oriented_programming">object oriented</a> styles of development in a single language<span class="reference">11</span>. (That said, I doubt the people who might need to maintain my code would feel the same.)</p>
+	
+	<p class="footnote">[11. Interestingly, the wide allowance for style variations are a criticism of Perl. See the discussion in the &quot;Python as the anti-Perl&quot; section. ]</p>
+	
+	<p class="subjcont">I should also argue that there are oddities in the language that lie in wait for those who do not properly understand the implementation details. For example, the scoping rules can be quite different than one would first expect - and then it all changes again once you are using a closure.</p>
+
+	<p class="subjcont">All in all, I will be inclined to use this language again.</p>
+	
+	<!-- ================================================================= -->
+    <p class="subjhead">Discussion / Q-n-A</p>
+
+	<!-- ======================== -->
+    <p class="subjsect">Is this available in <span class="texttt">cpub</span> now?</p>
+
+    <p class="subjcont">At the time of this writing this is still PoC code, but it should be integrated into <span class="texttt">cpub</span> in the near future. A PoC was chosen because it allowed me to create <span class="textit">predictable</span> binary files that I could easily decode / check by manual inspection in a hex editor. If I was using live data it would be difficult, if not impossible, to know when data had been intentionally skipped in the &quot;skip compression&quot; mode.</p>
+
+	<!-- ======================== -->
+    <p class="subjsect">Will you use the same data format in <span class="texttt">cpub</span>?</p>
+
+    <p class="subjcont">I expect the code will largely drop-in as is. I intend to add a file rotation scheme to the <span class="texttt">cpub</span> writer module and will need to write the glue for the framework. This is all fairly straight forward. The PoC did not support the compound <span class="texttt">timeval</span> and <span class="texttt">timespec</span> data types. As these are not popular types, they <span class="textit">may</span> not be supported in the released code either. I could then add that support later in a version 2 of the file format based upon demand.</p>
+
+	<!-- ======================== -->
+    <p class="subjsect">Why encode the data type <span class="textit">and</span> data length?</p>
+
+    <p class="subjcont">While most of the types are of explicit bitness, one or two of the data types are bitness variant. One specifically is <span class="texttt">time_t</span>. Originally I expected to have to deal with this by capturing both the type and size, but then I decided to force standardization in the type. (Such as making <span class="texttt">time_t</span> <span class="textit">always</span> a 64 bit value.) This means that the encoder will always enforce a specific bitness for each type.</p>
+
+    <p class="subjcont">Standardizing type and size results in the data size saved in the header being redundant. I kept this in the header partially out of laziness, but also to have (what is effectively) a &quot;checksum&quot; that I can check against to insure that the file really is what I think it is. If the data size and what the data type <span class="textit">demands</span> disagrees, then the decoder can tell that the header is corrupt or not a valid header.</p>
+
+	<!-- ======================== -->
+    <p class="subjsect">Why so much validation methods in the header, but none in the data?</p>
+
+	<p class="subjcont">It is easy to call the decompressor/extractor against a file of the wrong type. So this is important to check. Once it is determined that the file format is correct, then the most difficult work is done. That is not to say that there could not be a periodic insertion of a &quot;check line&quot; with known data that the extractor could expect to see. This could let the extractor know that it derailed somewhere and all further parsing is suspect. I did not implement this, although I remain open to the idea in a later implementation. I do not expect that such &quot;checks&quot; in the data are necessary.</p>
+	
+ 	<!-- ======================== -->
+   <p class="subjsect">Why Python?</p>
+
+	<p class="subjcont">I wanted to get an understanding on a language that I see being used more frequently at Bloomberg. I wanted to see what the issues were for its use in SA or performance related tools.</p>
+	
+	<!-- ======================== -->
+    <p class="subjsect">Well, what did you find?</p>
+
+	<p class="subjcont">It is not as dangerous as running with scissors, but it does have some pointy edges that might hurt when you fall on them.</p>
+	
+	<!-- ======================== -->
+    <p class="subjsect">Do you guarantee all items in the compound data type table to be 100% factually correct?</p>
+
+	<p class="subjcont">No. I did not implement each type and test for things like mutability, hashability, or eq tests. Instead I built the table out of documentation for the data types. If you find errors here, or anywhere in the document, please forward them on to me and I can fix them.</p>
+	
+	<!-- ======================== -->
+	<p class="subjsect">What is the 1033 program, and what is the Posse Comitatus Act?</p>
+
+	<p class="subjcont">The <a href="http://en.wikipedia.org/wiki/1033_program">1033 program</a> is a means to transfer surplus military gear to civilian police departments. The <a href="http://en.wikipedia.org/wiki/Posse_Comitatus_Act">Posse Comitatus Act</a> is a federal law (created as a result of reconstruction era military occupation of parts of the United States) that prohibits to use of the military for civilian policing actions.</p>
+
+	<!-- ================================================================= -->
+    <p class="subjhead">Resources</p>
+
+    <table class="listtable">
+	  <tr>
+        <td class="listtd">&bull;</td>
+        <td class="listtd">Python Docs (Version 3)</td>
+        <td class="listtd"><a href="https://docs.python.org/3/">https://docs.python.org/3/</a></td>
+      </tr>
+	  <tr>
+        <td class="listtd">&bull;</td>
+        <td class="listtd">Python Docs (Version 2)</td>
+        <td class="listtd"><a href="https://docs.python.org/2/">https://docs.python.org/2/</a></td>
+      </tr>
+	  <tr>
+        <td class="listtd">&bull;</td>
+        <td class="listtd">Python Enhancement Proposals (PEPs)</td>
+        <td class="listtd"><a href="http://legacy.python.org/dev/peps/">http://legacy.python.org/dev/peps/</a></td>
+      </tr>
+      <tr>
+        <td class="listtd">&bull;</td>
+        <td class="listtd">Python Glossary</td>
+        <td class="listtd"><a href="https://docs.python.org/3/glossary.html">https://docs.python.org/3/glossary.html</a></td>
+      </tr>
+      <tr>
+        <td class="listtd">&bull;</td>
+        <td class="listtd">The Zen of Python</td>
+        <td class="listtd"><a href="http://legacy.python.org/dev/peps/pep-0020/">http://legacy.python.org/dev/peps/pep-0020/</a></td>
+      </tr>
+    </table>
+
+  </body>
+</html>
+

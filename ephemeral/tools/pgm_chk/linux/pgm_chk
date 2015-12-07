@@ -1,0 +1,1772 @@
+#!/bin/ksh93
+
+# pgm_chk - A tool for monitoring / checking PGM interfaces
+#
+#  Charles Howard <lhadmiral@royalnavy.co.uk>
+#  Pompey Magnus <pompeius@pelusium.eg>
+#  William Favorite <wfavorite2@bloomberg.net>
+#
+#
+# ToDo:
+#  [ ] Remove the remaining AIX code
+#  [ ] -r and -s options are not complete
+#  [ ] handle_device_list() requires a UID check. Gotta be root.
+#  [ ] Re-write sysctl call in chk_sysctl to a local non-fork funciton
+#  [ ] tx_rx_q should have conditional formatting for some of the lines
+#      such as no-connections, then don't print the separator line.
+#
+# Done:
+#  [X] Write a man page
+#  [X] handle_reset() and handle_stats() should call an outsourced
+#      function to gather the actual stats. The stats should be passed
+#      via a compound variable. (See discussion/notes in the code)
+#  [X] handle_device_list() operation is hard coded (arg 1)
+#  [X] Remove the unused options from the option parsing.
+#  [X] is_valid_reset_dir() is stubbed
+#  [X] -m errors on some systems
+#  [X] Base functionality port to Linux
+#  [X] Convert to ksh functions
+#
+#
+# Generally, what needs to be done / where to go from here:
+#  + Work the todo's, JMPTs, DEBUGs, and STUBs documented above and
+#    throughout the code.
+#  + ethtool --statistics
+#    > The stats here are virtually unparsable... They are driver specific.
+#      This is consistent with what you expect from device-specific stats.
+#      The solution to this, in my opinion, is to write device-specific
+#      parsers, and boil the stats down to a few PASS/FAIL/WARN statements.
+#  + ethtool --coalesce
+#    > I honestly do not properly understand what these stats are. Generally
+#      these numbers are VERY device-specific, while the concepts are more
+#      universal. (Each concept is implemented with a different tunable in
+#      each case.)
+#    > So, I think this is important, although I am unsure
+#  + Card queues
+#    > Currently there is no accounting for card queues. (Multiple ring
+#      buffers) This needs to be handled.
+#  + Function names / code cleanup
+#    > Some AIX kruft remains. I kept it because some of the functions simply
+#      require testing or *minimal* porting. These can be properly ported
+#      or removed.
+#    > The function naming was not properly clear in some cases. This is
+#      because they may have clashed with one of the AIX names - or there
+#      were two competing implementations, and the poorly named one won.
+#      At any rate, this is largely cosmetic.
+#
+# Version history:
+#  0.1.0   10/15/13 - Snap from pgm_stats (AIX)
+#                   - Laid in chk_sysctl. This checks ALL tunables against
+#                     what is in /etc/sysctl.conf. This file could be grep-ed
+#                     for net-specific tunables and those dumped. The 
+#                     functionality works for now, let's roll with that until
+#                     we decide to extend it.
+#                   - Laid in tx_rx_q()
+#  0.2.0   10/15/13 - Added the -l option
+#  0.3.0   10/16/13 - Added the -m option
+#                   - Added the -r and -s options
+#  0.4.0   10/17/13 - Added the dev list functionality (currently -x)
+#  0.5.0   10/18/13 - Unstubbed is_valid_reset_dir()
+#  0.6.0   10/23/13 - Added sar drop check
+#  0.7.0    1/13/14 - Code cleanup (one J**T tag remains) 
+#                   - The remaining AIX functions have been renamed to AIX_*
+#                     This will cause the names to be non-usable (calls to
+#                     the functions were not changed). The point here is to
+#                     intentionally *break* any unintended dependencies.
+VERSION_STRING="0.7.0"
+#
+#
+#
+# Notes:
+#  - I am using JMPT as a search term to find "hotspots" in the code.
+#  - handle_device_list() is designed to handle *lots* of various per-device
+#    kind of stats. It prints the left-side device tree (it uses about 10
+#    chars of the left hand side of the output). The sub-functions are then
+#    responsible for displaying the rest of the line.
+#  - The -r and -s options are linked. Everything displayed in -s, must be
+#    saved when running -r. Any stats added to one, must be added to the
+#    other.
+#  - I have tried to make related functions, *clearly* related. It is kind
+#    of difficult to do this but there are typically two ways to see the
+#    relationship outside of mapping out who-calls-who:
+#     1. The naming convention
+#        Top-level functions are usually handle_XXXXX().
+#        Decision functions are usually is_a_something(). These read well
+#        in an inline scope: "if is_a_something"
+#     2. Documentation
+#        The relationships are mostly documented.
+#     3. Locality in the code
+#        Dependendt functions are typically local and just before the calling
+#        function..
+
+
+
+#------------------------------------------------------------------------------
+# Name: chk_sysctl
+# Description: Compare sysctl settings to that of a file
+# Paramaters: $1 - int - See the below "verbose" options
+#             $2 - string - name of the sysctl.conf file (optional)
+# Returns: 0 on success, one of the below return values on error/warning
+# Notes: No fork()ing around - except for the multitude of sysctl calls!
+#        ERROR and WARNING output is to stdout! The expectation here is that
+#        this will be part of a framework that finds errors regularly. So...
+#        errors are not exactly exceptions, but really "normal" operation.
+#        This runs as a regular user.
+# Return values
+typeset -ir CHK_SYSCTL_GOOD=0
+typeset -ir CHK_SYSCTL_NOFILE=1
+typeset -ir CHK_SYSCTL_ERROR=2
+typeset -ir CHK_SYSCTL_WARN=3
+# Enum input for verbose option
+typeset -ir CHK_SYSCTL_SILENT=0
+typeset -ir CHK_SYSCTL_VERBOSE=1
+typeset -ir CHK_SYSCTL_VISUAL=2
+
+function chk_sysctl
+{
+    # Paramaters
+    typeset cs_verbose=${1:-1}
+    typeset cs_sysctlfile=${2:-/etc/sysctl.conf}
+    # Locals
+    typeset -i cs_rv=${CHK_SYSCTL_GOOD}  # return value
+    typeset -i cs_visual=0               # The ANSI color code
+    typeset cs_vword=PASS                # The string to print for PASS or FAIL
+    typeset cs_line=                     # The line as read from the file
+    typeset cs_actual=                   # The VALUE as returned from sysctl
+    typeset cs_cactual=                  # Used for compares (tr'd version of cs_actual)
+    typeset cs_csysctl=                  # Used for comparse (tr'd version of cs_line)
+
+    # Make sure the file exists
+    if [[ ! -r ${cs_sysctlfile} ]]
+    then
+        if (( cs_verbose ))
+        then
+            echo "ERROR: ${cs_sysctlfile} does not exist."
+        fi
+        return ${CHK_SYSCTL_NOFILE}
+    fi
+
+    # Walk through the file, looking for bad matches
+    while read cs_line
+    do
+        if [[ ${cs_line} != "#"* ]]
+        then
+            # sysctl does NOT return non-zero on error. Who writes this crap?
+            # As a result, this if statement is a no-op (sysctl always returns 0)
+            # The argument is that this should be removed as sysctl always returns
+            # 0. This should be re-prhrased to "always returns 0 in known circumstances".
+            # The expectation is that there is a error condition somewhere that we are
+            # not aware of - and knowing this code, may give some sort of results to
+            # stdout (instead of stderr). So, this stays in - in anticipation of some
+            # yet undiscovered error code / return condition.
+            if cs_actual=$(/sbin/sysctl -e -n ${cs_line%=*})
+            then
+                if [[ -z ${cs_actual} ]]
+                then
+                    if (( cs_verbose == ${CHK_SYSCTL_VERBOSE} ))
+                    then
+                        echo "WARNING: ${cs_line%=*} is not valid for this system."
+                    fi
+
+                    if (( cs_rv != CHK_SYSCTL_ERROR ))
+                    then
+                        cs_rv=${CHK_SYSCTL_WARN}
+                    fi
+                else
+                    # tr that shit
+                    cs_cactual=${cs_actual//[[:space:]]/_}
+                    cs_csysctl=${cs_line#*=}
+                    cs_csysctl=${cs_csysctl//[[:space:]]/_}
+
+                    cs_visual=32 # ANSI GREEN
+                    cs_vword=PASS
+                    if [[ ${cs_cactual} != ${cs_csysctl} ]]
+                    then
+                        if (( cs_verbose == ${CHK_SYSCTL_VERBOSE} ))
+                        then
+                            echo "ERROR: ${cs_line%=*} should be \"${cs_line#*=}\" it is \"${cs_actual}\"".
+                        fi
+                        cs_rv=${CHK_SYSCTL_ERROR}
+
+                        cs_visual=31 # ANSI RED
+                        cs_vword=FAIL
+                    fi
+
+                    if (( cs_verbose == CHK_SYSCTL_VISUAL ))
+                    then
+                        printf "  [\x1b[%dm%s\x1b[0m]  %s = %s\n" ${cs_visual} ${cs_vword} "${cs_line%=*}" "${cs_actual}"
+                    fi
+                fi
+            fi
+        fi
+    done < ${cs_sysctlfile}
+
+    return ${cs_rv}
+}
+
+#------------------------------------------------------------------------------
+# Name: tx_rx_q
+# Description: Look for UDP socket connectors with non-zero queues
+# Paramaters: boolean - 1 show all results, 0 show just the failures (optional)
+# Returns: 0 on no failures, 1 on >= 1 failure
+# Notes: Single fork() for netstat | grep.
+#        I am not entirely sure this has significant value. Additionally, I am
+#        not sure that we could not do better here.... such as highlighting
+#        and potentially counting multicast (local) addresses.
+function tx_rx_q
+{
+    # Paramaters
+    typeset -i trq_showall=${1:-0}
+    # Stuff parsed from netstat
+    typeset trq_proto=         # Ignored
+    typeset -i trq_rxq=0       # Recv-Q
+    typeset -i trq_txq=0       # Send-Q
+    typeset trq_local=         # Local Address
+    typeset trq_remote=        # Foreign Address
+    typeset trq_junk=          # ESTABLISHED - Ignored
+    # Stats
+    typeset -i trq_total=0
+    typeset -i trq_fail=0
+    typeset -i trq_pass=0
+
+    netstat --udp | grep ESTABLISHED | while read trq_proto trq_rxq trq_txq trq_local trq_remote trq_junk
+    do
+        trq_colour=32
+
+        if (( trq_rxq != 0 || trq_txq != 0 ))
+        then
+            trq_colour=31
+            (( trq_fail++ ))
+        else
+            (( trq_pass++ ))
+        fi
+
+        if (( trq_showall ))
+        then
+            if (( trq_total % 23 == 0 ))
+            then
+                printf "  %7s  %7s %28s %28s\n" "Recv-Q" "Send-Q" "Local Address" "Foreign Address"
+            fi
+
+            printf "  \x1b[%dm%7d  %7d %28s %28s\x1b[%dm\n" ${trq_colour} ${trq_rxq} ${trq_txq} ${trq_local} ${trq_remote} 0
+        else
+            if (( trq_colour == 31 ))
+            then
+                if (( trq_fail % 23 == 1 )) # The index is off by one (it starts at 1)
+                then
+                    printf "  %7s  %7s %28s %28s\n" "Recv-Q" "Send-Q" "Local Address" "Foreign Address"
+                fi
+
+                printf "  \x1b[%dm%7d  %7d %28s %28s\x1b[%dm\n" ${trq_colour} ${trq_rxq} ${trq_txq} ${trq_local} ${trq_remote} 0
+            fi
+        fi
+        (( trq_total++ ))
+    done
+
+    printf "  --------------------------------------------------------------------------\n"
+    printf "  Total: %-7d     Pass: %-7d     Fail: %-7d\n" ${trq_total} ${trq_pass} ${trq_fail}
+
+    if (( trq_fail ))
+    then
+        return 1
+    fi
+
+    return 0
+}
+
+# =============================================================================
+# Name: list_if_devs
+# Description: Generate a list of (plumbed) interfaces (ifconfig -l)
+# Paramaters: boolean - filter devices (0 = no filter, non-0 = filter)
+# Returns: The number of devices found, -1 on error
+# Side effects: Writes list of devices to stdout
+# Notes: Filtering will drop sitX, usb, and lo devices
+#        This is the equivelant of $(ifconfig -l) on AIX
+typeset -ir FILTER_IFDEVS=1
+typeset -ir GIVALL_IFDEVS=0
+
+function list_if_devs
+{
+    typeset -i lid_filter=${1:-0}
+    typeset lid_line=
+    typeset -i lid_ifcnt=0
+
+    if [[ ! -r /proc/net/dev ]]
+    then
+        return -1
+    fi
+
+    while read lid_line
+    do
+        if [[ ${lid_line} == *:* ]]
+        then
+            # Is a device line
+            (( lid_ifcnt++ ))
+
+            lid_line=${lid_line%:*}
+            if [[ ${lid_line} == lo ]] ; then continue ; fi
+            if [[ ${lid_line} == sit* ]] ; then continue ; fi
+            if [[ ${lid_line} == usb* ]] ; then continue ; fi
+
+            echo ${lid_line}
+        fi
+    done < /proc/net/dev
+    
+    return ${lid_ifcnt}
+}
+
+
+# =============================================================================
+# Name: is_bond_if
+# Description: A test to see if it is a bondX interface
+# Paramaters: string - the bondX device we are looking at
+# Returns: 0 is bond, 1 is not bond, -1 on error
+# Side effects: None
+# Notes: Call it thusly:
+#        if is_bond_if bond0
+#        then
+#           echo "is a bond"
+#        fi
+#
+function is_bond_if
+{
+    typeset ibi_bonddev=${1}
+
+    if [[ -z ${ibi_bonddev} ]]
+    then
+        return -1
+    fi
+    
+    if [[ -e /proc/net/bonding/${ibi_bonddev} ]]
+    then
+        return 0
+    fi
+
+    return 1
+}
+
+# =============================================================================
+# Name: ip_from_eth
+# Description: Find an IP address from a device in ifconfig
+# Paramaters: string - the ethernet device we are looking for
+# Returns: 0 on success, non-0 on failure
+# Side effects: Writes IP address to stdout
+# Notes: It is dangerous to call "ifconfig ethX" and look at the results. The
+#        better solution is to check for that device first, *then* call the
+#        command. This is because "ifconfig eth7" will plumb eth7 if it was
+#        not previously plumbed. (Or so has been my experience on other
+#        platforms. We can "fix" this if I am wrong.) The solution here has
+#        been to do a single fork, and parse out the results.
+function ip_from_eth
+{
+    typeset ife_ethdev=${1}  # The device to check for
+    typeset ife_line=        # The line we are looking at from ifconfig
+    typeset -i ife_insec=0   # If we are in the right section or not
+    typeset -i ife_rv=1      # Return value, assume failure, change on success
+
+    if [[ -z ${ife_ethdev} ]]
+    then
+        return 1
+    fi
+
+    /sbin/ifconfig | while read ife_line
+    do
+        if [[ ${ife_line} == ${ife_ethdev}* ]]
+        then
+            ife_insec=1
+        fi
+
+        if [[ ${ife_line} == "" ]]
+        then
+            ife_insec=0
+        fi
+
+        if (( ife_insec == 0 )) ; then continue ; fi
+
+        if [[ ${ife_line} == *"inet addr:"* ]]
+        then
+            ife_line=${ife_line#*:}
+            ife_line=${ife_line%%[[:space:]]*}
+
+            if [[ -n ${ife_line} ]]
+            then
+                echo ${ife_line}
+                ife_rv=0
+            fi
+        fi
+    done
+
+    return ${ife_rv}
+}
+
+# =============================================================================
+# Name: get_bond_legs
+# Description: Get the legs of the bonded interface
+# Paramaters: string - the bondX device we are looking at
+# Returns: 0 on success, non-0 on error
+# Side effects: Writes leg names to stdou
+# Notes: The return value is NOT the number of legs. It could be. Currently
+#        no legs is an error condition.
+function get_bond_legs
+{
+    typeset gbl_bonddev=${1}
+    typeset gbl_legcnt=0
+
+    if [[ -z ${gbl_bonddev} ]]
+    then
+        return 1
+    fi
+
+    if [[ ! -e /proc/net/bonding/${gbl_bonddev} ]]
+    then
+        return 1
+    fi
+   
+    grep "Slave Interface:" /proc/net/bonding/${gbl_bonddev} | while read gbl_leg
+    do
+        echo ${gbl_leg#*: }
+        (( gbl_legcnt++ ))
+    done
+
+    # Consider this a failure
+    if ((  gbl_legcnt == 0 )) ; then return 1 ; fi
+        
+    return 0
+}
+
+# =============================================================================
+# Name: get_hosttype_by_ip
+# Description: Determine the *type* of the interface by hostname
+# Paramaters: reference - The string to modify (place the hosttype in)
+#             string - The IP address to query for 
+# Returns: 0 on success, non-0 on error
+# Side effects: Writes host type to referenced variable
+# Notes: Supported (known) types are:
+#          PRI   Primary
+#          PRI2  Primary2/n2
+#          STOR  Storage/-s
+#          DATA  -d
+#          UNK?  Unable to determine interface type
+#          HLF!  Hostname lookup failure
+function get_hosttype_by_ip
+{
+    typeset -n ghbi_hosttype=${1}
+    typeset ghbi_ipaddr=${2}
+
+    if [[ -z ${ghbi_ipaddr} ]]
+    then
+        return 0
+    fi
+
+    if ! ghbi_hostline=$(host ${ghbi_ipaddr} 2>/dev/null)
+    then
+        ghbi_hosttype="HLF!"  # Host name lookup failure
+        return 1
+    fi
+
+    ghbi_hostline=${ghbi_hostline#*pointer[[:space:]]}
+    ghbi_hostline=${ghbi_hostline%.bloomberg*}
+
+    if [[ ${ghbi_hostline} == $(uname -n) ]]
+    then
+        ghbi_hosttype="PRI"
+        return 0
+    fi
+    
+    if [[ ${ghbi_hostline} == $(uname -n)-s ]]
+    then
+        ghbi_hosttype="STOR"
+        return 0
+    fi
+
+    if [[ ${ghbi_hostline} == $(uname -n)-d ]]
+    then
+        ghbi_hosttype="DATA"
+        return 0
+    fi
+
+    if [[ ${ghbi_hostline} == $(uname -n)-n2 ]]
+    then
+        ghbi_hosttype="PRI2"
+        return 0
+    fi
+    
+    ghbi_hosttype="UNK?"
+    return 1
+}
+
+# =============================================================================
+# Name: get_ifconfig_stats
+# Description: Pull the stats from ifconfig for a given interface
+# Paramaters: reference - Stats struct (See the following definition)
+#                stats.rxpackets
+#                stats.txpackets
+#                stats.rxdrops
+#                stats.txdrops
+#                stats.rxbytes
+#                stats.txbytes
+#                 All of the above are strings, not numerics.
+#             string - The IP address to query for 
+# Returns: 0 on success, non-0 on error
+# Side effects: Writes host type to referenced variable
+# Notes: 1) The interface MUST exist. The thinking here is that the interface
+#           was derived from one of the other functions, and as a result, it
+#           has been sufficiently tested/validated. If the interface does not
+#           exist (has not been plumbed), this will plumb it!
+#        2) The first variable is pass by reference. It must be declared prior
+#           to passing it.
+#        3) The return value is always 0! But if the number was not set, then
+#           it will be NAN.
+function get_ifconfig_stats
+{
+    typeset -n gis_stats=${1}
+    typeset gis_interface=${2}
+    typeset gis_temp=
+
+    # Set all values to NULL
+    gis_stats.rxpackets=NAN
+    gis_stats.txpackets=NAN
+    gis_stats.rxdrops=NAN
+    gis_stats.txdrops=NAN
+    gis_stats.rxbytes=NAN
+    gis_stats.txbytes=NAN
+
+    # Some consideration here... the alternative is to read this from /proc/net/dev
+    /sbin/ifconfig ${gis_interface} | while read gis_ifline
+    do
+        if [[ ${gis_ifline} == *"RX packets:"* ]]
+        then
+            gis_temp=${gis_ifline#*packets:}
+            gis_temp=${gis_temp%%[[:space:]]*}
+            gis_stats.rxpackets=${gis_temp}
+
+            gis_temp=${gis_ifline#*dropped:}
+            gis_temp=${gis_temp%%[[:space:]]*}
+            gis_stats.rxdrops=${gis_temp}
+        fi
+
+        if [[ ${gis_ifline} == *"TX packets:"* ]]
+        then
+            gis_temp=${gis_ifline#*packets:}
+            gis_temp=${gis_temp%%[[:space:]]*}
+            gis_stats.txpackets=${gis_temp}
+
+            gis_temp=${gis_ifline#*dropped:}
+            gis_temp=${gis_temp%%[[:space:]]*}
+            gis_stats.txdrops=${gis_temp}
+        fi
+
+        if [[ ${gis_ifline} == *"RX bytes:"* ]]
+        then
+            gis_temp=${gis_ifline#*\(}
+            gis_temp=${gis_temp%%iB\)*}
+            gis_stats.rxbytes=${gis_temp}
+
+            gis_temp=${gis_ifline##*\(}
+            gis_temp=${gis_temp%%iB\)*}
+            gis_stats.txbytes=${gis_temp}
+        fi
+
+    done
+
+    return 0
+}
+
+# =============================================================================
+# Name: print_ifconfig_stats
+# Description: Print the stats from the supplied struct (compound variable)
+# Paramaters: reference - Stats struct (definition exists elsewhere)
+# Returns: Nothing ($? from printf falls through)
+# Side effects: Writes to stdout
+# Notes: This is simply a helper function for handle_packet_source. It is used
+#        to make the calling function a bit more readable.
+function print_ifconfig_stats
+{
+    typeset -n pis_stats=${1}
+
+    printf "%13s %13s %8s %8s %8s %8s" \
+        ${pis_stats.rxpackets}       \
+        ${pis_stats.txpackets}       \
+        ${pis_stats.rxdrops}         \
+        ${pis_stats.txdrops}         \
+        "${pis_stats.rxbytes}"       \
+        "${pis_stats.txbytes}"
+}
+
+# =============================================================================
+# Name: handle_packet_source
+# Description: Handle the -l(acp) option
+# Paramaters: None
+# Returns: 
+# Side effects: Writes to stdout
+# Notes: The (current) name is entirely inappropriate. It exists because I
+#        wanted to avoid collisions with the same (purpose) function that
+#        was copied over from AIX, but not yet deleted.
+function handle_packet_source
+{
+    typeset hps_ifdev=
+    typeset hps_ipaddr=
+    typeset hps_htype=
+    typeset -C hps_stats
+
+    printf "  %-6s  %-4s %13s %13s %8s %8s %8s %8s\n" "IFace" "Type" "RxPack" "TxPack" "RxDrop" "TxDrop" "RxBytes" "TxBytes"
+    for hps_ifdev in $(list_if_devs ${FILTER_IFDEVS})
+    do
+        # Does the interface have an IP address?
+        if ! hps_ipaddr=$(ip_from_eth ${hps_ifdev})
+        then
+            # No IP, so skip the rest
+            continue
+        fi
+
+        # Determine the host type for this IP address
+        get_hosttype_by_ip hps_htype ${hps_ipaddr}
+
+        hps_stats.rxpackets=0
+        hps_stats.txpackets=0
+        hps_stats.rxdrops=0
+        hps_stats.txdrops=0
+        hps_stats.rxbytes=0
+        hps_stats.txbytes=0
+      
+        get_ifconfig_stats hps_stats ${hps_ifdev}
+
+        # Print the line
+        printf "  %-6s  %-4s " ${hps_ifdev} "${hps_htype}"
+        print_ifconfig_stats hps_stats
+        printf "\n"
+
+        if is_bond_if ${hps_ifdev}
+        then
+            for hps_legdev in $(get_bond_legs ${hps_ifdev})
+            do
+
+                get_ifconfig_stats hps_stats ${hps_legdev}
+
+                printf "   + %-6s    " ${hps_legdev}
+                print_ifconfig_stats hps_stats
+                printf "\n"
+
+            done
+        fi
+    done
+}
+
+# =============================================================================
+# Name: #DEFINES
+# Description: Defines for the function_junction interchange
+# Notes: There are two sets of defines here. One is for the dev type, and
+#        the other is for what type of info (function) we want
+
+# Dev types
+typeset -ir DEV_ISBOND=1
+typeset -ir DEV_ISPHYS=2
+# Function to run
+typeset -ir OPER_DEVINFO=1
+typeset -ir OPER_RINGINFO=2
+
+# =============================================================================
+# Name: dsl_get_ring_hdr
+# Description: Header-only function for dsl_get_ring() 
+# Paramaters: None
+# Returns: None
+# Side effects: Writes to stdout 
+# Notes: 
+function dsl_get_ring_hdr
+{
+    printf "     RX        Mini         Jumbo       TX"
+}
+
+# =============================================================================
+# Name: dsl_get_ring
+# Description: Display device line for "ethtool --show-ring"
+# Paramaters: int/enum - The device type (from the #DEFINES above)
+# Returns: Nothing
+# Side effects: Calls ethtool, writes to stdout
+# Notes: Pairs with dsl_get_ring_hdr()
+function dsl_get_ring
+{
+    typeset -i dgr_devtype=${1}
+    typeset    dgr_devname=${2}
+    typeset    dgr_etline=
+    typeset -i dgr_section=0
+    # Maximums (pre-set) [dgr_section=1]
+    typeset    dgr_m_rx=0
+    typeset    dgr_m_rx_mini=0
+    typeset    dgr_m_rx_jumbo=0
+    typeset    dgr_m_tx=0
+    # Current            [dgr_section=2]
+    typeset    dgr_c_rx=0
+    typeset    dgr_c_rx_mini=0
+    typeset    dgr_c_rx_jumbo=0
+    typeset    dgr_c_tx=0
+
+    # No data if this is a bond interface (only for physical)
+    if (( ${dgr_devtype} == ${DEV_ISBOND} ))
+    then
+        return
+    fi
+
+    ethtool --show-ring ${dgr_devname} 2>/dev/null | while read dgr_etline
+    do
+        if [[ ${dgr_etline} == *"maximums:"* ]]
+        then
+            dgr_section=1
+            continue
+        fi
+
+        if [[ ${dgr_etline} == "Current"* ]]
+        then
+            dgr_section=2
+            continue
+        fi
+
+        if [[ ${dgr_etline} == "RX:"* ]]
+        then
+            case ${dgr_section} in
+                1) dgr_m_rx=${dgr_etline##*[[:space:]]} ;;
+                2) dgr_c_rx=${dgr_etline##*[[:space:]]} ;;
+            esac
+        fi
+
+
+        if [[ ${dgr_etline} == "TX:"* ]]
+        then
+            case ${dgr_section} in
+                1) dgr_m_tx=${dgr_etline##*[[:space:]]} ;;
+                2) dgr_c_tx=${dgr_etline##*[[:space:]]} ;;
+            esac
+        fi
+
+        if [[ ${dgr_etline} == *"Mini:"* ]]
+        then
+            case ${dgr_section} in
+                1) dgr_m_mini=${dgr_etline##*[[:space:]]} ;;
+                2) dgr_c_mini=${dgr_etline##*[[:space:]]} ;;
+            esac
+        fi
+
+        if [[ ${dgr_etline} == *"Jumbo:"* ]]
+        then
+            case ${dgr_section} in
+                1) dgr_m_jumbo=${dgr_etline##*[[:space:]]} ;;
+                2) dgr_c_jumbo=${dgr_etline##*[[:space:]]} ;;
+            esac
+        fi
+    done
+
+    printf "%5s/%-5s %5s/%-5s %5s/%-5s %5s/%-5s" \
+        "${dgr_c_rx}" "${dgr_m_rx}"              \
+        "${dgr_c_mini}" "${dgr_m_mini}"          \
+        "${dgr_c_jumbo}" "${dgr_m_jumbo}"        \
+        "${dgr_c_tx}" "${dgr_m_tx}"
+}
+
+
+
+
+
+# =============================================================================
+# Name: dsl_get_info_hdr
+# Description: Header-only function for dsl_get_info() 
+# Paramaters: None
+# Returns: None
+# Side effects: Writes to stdout 
+# Notes: 
+function dsl_get_info_hdr
+{
+    printf "%-10s %-14s %-9s %-32s" "Driver" "Bus_Info" "Version" "FW_Version"
+}
+
+# =============================================================================
+# Name: dsl_get_info
+# Description: Display device line for "ethtool --driver"
+# Paramaters: int/enum - The device type (from the #DEFINES above)
+# Returns: Nothing
+# Side effects: Calls ethtool, writes to stdout
+# Notes: Pairs with dsl_get_info_hdr()
+function dsl_get_info
+{
+    typeset -i dgi_devtype=${1}
+    typeset    dgi_devname=${2}
+    typeset    dgi_etline=
+    typeset    dgi_driver=
+    typeset    dgi_businfo=
+    typeset    dgi_version=
+    typeset    dgi_fwversion=
+
+
+    if (( ${dgi_devtype} == ${DEV_ISBOND} ))
+    then
+        return
+    fi
+
+    ethtool --driver ${dgi_devname} 2>/dev/null | while read dgi_etline
+    do
+        if [[ ${dgi_etline} == "driver:"* ]]
+        then
+            dgi_driver=${dgi_etline#driver: }
+        fi
+
+        if [[ ${dgi_etline} == "version:"* ]]
+        then
+            dgi_version=${dgi_etline#*ion: }
+        fi
+
+        if [[ ${dgi_etline} == "firmware-version:"* ]]
+        then
+            dgi_fwversion=${dgi_etline#*ion: }
+        fi
+
+        if [[ ${dgi_etline} == "bus-info:"* ]]
+        then
+            dgi_businfo=${dgi_etline#*info: }
+        fi
+
+    done
+
+    printf "%-10s %-14s %-9s %-32s" "${dgi_driver}" "${dgi_businfo}" "${dgi_version}" "${dgi_fwversion}"
+}
+
+# =============================================================================
+# Name: device_function_junction_hdr
+# Description: Display the appropriate header (function junction)
+# Paramaters: int/enum - The operation we are attempting to run
+# Returns: Nothing
+# Side effects: Prints a CR
+# Notes: Is just the header function for device_function_junction()
+#        Called (only) by handle_device_list()
+function device_function_junction_hdr
+{
+    typeset -i dfjh_operation=${1}
+
+    case ${dfjh_operation} in
+        ${OPER_DEVINFO}) dsl_get_info_hdr ;;
+        ${OPER_RINGINFO}) dsl_get_ring_hdr ;;
+    esac
+
+    printf "\n"
+
+}
+
+# =============================================================================
+# Name: device_function_junction
+# Description: Call the appropriate sub-function to handle remaining data line
+# Paramaters: int/enum - device type (from defined list)
+#             string   - device name string
+#             int/enum - Operation to run (from defined list)
+# Returns: Nothing
+# Side effects: Prints a CR
+# Notes: This function is responsible for calling the appropriate function to
+#        render the rest of the line. It simply passes the first two args
+#        and uses the third to determine the operation to run.
+#        Called (only) by handle_device_list()
+function device_function_junction
+{
+    typeset -i dfj_devtype=${1}
+    typeset    dfj_devname=${2}
+    typeset -i dfj_operation=${3}
+
+    case ${dfj_operation} in
+        ${OPER_DEVINFO}) dsl_get_info ${dfj_devtype} ${dfj_devname} ;;
+        ${OPER_RINGINFO}) dsl_get_ring ${dfj_devtype} ${dfj_devname} ;;
+    esac
+
+    printf "\n"
+}
+
+# =============================================================================
+# Name: handle_device_list
+# Description: Base dev-tree that will call rest of line handlers
+# Paramaters: int/enum - One of the rest of line options
+# Returns: nothing (of value)
+# Side effects: Fairly complex call tree (so... lots)
+# Notes: Q: Why all this crazy logic?
+#        A: Because I cannot simply filter on "is plumbed" kind of logic. I 
+#           need to display ALL devices, plumbed or not because this may be
+#           used in a physical accessment of capabilities. Showing just what
+#           is plumbed is not sufficient.
+#        This function is designed to "lay in" another per-device function to
+#        display the rest of the line. This function calls a "function junction"
+#        handler that calls the appropriate sub-function to handle the rest of
+#        the line.
+#
+#        Here is the concept:
+#        | Done by hdl() | Done by another sub-function
+#          eth0            12345      12345      12345      12345
+#          bond0           12345      12345      12345      12345
+#           + eth1         12345      12345      12345      12345
+#           + eth2         12345      12345      12345      12345
+function handle_device_list
+{
+    typeset -i hdl_operation=${1}
+    typeset -A hdl_bond_legs
+    typeset hdl_ifdev=
+
+    # Create the array of ifdev (physical) devices
+    for hdl_ifdev in $(list_if_devs ${FILTER_IFDEVS})
+    do
+        if [[ ${hdl_ifdev} == eth* ]]
+        then
+            hdl_bond_legs[$hdl_ifdev]=" "
+        fi
+    done
+
+    # Assign every device a bond name if the relationship exists
+    for hdl_ifdev in $(list_if_devs ${FILTER_IFDEVS})
+    do
+        if is_bond_if ${hdl_ifdev}
+        then
+            for hdl_legdev in $(get_bond_legs ${hdl_ifdev})
+            do
+                hdl_bond_legs[$hdl_legdev]=${hdl_ifdev}
+            done
+        fi
+    done
+
+    # Display the header
+    printf "  %-7s " "Device"
+    device_function_junction_hdr ${hdl_operation}
+
+    # Display the content
+    for hdl_ifdev in $(list_if_devs ${FILTER_IFDEVS})
+    do
+        if [[ ${hdl_ifdev} == bond* ]]
+        then
+            printf "  %-5s   " ${hdl_ifdev}
+            device_function_junction ${DEV_ISBOND} ${hdl_ifdev} ${hdl_operation}
+
+            for hdl_legdev in $(get_bond_legs ${hdl_ifdev})
+            do
+                printf "  + %-5s " ${hdl_legdev}
+                device_function_junction ${DEV_ISPHYS} ${hdl_legdev} ${hdl_operation}
+            done
+        else
+            if [[ ${hdl_bond_legs[$hdl_ifdev]} != bond* ]]
+            then
+                printf "  %-5s   " ${hdl_ifdev}
+                device_function_junction ${DEV_ISPHYS} ${hdl_ifdev} ${hdl_operation}
+            fi
+        fi
+    done
+
+}
+
+#------------------------------------------------------------------------------
+# Name: mcast_ip_to_mac
+# Description: Given a multicast IP input address, generate a multicast MAC
+# Paramaters: $1 - reference - Var to fill with output
+#             $2 - string - IP address
+# Returns: 0 on success, 1 on error (output is passed via stdout)
+# Notes: 
+function mcast_ip_to_mac
+{
+    typeset -n l_macaddr=${1}
+    typeset l_ipaddr=${2}
+
+    if [[ -z ${l_ipaddr} ]]
+    then
+        echo "ERROR: Missing multicast input to function." >&2
+        return 1
+    fi
+
+    if [[ ${l_ipaddr} != +([0-9]).+([0-9]).+([0-9]).+([0-9]) ]]
+    then
+        echo "ERROR: ${l_ipaddr} is not an IP address." >&2
+        return 1
+    fi
+
+    typeset l_tmp=${l_ipaddr}
+
+    l_tmp=${l_tmp#+([0-9]).}
+    l_tmp=${l_tmp%.+([0-9]).+([0-9])}
+    typeset -i l_otwo=${l_tmp}
+
+    l_tmp=${l_ipaddr}
+    l_tmp=${l_tmp#+([0-9]).+([0-9]).}
+    l_tmp=${l_tmp%.+([0-9])}
+    typeset -i l_othree=${l_tmp}
+
+    l_tmp=${l_ipaddr}
+    l_tmp=${l_tmp#+([0-9]).+([0-9]).+([0-9]).}
+    typeset -i l_ofour=${l_tmp}
+
+    # I was going to do this in the shell [typeset -i 16 hexvar=decvar] but
+    # just letting printf handle it seemed much cleaner. Plus it is MUCH easier
+    # to do the translation (to hex) *and* enforce leading 0s this way.
+
+    l_macaddr=$(printf "01:00:5e:%02x:%02x:%02x\n" $(( l_otwo & 127 )) ${l_othree} ${l_ofour})
+
+    return 0
+}
+
+
+#------------------------------------------------------------------------------
+# Name: list_mcast_addrs
+# Description: List all multicast IP registrations with the MAC address
+# Paramaters: None  
+# Returns: 0
+# Notes: This ONLY lists the addresses. It does not validate!
+
+function list_mcast_addrs
+{
+    typeset lma_if=
+    typeset lma_rcnt=
+    typeset lma_group=
+    typeset lma_macaddr=
+    typeset -A lma_stats
+
+    # We do not know the lma_stats members prior to the loop. So this array is
+    # not initialized. Instead I rely on the 
+
+    printf "  _Multicast_addresses________________________________________________\n"
+    printf "  %5s %20s %30s\n" "IFace" "Mcast IP" "Mcast MAC"
+
+    netstat --groups --numeric | while read lma_if lma_rcnt lma_group 
+    do
+        # Filter out headers and IPv6 addresses
+        if [[ ${lma_if} == lo ]] ; then continue ; fi
+        if [[ ${lma_if} == usb* ]] ; then continue ; fi
+        if [[ ${lma_group} == "ff0"* ]] ; then continue ; fi
+        if [[ ${lma_group} == "Group" ]] ; then continue ; fi
+        if [[ ${lma_rcnt} == "Group" ]] ; then continue ; fi
+        if [[ ${lma_rcnt} == "------" ]] ; then continue ; fi
+
+        mcast_ip_to_mac lma_macaddr ${lma_group}
+
+
+        # Here is the deal: We ALWAYS count every multicast address so that the
+        # interface (stat) array is properly filled. But then we immediately
+        # un-add stats if the multicast address is the default "host" address.
+        (( lma_stats[${lma_if}]++ ))
+
+        if [[ ${lma_group} == 224.0.0.1 ]]
+        then
+            (( lma_stats[${lma_if}]-- ))
+        fi
+
+        printf "  %5s %20s %30s\n" ${lma_if} ${lma_group} ${lma_macaddr}
+    done
+
+    printf "  _Per-interface_statistics___________________________________________\n"
+    printf "  %5s %5s\n" "IFace" "Count"
+    for lma_if in ${!lma_stats[*]}
+    do
+        printf "  %5s %5d\n" ${lma_if} ${lma_stats[$lma_if]}
+    done
+}
+
+#------------------------------------------------------------------------------
+# Name: handle_reset
+# Description: Primary handler for the -r(eset) option
+# Paramaters:
+# Returns: Always 0.
+# Notes: 
+function handle_reset
+{
+    typeset hr_nsline=
+    typeset netstat_udp_pr=       # netstat UDP Packets recieved
+    typeset netstat_udp_upr=      # netstat UDP Packets to unknown port
+    typeset netstat_udp_pre=      # netstat UDP Packet recieve errors
+    typeset netstat_udp_ps=       # netstat UDP Packets sent
+    typeset hr_resetdir=/var/adm/bb/pgm_chk.reset
+
+    if (( $(id -u) != 0 ))
+    then
+        echo "WARNING: Stats cannot be reset as a non-root user. The reset will be local." >&2
+        hr_resetdir=pgm_chk.reset
+    fi
+
+    # What we are doing here:
+    #  - The UDP section of the output does not follow "normal" conventions
+    #    of the other data (   Descriptor: value). It is formatted as
+    #    (   value open text description).
+    #  - The first "##" strips off leading spaces
+    #    (   value open text description) ===> (value open text description)
+    #  - The second "%%" strips off everything including and following the first space
+    #    (value open text description) ===> (value)
+    #  - This code is reused multiple times and *could* be put in a function. The
+    #    reasoning at this time is that only the UDP section appears to use this (non-colon)
+    #    format. I will wait until additional items are "reset" before adding sub-functions
+    netstat -su | while read hr_nsline
+    do
+        if [[ ${hr_nsline} == *"packets received"* ]]
+        then
+            hr_nsline=${hr_nsline##[[:space:]]}
+            netstat_udp_pr=${hr_nsline%%[[:space:]]*}
+            continue
+        fi
+
+        if [[ ${hr_nsline} == *"unknown port"* ]]
+        then
+            hr_nsline=${hr_nsline##[[:space:]]}
+            netstat_udp_upr=${hr_nsline%%[[:space:]]*}
+            continue
+        fi
+
+        if [[ ${hr_nsline} == *"receive errors"* ]]
+        then
+            hr_nsline=${hr_nsline##[[:space:]]}
+            netstat_udp_pre=${hr_nsline%%[[:space:]]*}
+            continue
+        fi
+
+        if [[ ${hr_nsline} == *"packets sent"* ]]
+        then
+            hr_nsline=${hr_nsline##[[:space:]]}
+            netstat_udp_ps=${hr_nsline%%[[:space:]]*}
+            continue
+        fi
+    done
+
+    if [[ ! -d ${hr_resetdir} ]]
+    then
+        if ! mkdir ${hr_resetdir} > /dev/null 2>&1
+        then
+            echo "ERROR: Unable to create stats directory." >&2
+            return 1
+        fi
+    fi
+    date +%s > ${hr_resetdir}/reset_timestamp
+    echo ${netstat_udp_pr} > ${hr_resetdir}/netstat_udp_pr
+    echo ${netstat_udp_upr} > ${hr_resetdir}/netstat_udp_upr
+    echo ${netstat_udp_pre} > ${hr_resetdir}/netstat_udp_pre
+    echo ${netstat_udp_ps} > ${hr_resetdir}/netstat_udp_ps
+
+    echo "For debug purposes only"
+    echo "--------------------------------------------------"
+    echo "Reset time: "$(date +%s)
+    echo "netstat_udp_pr: "${netstat_udp_pr}
+    echo "netstat_udp_upr: "${netstat_udp_upr}
+    echo "netstat_udp_pre: "${netstat_udp_pre}
+    echo "netstat_udp_ps: "${netstat_udp_ps}
+
+    return 0
+}
+
+#------------------------------------------------------------------------------
+# Name: is_valid_reset_dir
+# Description: Test if the reset stats directory is usable
+# Paramaters: The (proposed) directory name
+# Returns: 0 if usable, non-0 if not
+# Notes: call it thusly:
+#        if is_valid_reset_dir
+#        then
+#           ...use reset dir...
+#        fi
+#
+function is_valid_reset_dir
+{
+    typeset ivrd_resetdir=${1}
+    typeset irvd_reset_timestamp=
+    typeset irvd_cur_timestamp=$(date +%s)
+    typeset irvd_reset_age=
+    typeset irvd_uptime_age=
+
+    # Did we get a paramater?
+    if [[ -z ${ivrd_resetdir} ]]
+    then
+        return 1
+    fi
+
+    # Does the directory exist?
+    if [[ ! -d ${ivrd_resetdir} ]]
+    then
+        return 1
+    fi
+
+    # Does the timestamp file exist?
+    if [[ ! -f ${ivrd_resetdir}/reset_timestamp ]]
+    then
+        return 1
+    fi
+
+    irvd_reset_timestamp=${ < ${ivrd_resetdir}/reset_timestamp }
+    irvd_reset_age=$(( irvd_cur_timestamp - irvd_reset_timestamp ))
+
+    irvd_uptime_age=${ < /proc/uptime }
+    irvd_uptime_age=${irvd_uptime_age%%\.*}
+
+    # Debuggery
+    #echo "Reset timestamp    : "${irvd_reset_timestamp}
+    #echo "Current timestamp  : "${irvd_cur_timestamp} 
+    #echo "Reset age          : "${irvd_reset_age}
+    #echo "Uptime age         : "${irvd_uptime_age}
+
+    # Did the reset happen this boot?
+    if (( irvd_uptime_age < irvd_reset_age ))
+    then
+        return 1
+    fi
+
+    return 0
+}
+
+#------------------------------------------------------------------------------
+# Name: read_stored_stat
+# Description: Read the stored stat into a reference variable
+# Paramaters: reference - The variable to fill
+#             string    - The directory that will hold the value file
+#             string    - The name of the value file
+# Returns: 0 on success or failure (there is no failure)
+# Notes: The value will be read in, if not, then it will be set to 0
+#        The recommendation is to make the file name and the reference name
+#        to be the same. It is not possible (to the best of my knowledge) to
+#        pass a refrence and use it both as a string and a reference (although
+#        I expect it exists).
+function read_stored_stat
+{
+    typeset -n rss_valtoset=${1}
+    typeset rss_dir=${2}
+    typeset rss_name=${3}
+
+    if [[ -e ${rss_dir}/${rss_name} ]]
+    then
+        rss_valtoset=${ < ${rss_dir}/${rss_name} }
+    else
+        rss_valtoset=0
+    fi
+
+    return 0
+}
+
+#------------------------------------------------------------------------------
+# Name: handle_stats
+# Description: Primary handler for the -s(tats) option
+# Paramaters: 
+# Returns: Always 0. This is for reporting, not for analysis
+# Notes: 
+function handle_stats
+{
+    typeset rnetstat_udp_pr=0      # netstat UDP Packets recieved
+    typeset rnetstat_udp_upr=0     # netstat UDP Packets to unknown port
+    typeset rnetstat_udp_pre=0     # netstat UDP Packet recieve errors
+    typeset rnetstat_udp_ps=0      # netstat UDP Packets sent
+    typeset hr_resetdir=/var/adm/bb/pgm_chk.reset
+
+    typeset hs_nsline=
+    typeset netstat_udp_pr=       # netstat UDP Packets recieved
+    typeset netstat_udp_upr=      # netstat UDP Packets to unknown port
+    typeset netstat_udp_pre=      # netstat UDP Packet recieve errors
+    typeset netstat_udp_ps=       # netstat UDP Packets sent
+
+
+    if (( $(id -u) != 0 ))
+    then
+        hr_resetdir=pgm_chk.reset
+    fi
+
+    if is_valid_reset_dir ${hr_resetdir}
+    then
+        echo "NOTE: Using the local-only reset values." >&2
+        read_stored_stat rnetstat_udp_pr ${hr_resetdir} netstat_udp_pr
+        read_stored_stat rnetstat_udp_upr ${hr_resetdir} netstat_udp_upr
+        read_stored_stat rnetstat_udp_pre ${hr_resetdir} netstat_udp_pre
+        read_stored_stat rnetstat_udp_ps ${hr_resetdir} netstat_udp_ps
+    fi
+
+    netstat -su | while read hs_nsline
+    do
+        if [[ ${hs_nsline} == *"packets received"* ]]
+        then
+            hs_nsline=${hs_nsline##[[:space:]]}
+            netstat_udp_pr=${hs_nsline%%[[:space:]]*}
+            continue
+        fi
+
+        if [[ ${hs_nsline} == *"unknown port"* ]]
+        then
+            hs_nsline=${hs_nsline##[[:space:]]}
+            netstat_udp_upr=${hs_nsline%%[[:space:]]*}
+            continue
+        fi
+
+        if [[ ${hs_nsline} == *"receive errors"* ]]
+        then
+            hs_nsline=${hs_nsline##[[:space:]]}
+            netstat_udp_pre=${hs_nsline%%[[:space:]]*}
+            continue
+        fi
+
+        if [[ ${hs_nsline} == *"packets sent"* ]]
+        then
+            hs_nsline=${hs_nsline##[[:space:]]}
+            netstat_udp_ps=${hs_nsline%%[[:space:]]*}
+            continue
+        fi
+    done
+
+    #cho '-------------------------------------------------------------------------------'
+    #cho IP
+    #cho '-------------------------------------------------------------------------------'
+    #cho
+    echo '-------------------------------------------------------------------------------'
+    echo UDP
+    echo '-------------------------------------------------------------------------------'
+    echo "  Packets received      : "$(( netstat_udp_pr - rnetstat_udp_pr ))
+    echo "  Packets without a port: "$(( netstat_udp_upr - rnetstat_udp_upr ))
+    echo "  Packet errors         : "$(( netstat_udp_pre - rnetstat_udp_pre ))
+    echo "  Packets sent          : "$(( netstat_udp_ps - rnetstat_udp_ps ))
+    #cho '-------------------------------------------------------------------------------'
+    #cho <interface>
+    #cho '-------------------------------------------------------------------------------'
+    #cho
+}
+
+#------------------------------------------------------------------------------
+# Name: get_addr_from_name
+# Description: Get address from host name
+# Paramaters: $1 - boolean - Verbosity. 1 = verbose, 0 = silent
+#             $2 - reference - The address (variable) that will be modified
+#             $3 - string - The hostname
+# Returns: 0 on success, 1 on failure
+# Notes:
+function get_addr_from_name
+{
+    typeset -i l_verbose=${1}
+    typeset -n l_addr=${2}
+    typeset l_hn=${3}
+    typeset -i l_rv=0
+    typeset l_echo=true
+
+    if (( l_verbose )) ; then l_echo=echo ; fi
+
+    if [[ -n ${l_hn} ]]
+    then
+        ${l_echo} -n "Determining address from hostname..."
+        if l_addr=$(host ${l_hn} 2> /dev/null)
+        then
+            # I do this in two steps to be complete *and* safe
+            l_addr=${l_addr%%[[:space:]]has*} # Chop off the expected Linux host text
+            l_addr=${l_addr%%.bloomberg.com*} # Optionally, chop off the domain name.
+            ${l_echo} ${l_addr}.
+        else
+            ${l_echo} "Failed."
+            l_rv=1
+        fi
+    else
+        ${l_echo} "No hostname found, no address resolved."
+        l_rv=1
+    fi
+
+    return ${l_rv}
+}
+
+#------------------------------------------------------------------------------
+# Name: get_if_from_addr
+# Description: Finds the interface that serves the supplied address
+# Paramaters: $1 - boolean - Verbosity: 1 = verbose, 0 = silent
+#             $2 - reference - The interface name will be put in this variable
+#             $3 - string (IP address) - The IP address to find IF for
+# Returns: 0 on success, non-zero on failure
+# Notes: NOTE: $2 is passed by reference
+function get_if_from_addr
+{
+    typeset -i l_verbose=$1
+    typeset -n l_if=$2
+    typeset l_addr=$3
+    typeset -i l_rv=0
+    typeset l_echo=true
+
+    if (( l_verbose )) ; then l_echo=echo ; fi
+
+    if [[ ${l_addr} == +([0-9]).+([0-9]).+([0-9]).+([0-9]) ]]
+    then
+        ${l_echo} -n "Determining interface from address..."
+        l_if=NONE
+
+        for l_interface in $(list_if_devs)
+        do
+            if /sbin/ifconfig ${l_interface} | grep ${l_addr} > /dev/null 2>&1
+            then
+                l_if=${l_interface}
+            fi
+        done
+        
+        if [[ ${l_if} == NONE ]]
+        then
+            ${l_echo} "Failed."
+            l_rv=1
+        else
+            ${l_echo} ${l_if}.
+        fi
+    else
+        ${l_echo} "Address not recognized, interface not found."
+        l_rv=1
+    fi
+     
+    return ${l_rv}
+}
+
+#------------------------------------------------------------------------------
+# Name: sar_drops
+# Description: display statistic about possible drops recorded from sar plus the traffic in that specific time
+# Paramaters: ${1} optinal for a specific day
+# Returns: Returns 0 if able to open the log 1 otherwise
+# Notes: 
+function sar_drops 
+{
+    if [[ -z ${1} || ${1} -eq 0 ]]
+    then
+
+    
+        today=$(date +"%d")
+        time=$(date +"%T")
+
+        if [[ -e "/var/log/sa/sa${today}" ]]
+        then
+	         echo "Checking /var/log/sa/sa${today}"
+            #count=$(sar  -n EDEV|grep -v "0.00      0.00      0.00      0.00      0.00      0.00      0.00      0.00      0.00"|grep -v Average|grep -v IFACE|grep -v Linux|grep [0-9]|wc -l)
+            sartime=($(sar -n EDEV|grep -v "0.00      0.00      0.00      0.00      0.00      0.00      0.00      0.00      0.00"|grep -v IFACE|grep -v Linux|grep -v Average|grep [0-9]|awk '{print $1}'))
+            echo "Event drop count: ${#sartime[@]}"
+            if [[ ${#sartime[@]} -eq 0 ]] 
+            then
+                echo ""
+                echo "No Drops found today"
+                echo ""
+                exit 0
+            else
+                starttime=$(date +"%R:%S" --date "${sartime[0]} 1 min ago")
+                endtime=$(date +"%R:%S" --date "${sartime[${#sartime[@]}-1]} 1 min")
+                echo "Time range of drops ${starttime} ${endtime}"
+            fi
+            sar -n DEV -s ${starttime} -e ${endtime}  >/bb/data/tmp/dev.txt; sar -n EDEV -s ${starttime} -e ${endtime} >/bb/data/tmp/edev.txt
+            header=$(/usr/bin/paste /bb/data/tmp/edev.txt /bb/data/tmp/dev.txt|awk '{ $12="";$13=""; print}'|sed 1d |column -t|grep IFACE |head -n 1)
+            echo "$header"
+ 
+            /usr/bin/paste /bb/data/tmp/edev.txt /bb/data/tmp/dev.txt|awk '{ $12="";$13=""; print}'|sed 1d |column -t|grep -v IFACE|egrep -v "0.00     0.00     0.00    0.00      0.00      0.00      0.00      0.00      0.00"|grep -v "0.00     0.00     0.00    0.00      0.00      0.00      0.00      0.00" |grep -v Average
+
+            rm /bb/data/tmp/edev.txt
+            rm /bb/data/tmp/dev.txt
+            return 0
+        else
+            echo "No log available for sa${today}"
+            return 1
+        fi
+    else
+        if [[ -e "/var/log/sa/sa${1}" ]]
+        then
+            echo "checking /var/log/sa/sa${1}"
+            
+            #count=$(sar -f /var/log/sa/sa${1}  -n EDEV|grep -v "0.00      0.00      0.00      0.00      0.00      0.00      0.00      0.00      0.00"|grep -v Average|grep -v IFACE|grep -v Linux|grep [0-9]|wc -l)
+            sartime=($(sar -f /var/log/sa/sa${1}  -n EDEV|grep -v "0.00      0.00      0.00      0.00      0.00      0.00      0.00      0.00      0.00"|grep -v IFACE|grep -v Linux|grep -v Average|grep [0-9]|awk '{print $1}'))
+            echo "Event drop count: ${#sartime[@]}"
+            if [[ ${#sartime[@]} -eq 0 ]]
+            then
+                echo ""
+                echo "No Drops found today"
+                echo ""
+                exit 0
+            else
+                #sartime=($(sar -f /var/log/sa/sa${1}  -n EDEV|grep -v "0.00      0.00      0.00      0.00      0.00      0.00      0.00      0.00      0.00"|grep -v IFACE|grep -v Linux|grep -v Average|grep [0-9]|awk '{print $1}'))
+                starttime=$(date +"%R:%S" --date "${sartime[0]} 1 min ago") 
+                endtime=$(date +"%R:%S" --date "${sartime[${#sartime[@]}-1]} 1 min")
+                echo "Time range of drops $starttime $endtime"
+            fi
+
+            sar -f /var/log/sa/sa${1} -n DEV -s ${starttime} -e ${endtime}  >/bb/data/tmp/dev.txt;sar -f /var/log/sa/sa${1} -n EDEV -s ${starttime} -e ${endtime} >/bb/data/tmp/edev.txt
+
+          
+            header=$(/usr/bin/paste /bb/data/tmp/edev.txt /bb/data/tmp/dev.txt|awk '{ $12="";$13="";$14=""; print}'|sed 1d |column -t|grep IFACE |head -n 1)
+            echo "$header"
+ 
+            /usr/bin/paste /bb/data/tmp/edev.txt /bb/data/tmp/dev.txt|awk '{ $12="";$13=""; $14="";print}'|sed 1d |column -t|grep -v IFACE |grep -v "0.00     0.00     0.00    0.00      0.00      0.00      0.00      0.00      0.00"|grep -v "0.00     0.00     0.00    0.00      0.00      0.00      0.00      0.00"|grep -v Average
+
+
+            rm /bb/data/tmp/edev.txt
+            rm /bb/data/tmp/dev.txt
+            return 0
+        else
+            echo "no log available for sa${1}"
+            return 1
+            
+        fi
+    fi
+}
+
+
+#------------------------------------------------------------------------------
+# Name: check_logs
+# Description: display possible issue found in dmesg message act.log  and hplog
+# Paramaters: none
+# Returns: Returns 0 if able to open the log 1 otherwise
+# Notes:
+function check_logs
+{
+    if [[ -f "/sbin/hplog" ]]
+    then
+        echo "Checking hplog........."
+        echo " "
+        /sbin/hplog -v|grep -A 1   Critical
+        echo ""
+        read prompt?'Press [Enter] key to contine...'  
+    fi
+
+
+    if [[ -f "/bb/data/act.log" ]]
+    then
+        echo "Checking act.log"
+        
+        cat /bb/data/act.log|grep  TKRMPGM_OU |grep -v suppressed
+        echo ""
+        read prompt?'Press [Enter] key to contine...'
+
+        cat /bb/data/act.log|grep  TKRMPGM_WP |grep -v suppressed
+
+        echo ""
+        #read prompt?'Press [Enter] key to contine...'
+    fi
+
+
+    if [[ -f "/var/log/messages" ]]
+    then
+        echo "Checking /var/log/messages"
+
+        boot=$(last|grep reboot|awk '{print $6,$7,$8}'|head -n 1)
+
+        endboot=$(date +"%b %d %R" --date "$boot 5 min ")
+
+        find=$(grep "${endboot}" /var/log/messages -c)
+
+        if (( find == 0 ))
+        then
+            # Log has rolled since boot.
+            grep kernel /var/log/messages
+        else
+            lines=$(wc -l /var/log/messages)
+            lines=${lines%%[[:space:]]}
+            grep -A ${lines} "${endboot}" /var/log/messages | grep kernel
+        fi
+    fi
+
+}
+
+
+# Name: check_ldrivers
+# Description: check the loaded driver showing also what other drivers are available
+# Paramaters: None
+# Returns: Nothing
+# Notes: none
+
+
+check_ldrivers()
+{
+driver=($(for f in $(/sbin/ifconfig |grep eth|awk '{print $1}'); do /sbin/ethtool -i $f|grep driver |awk '{print $2}';done|sort |uniq))
+
+echo ""
+printf "%12-s %10-s %15-s %60-s\n"  'STATUS' "DRIVER"  "VERSION" "RPM --> (where)"
+
+echo ""
+for i in "${driver[@]}"
+do
+  src=$( cat /sys/module/$i/srcversion)
+
+
+  loaded=($(find /lib/modules/$(uname -r) -name $i.ko))
+
+  for j in "${loaded[@]}"
+  do
+
+    version=$(/sbin/modinfo $j |grep ^version:|awk '{print $2}')
+    module=$( /sbin/modinfo $j |grep ^filename |awk '{print $2}')
+    src2=$(/sbin/modinfo $j |grep ^srcversion|awk '{print $2}')
+
+    rpm=$( /bin/rpm -fq $(/bin/readlink -f $module))
+    path=($(echo $module| tr "/" "\n"))
+
+
+    if [ "$src" == "$src2" ]; then
+
+      printf "%12-s %10-s %15-s %60-s\n"  '*)In Use' "$i"  "$version" "$rpm --> (${path[3]}) "
+
+    else
+
+     printf "%12-s %10-s %15-s %60-s\n"  '**)Available' "$i"  "$version" "$rpm --> (${path[3]}) "
+
+    fi
+
+
+
+done
+
+echo  ""
+
+done
+
+
+
+}
+
+#------------------------------------------------------------------------------
+# Name: show_usage
+# Description: Response to -h on command line
+# Paramaters: None
+# Returns: Nothing
+# Notes: DOES NOT EXIT. Gotta do that yourself.
+show_usage ()
+{
+    echo "pgm_chk <options>"
+    echo " Version: ${VERSION_STRING}"
+    echo " Options:"
+#    echo "  -b  Check chelsio queues (count & balance)."
+    echo "  -d  Show device information"
+    echo "  -f  Show FIFO information"
+    echo "  -g  Check sar stats for drops" 
+    echo "  -h  Show this output"
+    echo "  -l  Show LACP balance / errors (also shows dev tree)"
+    echo "  -m  Multicast address report"
+    echo "  -q  Check for non-0 socket queues"
+    echo "  -r  Reset all stats."
+    echo "  -s  Show (full stack) statistics."
+    echo "  -t  Check sysctl tunables"
+    echo "  -v  Verbose modifier (compatible with: -q)"
+    echo "  -z  Show some useful logs info"
+    echo "  -o  Show loaded drivers vs installed ones"
+}
+
+# ============
+# Begin main()
+# ============
+
+# -v option - To be verbose
+typeset -i opt_verbose=0
+ECHO=true
+# -r option - to reset all stats
+typeset -i opt_reset=0
+# -b option - to check to see if Qs (on the cards) are balanced
+typeset -i opt_qbal=0
+# -t option - validate tunables
+typeset -i opt_tunables=0
+# -m option - show multicast info
+typeset -i opt_mcast=0
+# -l option - show lacp info
+typeset -i opt_lacp=0
+# -s option - show stack stats
+typeset -i opt_stats=0
+# -q option - show TX RX Q stats
+typeset -i opt_txrxq=0
+# -f option - Show fifo settings
+typeset -i opt_fifo=0
+# -d option - Show device info
+typeset -i opt_devinfo=0
+# -g option - Show stat for the day
+typeset -i opt_day=${2}
+# -z option - Show logs
+typeset -i opt_logs=0
+#-o option - show drivers
+typeset -i opt_dload=0
+
+
+# ================
+# Parse user input
+# ================
+
+while getopts ":dfhlmnoqrstvgz" OPTS
+do
+   case ${OPTS} in
+#      b) opt_qbal=1          ;;
+       d) opt_devinfo=1       ;;
+       f) opt_fifo=1          ;;
+       h) show_usage ; exit 0 ;;
+       l) opt_lacp=1          ;;
+       m) opt_mcast=1         ;;
+       q) opt_txrxq=1         ;;
+       r) ECHO=echo ; opt_reset=1 ;;
+       s) opt_stats=1         ;;
+       t) opt_tunables=1 ;;
+       v) opt_verbose=1 ;;
+       g) opt_gaps=1 ;;
+       z) opt_logs=1 ;;
+       o) opt_dload=1 ;;
+       ?) echo "ERROR: ${OPTARG} was not understood." >&2
+	        exit 1
+	        ;;
+       *) echo "ERROR: Error parsing getopts arguments. Contact script author." >&2
+           exit 1
+           ;;
+   esac
+done
+
+if (( opt_devinfo ))
+then
+    handle_device_list ${OPER_DEVINFO}
+    exit 0
+fi
+
+if (( opt_fifo ))
+then
+    handle_device_list ${OPER_RINGINFO}
+    exit 0
+fi
+
+if (( opt_lacp ))
+then
+    handle_packet_source
+    exit 0
+fi
+
+if (( opt_mcast ))
+then
+    list_mcast_addrs
+    exit 0
+fi
+
+if (( opt_txrxq ))
+then
+    # It JUST SO HAPPENS that opt_verbose maps to the first paramater
+    tx_rx_q ${opt_verbose}
+    exit $?
+fi
+
+if (( opt_reset ))
+
+then
+    handle_reset
+    exit 0
+fi
+
+if (( opt_stats ))
+then
+    handle_stats
+    exit 0
+fi
+
+if (( opt_tunables ))
+then
+    chk_sysctl ${CHK_SYSCTL_VISUAL}
+    exit $?
+fi
+
+
+if (( opt_gaps ))
+then
+    sar_drops ${opt_day}
+    exit $?
+fi
+
+if (( opt_logs ))
+then
+    check_logs
+    exit 0
+fi
+
+
+if (( opt_dload ))
+then
+    check_ldrivers
+    exit 0
+fi
+
+#### JMPT: The q-balance option is not supported with limited driver repoting
+#          Note - this code will not run, there is no setting of this value
+#          in the command line parsing loop.
+if (( ${opt_qbal} ))
+then
+    handle_qinfo ${opt_verbose} ${arg_datanet}
+    exit 0
+fi
+
+# This is fall-through - no option passed, then show stats
+handle_stats
+exit 0
+

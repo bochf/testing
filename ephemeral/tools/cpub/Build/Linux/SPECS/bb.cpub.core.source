@@ -1,0 +1,50 @@
+Summary: Bloomberg cpub core package
+Name: bb-cpub-core
+Version: CPUBVERSION
+Release: 1
+License: None
+Group: BB/Tools
+Vendor: Bloomberg LLP
+Packager: William Favorite <wfavorite2@bloomberg.net>
+Buildroot: %{_topdir}/BUILDROOT
+
+%description
+This is the core binary package for the cpub framework. It includes cpub and
+man pages. Specific .cpub files are packaged separately.
+
+%prep
+# Code was built elsewhere - no staging
+
+%build
+# Code was built elsewhere - no build
+
+%install
+# Clean up BUILDROOT
+rm -rf $RPM_BUILD_ROOT
+# Re-build directory structure
+mkdir -p $RPM_BUILD_ROOT/usr/local/bin
+mkdir -p $RPM_BUILD_ROOT/usr/share/man/man1
+mkdir -p $RPM_BUILD_ROOT/usr/share/man/man5
+
+# Copy in files
+cp $RPM_BUILD_DIR/cpub $RPM_BUILD_ROOT/usr/local/bin/cpub
+cp $RPM_BUILD_DIR/ebcd $RPM_BUILD_ROOT/usr/local/bin/ebcd
+cp $RPM_BUILD_DIR/cpub.1.gz $RPM_BUILD_ROOT/usr/share/man/man1/cpub.1.gz
+cp $RPM_BUILD_DIR/cpub.5.gz $RPM_BUILD_ROOT/usr/share/man/man5/cpub.5.gz
+
+%clean
+rm -rf $RPM_SOURCE_DIR
+rm -rf $RPM_BUILD_ROOT
+rm -rf $RPM_BUILD_DIR
+
+%files
+%defattr(755,root,root)
+/usr/local/bin/cpub
+/usr/local/bin/ebcd
+%attr(644,root,root) /usr/share/man/man5/cpub.5.gz
+%attr(644,root,root) /usr/share/man/man1/cpub.1.gz
+
+%pre
+
+%postun
+

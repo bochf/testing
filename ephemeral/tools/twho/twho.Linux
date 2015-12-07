@@ -1,0 +1,115 @@
+#!/bin/ksh
+
+# I am an OS-specific script. I handle the Linux-specific implementation of
+# the twho requirements.
+
+# twho - trace who - Determine what trace programs are running
+#
+#  Ronald Opus <jumpshot@caseclosed.com>
+#  William Favorite <wfavorite2@bloomberg.net>
+#
+
+# STUB: Debug code follows
+for x in "${@}"
+do
+    echo "ARG = "${x}
+done
+# STUB: End
+
+# Defines for environment state
+typeset -ir ES_ERR=-1
+typeset -ir ES_NA=0
+typeset -ir ES_RUN=1
+typeset -ir ES_OFF=2
+
+function print_env_state
+{
+    typeset -i pes_state=${ES_ERR}
+
+    # I am doing this because I am explicitly casting to integer
+    if [[ -n ${1} ]]
+    then
+        pes_state=${1}
+    fi
+
+    case ${pes_state} in
+        ${ES_NA})   printf "N/A" ;;
+        ${ES_RUN})  printf "\033[91mRunning\033[0m" ;;
+        ${ES_OFF})  printf "\033[92mOff\033[0m" ;;
+        *)          printf "\033[91mERROR\033[0m" 
+                    return 1 ;;
+    esac
+
+    return 0
+}
+
+
+
+typeset perf_state=${ES_NA}
+
+if [[ -x /usr/bin/perf ]]
+then
+    if ps -eo comm | grep "^perf$" >/dev/null 2>&1
+    then
+        perf_state=${ES_RUN}
+    else
+        perf_state=${ES_OFF}
+    fi
+fi
+
+typeset top_state=${ES_NA}
+
+if [[ -x /usr/bin/top ]]
+then
+    if ps -eo comm | grep "^top$" >/dev/null 2>&1
+    then
+        top_state=${ES_RUN}
+    else
+        top_state=${ES_OFF}
+    fi
+fi
+
+typeset ftrace_state=${ES_NA}
+
+if [[ -d /sys/kernel/debug/tracing ]]
+then
+    if [[ $(< /sys/kernel/debug/tracing/current_tracer) == nop ]]
+    then
+        ftrace_state=${ES_OFF}
+    else
+        ftrace_state=${ES_RUN}
+    fi
+fi
+
+
+typeset stap_state=${ES_NA}
+
+if [[ -x /usr/bin/stap ]]
+then
+    if ps -eo comm | grep "^stap$" >/dev/null 2>&1
+    then
+        stap_state=${ES_RUN}
+    else
+        stap_state=${ES_OFF}
+    fi
+fi
+
+
+
+
+
+printf "\033[1mPerf\033[0m is      : "
+print_env_state ${perf_state}
+printf "\n"
+
+printf "\033[1mTop\033[0m is       : "
+print_env_state ${top_state}
+printf "\n"
+
+printf "\033[1mftrace\033[0m is    : "
+print_env_state ${ftrace_state}
+printf "\n"
+
+printf "\033[1mSystemTap\033[0m is : "
+print_env_state ${stap_state}
+printf "\n"

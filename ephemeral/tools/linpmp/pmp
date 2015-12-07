@@ -1,0 +1,1701 @@
+
+# -- No interpreter - intended to be sourced --
+#
+# pm profile
+# 
+# This is a profile that will give the new user/login a heads up on basic info
+# on the system and provides a number of functions, aliases, and settings.
+#
+# Nikephoros I. <genikos@krum-cup.bg>
+# William Favorite <wfavorite2@bloomberg.net>
+#
+# Note:
+#  - I am going to stick with using /bb/pm as HOME for now. This *did* appear
+#    to be causing issues with history when multiple users are on the system.
+#    (I was continually getting the same garbage in my recent command recall
+#    regardless of what I had just run, or how long ago I had run it.)
+#
+# ToDo:
+#  [ ] There needs to be a way to filter out kernel PIDs. The PID count
+#      is full of kernel processes - that unfairly skews the count.
+#  [ ] The bbcheck[lop] stuff is commented out of tellmemore(). I left this
+#      as sort of a place-holder for a replacement set of info.
+#  [ ] The sys_type is hard coded to x86 in info_banner().
+#  [ ] billto should probably be removed. Outside of AIX, there are just
+#      too many bill-to groups - and this is not maintained at this time.
+#  [ ] The Korn version check is kind of lame. It only checks for two
+#      known versions. But more importantly, it does not tie those versions
+#      to a specific behavior/issue (like it was originally designed).
+#
+# Done:
+#  [X] Port basic functionality to Linux
+#  [X] trace_is() remains... it needs to be "ported" to the equivelant
+#      Linux command, or removed.
+#  [X] /bb/pm is conditionally set to HOME. This should(?) revert back
+#      to /root if /bb/pm does not exist... or just leave it alone?
+#
+# Notes:
+#  - Look for "FiXmE" in the code (all caps) for things that need attention.
+#
+# 0.1.0 - Initial creation
+# 0.2.0 - Comments
+#       - ps_nok alias
+#       - Fixed issue with cpu_speed
+#       - Lots of small changes
+# 0.3.0 - Removed references to nawk
+#       - Fixed shell tests
+# 0.4.0 - Initial port to x86 Linux (Previous was LoP)
+# 0.5.0 - Added turbostat to cpu_speed
+#       - Added turbosnap alias
+# 0.6.0 - Fixed bugs, formatting, and cleanup in info_driver
+#       - Added pm_tools
+#       - Removed trace_is
+#       - stubbed (u)mount_perf and aliased as (u)mount_pm
+# 0.7.0 - Work on mount_perf 
+#       - Some non-priority STVBs remain
+#
+VERSION_STRING="0.7.j"
+#
+
+# C-q ESC [ 1 m  <-- To create in emacs
+AB='[1m'
+AU='[4m'
+AN='[0m'
+
+### Make sure we are where we think we are
+printf "Validating OS..."
+if [[ $(uname -s) != "Linux" ]]
+then
+    printf "Failed."
+    echo "ERROR: This is not Linux. Exiting."
+    #Don't exit, return (we are being sourced)
+    return
+fi
+
+if [[ $(uname --processor) == ppc64 ]]
+then
+    printf "Failed."
+    echo "ERROR: This is not x86 Linux. Exiting."
+    #Don't exit, return (we are being sourced)
+    return
+fi
+
+# echo now has a known behavior. printf no longer required.
+echo "Good."
+
+echo -n "Setting some script default values..."
+# Not using EDITOR. That is used for other things (like crontab -e). So it is 
+# inappropriate to set the EDITOR to something that may not be on the system.
+#
+# (default)  - What we get if nothing is specified / triggered
+# (explicit) - What we get if it is passed on command line
+# (implicit) - What we get as determined by element box
+#
+# These are evaluated in priority:
+#   command line (explicit)
+#   if no command line, then element box (implicit)
+#   if no element box (if not argon), then default
+# Start with the default
+cl_EDITOR=vi
+echo "Done."
+
+### Under construction
+echo -n "Checking to see how we were called..."
+
+if [[ ${0} != -* ]]
+then
+    echo "Incorrectly."
+    echo "WARNING: This script was not called from a login shell. Make sure that it is" >&2
+    echo "         sourced rather than simply \"run\" so that it changes the environment" >&2
+else
+    echo "OK."
+fi
+
+### What is the shell version?
+echo -n "Checking the version of the shell..."
+notfound=0
+if [[ -n ${KSH_VERSION} ]]
+then
+    disp_ver=${KSH_VERSION/* 93/93}
+    disp_ver=${disp_ver%% *}
+
+    if [[ -n ${disp_ver} ]]
+    then
+        echo -n "["${disp_ver}"] "
+    fi
+
+    if [[ ${KSH_VERSION} == *93u* ]]
+    then
+        echo "Good."
+    elif [[ ${KSH_VERSION} == *93t* ]]
+    then
+        echo "Good."
+    else
+        echo "Korn: Questionable!"
+    fi
+else
+    notfound=$(( ${notfound} + 1 ))
+fi
+
+
+if [[ -n "${BASH_VERSION}" ]]
+then
+    # These both *could* fire - but unlikely. This is a fairly well-defined
+    # problem domain.
+
+    # grep - because the space is invalid (*BB KSH*)
+    if [[ ${BASH_VERSION} == 4.* ]]
+    then
+        echo "Good."
+    else
+        echo "Bash: Questionable!"
+    fi
+else
+    notfound=$(( ${notfound} + 1 ))
+fi
+
+if (( ${notfound} > 1 ))
+then
+    echo "DANGER WILL ROBINSON!"
+fi
+unset notfound
+
+# This may be useful - we can set specific personalities based on what system the
+# user logged in from.
+echo -n "Checking to see where we are coming from..."
+tmp_line=$(who -m)
+tmp_line=${tmp_line#*\(}
+from_addr=${tmp_line%\)*}
+if from_host=$(host ${from_addr})
+then
+    # I *cheat* here. I should be parsing out the domain name... but I don't
+    # really care for now, I only need to know if this is argon or not.
+    # So a weak pattern match will do for now.
+    if [[ ${from_host} == *argon* ]]
+    then
+        echo "argon."
+        cl_EDITOR=emacs
+        echo "Setting command line editor mode based on element box."
+    else
+        echo ${from_addr}.
+    fi
+else
+    echo ${from_addr}.
+fi
+# Clean up - right here
+unset tmp_line
+unset from_addr
+unset from_host
+
+echo -n "Looking for arguments..."
+if (( ${#} == 0 ))
+then
+    echo "None."
+else
+    for ARG in ${@}
+    do
+        echo -n "."
+
+        if [[ ${ARG} == vi || ${ARG} == v ]]
+        then
+            cl_EDITOR=vi
+        fi
+        
+        if [[ ${ARG} == emacs || ${ARG} == e ]]
+        then
+            cl_EDITOR=emacs
+        fi
+    done
+
+    echo "Done."
+fi
+
+echo -n "Setting some globals..."
+pmp_version=${VERSION_STRING}
+echo "Done."
+
+###############################################################################
+### Load functions
+echo "Loading functions:"
+
+# pmp_banner___________________________________________________________________
+# Generate, and display the pmp banner
+printf "  %-20s %-50s" info_banner "Display the pmp system info banner"
+info_banner ()
+{
+    ECHO=true
+    if [[ ${1} == -v ]]
+    then
+        ECHO=echo
+    fi
+
+    # C-q ESC [ 1 m  <-- To create in emacs
+    AB='[1m'
+    AU='[4m'
+    AN='[0m'
+
+    ${ECHO} -n "Discovering the system."
+
+    ### Find the system (hardware) type
+    sys_type=$(/usr/sbin/dmidecode --type 1 2>/dev/null 1| grep "Product Name")
+    sys_type=${sys_type##*:[[:space:]]}
+
+    # Chop off unnessary/redundant kruft
+    sys_type=${sys_type##*ProLiant[[:space:]]}
+    sys_type=${sys_type##*System[[:space:]]}   # IBM System x
+    sys_type=${sys_type/-\[*\]-/}              # IBM System X MT-MN
+
+    if [[ ${sys_type} == *VMware* ]]
+    then
+        sys_type=VMware
+    fi
+
+    if [[ ${sys_type} == *Gen[0-9]* ]]
+    then
+        sys_type=${sys_type/Gen/G}
+    fi
+
+    if [[ -z ${#sys_type} ]]
+    then
+        sys_type="[x86]"
+    fi
+
+    if (( ${#sys_type} >= 10 ))
+    then
+        sys_type="[x86]"
+    fi
+
+    ${ECHO} -n "."
+
+    ### Find out how many processes are on the system
+    pid_cnt=$(ps -eo pid | wc -l)
+    ${ECHO} -n "."
+
+    ### User
+    luser=$(id -un)
+    ${ECHO} -n "."
+
+    ### Running environment
+    env_up="No"
+    if ps -eo args | grep -v grep | egrep "prccom|comdb2" > /dev/null 2>&1
+    then
+        env_up="Yes"
+    fi
+    ${ECHO} -n "."
+
+    ### Uptime
+    uptime=$(uptime)
+    uptime=${uptime#*up}
+    uptime=${uptime%%,*}
+    ${ECHO} -n "."
+
+
+    ### Logins
+    users=$( who -q | grep "users=" )
+    users=${users#*s=}
+    # Painful, but works. (uusers = unique users)
+    uusers=$( who | awk '{ print $1 }' | sort -u | wc -l ) 
+
+    ### CPU configuration
+    # FIXME: No exception handling here
+    # This is fork-city here!!! Not sure what options we have 
+    lcpu=$(grep processor /proc/cpuinfo | wc -l)
+    sockets=$(grep "physical id" /proc/cpuinfo | sort -u | wc -l)
+    cores=$(grep "cpu cores" /proc/cpuinfo | head -1)
+    cores=${cores##*:[[:space:]]}
+    # Basic exception handling
+    if [[ ${sockets} != +([0-9]) ]] ; then sockets=1 ; fi
+    if [[ ${cores} != +([0-9]) ]] ; then cores=1 ; fi
+    if (( ${sockets} == 0 )) ; then sockets=1 ; fi
+    if (( ${cores} == 0 )) ; then cores=1 ; fi
+
+    pcpu=$(( cores * sockets ))
+    if (( pcpu > 0 ))
+    then
+        smt=$((lcpu / pcpu))
+    else
+        smt=1
+    fi
+    # Unset these, they are not used beyond this point
+    unset cores
+    unset sockets
+
+    mem=$(grep MemTotal /proc/meminfo)
+    mem=${mem##*:}
+    mem=${mem##[[:space:]]}
+    mem=${mem%[[:space:]]kB*}
+    mem=$(( mem / 1024 ))
+    mem=$(( mem / 1024 ))
+    mem="${mem} GB"
+
+    ### Release version
+    oslevel=$(< /etc/redhat-release)
+    oslevel=${oslevel##*release[[:space:]]}
+    oslevel=${oslevel%%[[:space:]]*}
+    ${ECHO} -n "."
+
+    ### Hostname
+    host_actual=$(uname -n)
+    host_final=${host_actual%-(rr|new|temp)}
+    ${ECHO} -n "."
+
+    ### BB System Type
+    bbsystype=_______
+    # - Stole this code from Ben's addition to bbcheckaix - somewhat modified
+    if [[ -f /bb/bin/bbcpu.lst ]]
+    then
+        if bbcpu_line=$(grep ${host_final} /bb/bin/bbcpu.lst 2>/dev/null)
+        then
+            for TYPE in tickr ltp user ustb gtbk auex message gsrv phdb hist cdb2 portfolio bldo bval mktdst dev trading esrv ibbrg phqadb tpbld nbu histqa dart fiet fitbet dsrv scip sciq dlsat ems tsgsv intrl ibsrv ebbdb fsrv
+            do
+                #if [[ ${bbcpu_line} == *[[:space:]]${TYPE}?([[:space:]])* ]]
+                if echo ${bbcpu_line} | grep -w ${TYPE} > /dev/null 2>&1
+                then
+                    bbsystype=${TYPE}
+                fi
+            done
+        fi
+    fi
+    ${ECHO} -n "."
+
+    # Login message - kind of pointless
+    if (( $(id -u) == 0 ))
+    then
+        id_message="You are root! Respect the #!"
+    else
+        id_message="Priveleged commands may have failed."
+    fi
+    ${ECHO} -n "."
+
+    # CPU type - This is basically hard-coded nonsense
+    proc_type=$(uname --processor 2>/dev/null)
+    ${ECHO} -n "."
+
+    # This has to be derived
+    cl_EDITOR=_____
+    if set -o | grep "emacs[[:space:]]*on" > /dev/null
+    then
+        cl_EDITOR=emacs
+    fi
+
+    if set -o | grep "vi[[:space:]]*on" > /dev/null
+    then
+        cl_EDITOR=vi
+    fi
+
+    ${ECHO} ".Done."
+
+    ### Formatted display of info
+    echo "==============================================================================="
+    printf " ${AU}Type${AN}: ${AB}%-9s${AN} ${AU}Hostname${AN}: ${AB}%-14s${AN} ${AU}RH Rel${AN}: ${AB}%-13s${AN} ${AU}User${AN}: ${AB}%-9s${AN}\n" "${sys_type}" ${host_actual} "${oslevel}" ${luser}
+    printf " ${AU}Proc Cnt${AN}: ${AB}%-5d${AN} ${AU}Uptime${AN}: ${AB}%-12s${AN}     ${AU}Thr${AN}: ${AB}%-2s${AN} ${AU}LogCPU${AN}: ${AB}%-5s${AN} ${AU}PhyCPU${AN}: ${AB}%-5s${AN}\n" ${pid_cnt} "${uptime}" "${smt}" "${lcpu}" "${pcpu}"
+    printf " ${AU}Memory${AN}: ${AB}%-7s${AN} ${AU}bbcpu${AN}: ${AB}%-11s${AN}       ${AU}Processor${AN}: ${AB}%-8s${AN}   ${AU}CLMode${AN}: ${AB}%-5s${AN}\n" "${mem}" "${bbsystype}" "${proc_type}" "${cl_EDITOR}"
+    printf " ${AU}EnvUp${AN}: ${AB}%-3s${AN}                               ${AU}Logins${AN}: ${AB}%-3s${AN}           ${AU}Users${AN}: ${AB}%-3s${AN} \n" ${env_up} ${users} ${uusers}
+    printf " Version: %-5s %60s\n" ${pmp_version} "${id_message}" 
+    echo "==============================================================================="
+
+
+    unset AB
+    unset AU
+    unset AN
+    unset ECHO
+
+    unset sys_type
+    unset pid_cnt
+    unset luser
+    unset rest
+    unset users
+    unset uusers
+    unset env_up
+    unset uptime
+    unset lparstat
+    unset smt
+    unset lcpu
+    unset pcpu
+    unset mem
+    unset oslevel
+    unset host_actual
+    unset host_final
+    unset bbsystype
+    unset bbcpu_line
+    unset TYPE
+    unset id_message
+    unset proc_type
+    unset cl_EDITOR
+}
+echo "Done."
+
+# info_driver__________________________________________________________________
+# Print loaded driver information
+printf "  %-20s %-50s" info_driver "Display the driver version where available"
+info_driver()
+{
+    typeset i=
+
+    typeset AB='\e[1m'
+    typeset AU='\e[4m'
+    typeset AN='\e[0m'
+
+    printf "\n"
+    printf "=========================\n"
+
+    # Handle verbosity option
+    typeset ECHO=true
+    if [[ ${1} == -v ]]
+    then
+        ECHO=echo
+    fi
+
+   
+    ${ECHO} "Discovering driver module loaded"
+    
+    printf "  %-24s %-20s %s\n" Driver "Version" Description
+    printf "\n"
+    
+    for i in $(/sbin/lsmod 2>/dev/null | awk '{print $1}'|grep -v Module|grep -v stap) 
+    do
+        version=$(/sbin/modinfo $i 2>/dev/null | grep ^version:|awk '{print $2}')
+    
+        descr=$(/sbin/modinfo $i 2>/dev/null | grep ^description:|awk -F ':' '{print $2}')
+     
+        if [[ -n $version ]]
+        then
+            printf "  %-24s ${AB}%-20s${AN} %s\n" $i "$version" "$descr"
+        fi
+    done
+    
+    bios=$(/usr/sbin/dmidecode -t 0 2>/dev/null | grep "Release Date:"|awk '{print $3}')
+    
+    
+    printf "\n"
+
+    printf "  %-24s ${AB}%-20s${AN}\n" BIOS  "$bios"
+    
+    printf "=========================\n"
+    
+
+
+    unset i
+    unset AB
+    unset AU
+    unset AN
+    unset ECHO
+}
+echo "Done."
+
+# bbcpu________________________________________________________________________
+# Show info about this system from bbcpu list
+printf "  %-20s %-50s" bbcpu "Look for basic patterns in bbcpu.lst"
+bbcpu ()
+{
+    if [[ ! -f /bb/bin/bbcpu.lst ]]
+    then
+        echo "ERROR: No bbcpu.lst file on this system." >&2
+        return 1
+    fi
+
+    typeset thishost=
+
+    if [[ -z ${1} ]]
+    then
+        thishost=$(uname -n)
+    else
+        thishost=${1}
+    fi
+
+    typeset bbcpu_line=
+
+    if [[ -z ${thishost} ]] ; then thishost=$(uname -u) ; fi
+
+    if ! bbcpu_line=$(grep "^${thishost}[[:space:]]" /bb/bin/bbcpu.lst 2>/dev/null)
+    then
+        echo "ERROR: ${thishost} not found bbcpu.lst file." >&2
+        unset bbcpu_line
+        return 1
+    fi
+
+    typeset bbos=___
+    typeset bbsystype=___
+    typeset bbquad=___
+    typeset bbsysq=___
+    typeset bbnode=___
+    typeset bbflvr=N/A
+    typeset bbowner=___
+    typeset bbprcom=No
+
+    for ITEM in tickr ltp user ustb gtbk auex message gsrv phdb hist cdb2 portfolio bldo bval mktdst dev trading esrv ibbrg phqadb tpbld nbu histqa dart fiet fitbet dsrv scip sciq dlsat ems tsgsv intrl ibsrv ebbdb fsrv
+    do
+        # Works, but inefficient
+        #if echo ${bbcpu_line} | grep -w ${TYPE} > /dev/null 2>&1
+        # Only works on modern shell - bbksh is downlevel!
+        #if [[ ${bbcpu_line} == *[[:space:]]${TYPE}?([[:space:]])* ]]
+        # Works, but pattern match is poor
+        if [[ ${bbcpu_line} == *${ITEM}* ]]
+        then
+            bbsystype=${ITEM}
+        fi
+    done
+
+    # Same shell shortcomming, different line
+    #if [[ ${bbcpu_line} == ?(*[[:space:]])ibm?([[:space:]]*) ]]
+    if [[ ${bbcpu_line} == *" ibm "* ]]
+    then
+        bbos=AIX
+    fi
+
+    #if [[ ${bbcpu_line} == ?(*[[:space:]])sparc?([[:space:]]*) ]]
+    if [[ ${bbcpu_line} == *" sparc "* ]]
+    then
+        bbos=Solaris
+    fi
+
+    for ITEM in quad0 quad1 quad2 quad3 quad4
+    do
+        if [[ ${bbcpu_line} == *${ITEM}* ]]
+        then
+            bbquad=${ITEM#quad}
+        fi
+    done
+
+    if [[ ${bbquad} == ___ ]]
+    then
+        for ITEM in devq0 devq1 devq2 devq3 devq4
+        do
+            if [[ ${bbcpu_line} == *${ITEM}* ]]
+            then
+                bbquad="DEV "${ITEM#devq}
+            fi
+        done
+    fi
+
+    if [[ ${bbcpu_line} == *" sysq"* ]]
+    then
+        bbsysq=${bbcpu_line##*sysq}
+        bbsysq=${bbsysq%% *}
+    fi
+
+    bbnode=${bbcpu_line#* }
+    bbnode=${bbnode%% *}
+
+    bbflvr=${bbcpu_line#*flvr}
+    bbflvr=${bbflvr%% *}
+    if [[ -z ${bbflvr} ]] ; then bbflvr=N/A ; fi
+    if [[ ${bbflvr} == ${thishost} ]] ; then bbflvr=N/A ; fi
+
+
+    #if [[ ${bbcpu_line} == ?(*[[:space:]])prcom?([[:space:]]*) ]]
+    if [[ ${bbcpu_line} == *" prcom "* ]]
+    then
+        bbprcom=Yes
+    fi
+
+    # Owner tends to be last - we are counting on that!
+    bbowner=${bbcpu_line##* }
+
+    echo "OS               : "${bbos}
+    echo "System type      : "${bbsystype}
+    echo "Quad             : "${bbquad}
+    echo "Sys Quad         : "${bbsysq}
+    echo "Node ID          : "${bbnode}
+    echo "Ticker flavor    : "${bbflvr}
+    echo "Machine owner    : "${bbowner}
+    echo "prccom           : "${bbprcom}
+    
+    unset bbos
+    unset bbsystype
+    unset bbquad
+    unset bbsysq
+    unset bbnode
+    unset bbflvr
+    unset bbowner
+    unset bbprcom
+    unset ITEM
+    unset thishost
+}
+echo "Done."
+
+# tellmemore___________________________________________________________________
+# 
+printf "  %-20s %-50s" tellmemore "Additional info not in info_banner"
+tellmemore ()
+{
+    typeset thishost=
+    typeset almnbypass=no
+    #typeset bboverrides=no
+    #typeset bbcchkver=____
+    typeset fncode=
+
+    if [[ -z ${1} ]]
+    then
+        thishost=$(uname -n)
+    else
+        thishost=${1}
+    fi
+
+    if [[ -f /${thishost}.bypass ]] ; then almnbypass=yes ; fi
+
+    if [[ -d /etc/bbchecklop/overrides.d/ ]]
+    then
+        if (( $(ls /etc/bbchecklop/overrides.d | wc -l) > 0 ))
+        then
+            bboverrides=yes
+        fi
+    fi
+
+    fncode=$(grep ${thishost} /bb/bin/bbcpu.alias 2> /dev/null | awk '{ print $1 }')
+
+    if [[ -z ${fncode} ]]
+    then
+        fncode=${thishost}
+
+        if (( ${#fncode} > 4 ))
+        then
+            fncode=$(grep ${thishost} /bb/bin/bbcpu.lst 2> /dev/null | awk '{ print $2 }')
+        fi
+        
+        if [[ -z ${fncode} ]]
+        then
+            fncode=____
+        fi
+    else
+        # WHY ARE WE HERE?! Because /bb/bin/bbcpu.alias is not always formatted
+        # correctly!
+        if (( ${#fncode} > 4 ))
+        then
+            # Make it the whole line (because we know it exists)
+            fncode=$(grep ${thishost} /bb/bin/bbcpu.alias)
+        fi
+    fi
+
+    #bbcchkver=$(/opt/LOP_QA/bbchecklop/bbchecklop -V 2> /dev/null)
+    #bbcchkver=${bbcchkver##*: }
+
+    echo "Has ALMN bypass      : "${almnbypass}
+    #echo "bbchecklop overrides : "${bboverrides}
+    #echo "bbchecklop version   : "${bbcchkver}
+    echo "FN code              : "${fncode}
+    
+    unset thishost
+    unset almnbypass
+    #unset bboverrides
+    #unset bbcchkver
+    unset fncode
+
+
+}
+echo "Done."
+
+# cpu_speed____________________________________________________________________
+# 
+printf "  %-20s %-50s" cpu_speed "Print the speed of the CPUs"
+cpu_speed ()
+{
+    typeset -i on_first_cpu=0
+
+    if (( $(id -u) != 0 ))
+    then
+        echo "ERROR: This can only be run as root!" >&2
+        exit 1
+    fi
+
+    echo "Processor information__________________________________________"
+
+    /usr/sbin/dmidecode --type 4 | while read cs_line
+    do
+        if [[ ${cs_line} == "Processor Information" ]]
+        then
+            (( on_first_cpu++ ))
+            if (( on_first_cpu != 1 )) ; then break ; fi
+        fi
+
+        if [[ ${cs_line} == *Speed* ]]
+        then
+            echo "  "${cs_line}
+        fi
+
+        if [[ ${cs_line} == *Version* ]]
+        then
+            echo "  "${cs_line}
+        fi
+
+    done
+
+    unset on_first_cpu
+    unset cs_line
+    
+    if [[ -x /usr/local/sbin/turbostat ]]
+    then
+        echo "Processor state________________________________________________"
+        { turbostat true ; }  2>&1 | head -2 | sed -r 's/^.{12}//'
+    fi
+
+    return 0
+}
+echo "Done."
+
+# billto_______________________________________________________________________
+# 
+printf "  %-20s %-50s" billto "HIER bill to code"
+billto ()
+{
+    typeset bbcpu_line=
+    typeset thishost=
+    typeset bbsystype=UNK
+
+    if [[ -z ${1} ]]
+    then
+        thishost=$(uname -n)
+    else
+        thishost=${1}
+    fi
+
+    # Somewhat redundant, no?
+    if [[ -z ${thishost} ]] ; then thishost=$(uname -u) ; fi
+
+    if ! bbcpu_line=$(grep "^${thishost} " /bb/bin/bbcpu.lst 2>/dev/null)
+    then
+        echo "ERROR: ${thishost} not found bbcpu.lst file." >&2
+        unset bbcpu_line
+        unset thishost
+        return 1
+    fi
+
+    for ITEM in tickr ltp user ustb gtbk auex message gsrv phdb hist cdb2 portfolio bldo bval mktdst dev trading esrv ibbrg phqadb tpbld nbu histqa dart fiet fitbet dsrv scip sciq dlsat ems tsgsv intrl ibsrv ebbdb
+    do
+        # Works, but inefficient
+        #if echo ${bbcpu_line} | grep -w ${TYPE} > /dev/null 2>&1
+        # Only works on modern shell - bbksh is downlevel!
+        #if [[ ${bbcpu_line} == *[[:space:]]${TYPE}?([[:space:]])* ]]
+        # Works, but pattern match is poor
+        if [[ ${bbcpu_line} == *${ITEM}* ]]
+        then
+            bbsystype=${ITEM}
+        fi
+    done
+
+    case ${bbsystype} in
+        dsrv)       echo 4747 ;;
+        tickr)      echo 2690 ;;
+        ltp)        echo 2690 ;;
+        user)       echo 4611 ;;
+        ustb)       echo 4691 ;;
+        gtbk)       echo 4061 ;;
+        auex)       echo 2622 ;;
+        message)    echo 3053 ;;
+        gsrv)       echo 4728 ;;
+        phdb)       echo 4616 ;;
+        hist)       echo 4616 ;;
+        cdb2)       echo 4673 ;;
+        portfolio)  echo 3721 ;;
+        bldo)       echo 4610 ;;
+        bval)       echo 4628 ;;
+        mktdst)     echo 2670 ;;
+        dev)        echo 3681 ;;
+        trading)    echo 2920 ;;
+        esrv)       echo 4781 ;;
+        ibbrg)      echo 4117 ;;
+        phqadb)     echo 4616 ;;
+        tpbld)      echo 2690 ;;
+        nbu)        echo Bill to a TREQ, or 3843 ;;
+        histqa)     echo 4616 ;;
+        dart)       echo 4663 ;;
+        fiet)       echo 2622 ;;
+        fitbet)     echo 2622 ;;
+        dsrv)       echo 4747 ;; # Questionable if this is correct
+        scip)       echo 4258 ;; # Unable to find machine owner
+        sciq)       echo 4258 ;; # Same as previous
+        dlsat)      echo 4631 ;;
+        ems)        echo 4739 ;;
+        intrl)      echo 2291 ;;
+        ibsrv)      echo 4117 ;; # DRQS 35065420 page 1
+        ebbdb)      echo 4077 ;; # Based largely on Andrei Basov's Q
+        fsrv)       echo 4728 ;;
+    esac
+
+    unset bbcpu_line
+    unset thishost
+    unset bbsystype
+}
+echo "Done."
+
+# mark_time____________________________________________________________________
+# mark_time - A means to timestamp all logs with a common entry 
+printf "  %-20s %-50s" mark_time "ubiquitous log checkpoint"
+mark_time ()
+{
+    # usm = user supplied message
+    typeset l_mt_usm="placed here"
+    typeset l_mt_msg="ubiquitous log checkpoint "
+    typeset l_mt_tag="mark_time"
+   
+    if [[ ! -z ${1} ]]
+    then
+        l_mt_usm=": "${1}
+    fi
+
+    l_mt_msg=${l_mt_msg}${l_mt_usm}
+
+    if [[ $(id -u) != 0 ]]
+    then
+        echo "ERROR: root capabilities required." >&2
+        return 1
+    fi
+
+    echo "Ubiquitous log checkpoint at "$(date)"."
+    echo "Message is: \""${l_mt_msg}"\""
+
+    # syslog
+    if ! logger -t ${l_mt_tag} -p user.notice "${l_mt_msg}"
+    then
+        printf "ERROR: Failed to syslog the message.\n"
+    fi
+
+    # act.log
+    if [[ -x /bb/bin/openpipe ]]
+    then
+        /bb/bin/openpipe mark_time
+
+        # sub-second sleep
+        ls /usr/bin > /dev/null
+
+        if [[ -e /tmp/mark_time.fifo ]]
+        then
+            echo ${l_mt_msg} >> /tmp/mark_time.fifo
+            /bb/bin/closepipe mark_time
+        fi
+    fi
+
+    unset l_mt_usm
+    unset l_mt_msg
+    unset l_mt_tag
+
+}
+echo "Done."
+
+# top_cpu______________________________________________________________________
+# Top CPU consumer (snapshot) - otherwise run topas -P
+printf "  %-20s %-50s" top_cpu "List top processes by CPU utilization"
+top_cpu ()
+{
+    # A one-liner
+    echo " %CPU NI      PID COMMAND"
+    ps -eo pcpu,ni,pid,comm | grep -v COMMAND | sort -nr | head -21
+
+    return 0
+}
+echo "Done."
+
+# get_hipri____________________________________________________________________
+# Get a list of processes that are as high as or higher than xntpd
+printf "  %-20s %-50s" list_hipri "List high priority processes"
+list_hipri ()
+{
+    typeset ppid
+    typeset pcomm
+    typeset prset
+    typeset ppri
+
+    printf "%-12s %-20s %-4s %-s\n" PID Name Pri RSet
+
+    ps -e -o pid,comm,pri | while read ppid pcomm ppri
+    do
+        if [[ ${ppri} == +([0-9]) ]]
+        then
+            if (( ${ppri} <= 48 ))
+            then
+                prset=$(lsrset -vp ${ppid} 2> /dev/null | grep "rset:")
+                prset=${prset#*: }
+                prset=${prset## }
+                
+                printf "%-12s %-20s %-4s %-s\n" "${ppid}" "${pcomm}" ${ppri} "${prset}"
+            fi
+        else
+            # Not sure what this is about.
+            if [[ ${ppid} != PID ]]
+            then
+                printf "%-12s %-20s %-4s\n" "${ppid}" "${pcomm}" "${ppri}"
+            fi
+        fi
+    done
+
+    unset ppid
+    unset pcomm
+    unset prset
+    unset ppri
+
+}
+echo "Done."
+
+# size_screen__________________________________________________________________
+# A simple tool to show what size a screen *should* be. Undocumented (meaning:
+# not included in regular output / functions listing).
+printf "  %-20s %-50s" various "Support and undocumented functions"
+size_screen ()
+{
+   typeset -i cols=0
+   typeset -i rows=0
+
+   while (( rows < 23 ))
+   do
+       cols=0
+       printf "[%2d]" $(( rows + 1 ))
+       while (( cols < 76 ))
+       do
+           echo -n "*"
+           (( cols+=1 ))
+       done
+       echo
+       (( rows+=1 ))
+   done
+
+   unset cols
+   unset rows
+
+
+}
+echo "Done."
+
+# mkcd_________________________________________________________________________
+# Make a directory, then change to it
+printf "  %-20s %-50s" mkcd "mkdir & cd in one command"
+mkcd ()
+{
+    if [[ -z ${1} ]]
+    then
+        echo "ERROR: This command requires a paramater." >&2
+        return 1
+    fi
+
+    if [[ ! -d ${1} ]]
+    then
+        mkdir -p ${1}
+    fi
+
+    if [[ ! -d ${1} ]]
+    then
+        echo "ERROR: Unable to create directory." >&2
+        return 1
+    fi
+
+    cd ${1}
+    pwd
+    return 0
+}
+echo "Done."
+
+# puptime______________________________________________________________________
+# Process uptime
+printf "  %-20s %-50s" puptime "Process uptime"
+puptime ()
+{
+    if [[ -z ${1} ]]
+    then
+        echo "ERROR: This command requires a paramater." >&2
+        return 1
+    fi
+
+    if [[ ${1} != +([0-9]) ]]
+    then
+        echo "ERROR: Input not understood - it must be numeric." >&2
+        return 1
+    fi
+
+    # etime is elapsed time. The ="" means: display no header for this column
+    if ! ps -o etime="" -p ${1}
+    then
+        echo "ERROR: PID not found." >&2
+        return 1
+    fi
+
+    return 0
+}
+echo "Done."
+
+# top_mem______________________________________________________________________
+# Top Memory (RSS/Physical) (snapshot)
+printf "  %-20s %-50s" top_mem "List top processes by rss or size"
+top_mem ()
+{
+    typeset l_memtype=${1:-rss}
+
+    # The old way
+    #echo "USER         PID %CPU %MEM   SZ  RSS    TTY STAT    STIME  TIME COMMAND"
+    #ps aux | sort -nr +5 | head -21
+
+    # NOTE: The current shell does not appear to support limiting line length using
+    #       ${var:start:end}. So we are programming for least common feature here.
+    #       So instead of using args (the potentially longer string), I use comm.
+    case ${l_memtype} in
+        rss|RSS)
+            printf "%-8s %-10s %-10s %-10s %-36s\n" User____ PID_______ RSS_______ Size______ Command________________________
+            ps -eo user,pid,rssize,vsz,comm | sort -nr +2 | head -21 | while read l_user l_pid l_rss l_size l_comm
+            do
+                printf "%-8s %-10s %-10s %-10s %-36s\n" "${l_user}" "${l_pid}" "${l_rss}" "${l_size}" "${l_comm}"
+            done
+            ;;
+        size|SZ)
+            printf "%-8s %-10s %-10s %-10s %-36s\n" User____ PID_______ Size______ RSS_______ Command_________________________
+            ps -eo user,pid,vsz,rssize,comm | sort -nr +2 | head -21 | while read l_user l_pid l_size l_rss l_comm
+            do
+                printf "%-8s %-10s %-10s %-10s %-36s\n" "${l_user}" "${l_pid}" "${l_size}" "${l_rss}" "${l_comm}"
+            done
+            ;;
+        -h|--help)
+            echo "top_mem - Find top memory usage by rss or size"
+            echo "   Usage: top_mem <rss|size>"
+            echo "   Default is \"rss\". RSS and vsize are in 1KB units."
+            ;;
+        *)
+            echo "ERROR: Unrecognized memory type." >&2
+            ;;
+    esac
+            
+    unset l_memtype
+   
+    return 0
+}
+echo "Done."
+
+# stopped_proc_________________________________________________________________
+# Look for "T" in the "S" column
+printf "  %-20s %-50s" stopped_proc "List processes currently in stopped state"
+stopped_proc ()
+{
+    l_lines=0
+    
+    ps -eo state,user,pid,comm | grep "^T" | while read l_state l_user l_pid l_comm
+    do
+        if (( l_lines == 0 ))
+        then
+            printf "%-10s %-10s %-55s\n" "User" "PID" "Command"
+        fi
+
+        printf "%-10s %-10s %-55s\n" "${l_user}" "${l_pid}" "${l_comm}"
+        l_lines=1
+    done
+
+    # l_lines is set in a different scope in the loop. So when it gets here,
+    # is is *always* 0 - and therefore this always prints. So I have a choice
+    # of either 
+    #if (( l_lines == 0 ))
+    #then
+    #    echo "No stopped processes found"
+    #fi
+            
+    unset l_lines
+    unset l_state
+    unset l_user
+    unset l_pid
+    unset l_comm
+   
+    return 0
+}
+echo "Done."
+
+# pm_tools_____________________________________________________________________
+# 
+pmt_helper ()
+{
+    typeset bin_name=${1}
+
+    if [[ -z ${bin_name} ]]
+    then
+        return -1
+    fi
+
+    printf "  %-16s : " "${bin_name}"
+
+    if which ${bin_name} >/dev/null 2>&1
+    then
+        printf "Found in PATH\n"
+        return 0
+    fi
+
+    if [[ -x /bb/pm/${bin_name} ]]
+    then
+        printf "/bb/pm/${bin_name}\n"
+        return 0
+    fi
+
+    if [[ -x /bb/pm/bin/${bin_name} ]]
+    then
+        printf "/bb/pm/bin/${bin_name}\n"
+        return 0
+    fi
+
+    if [[ -x /root/bin/${bin_name} ]]
+    then
+        printf "/root/bin/${bin_name}\n"
+        return 0
+    fi
+
+    if [[ -x /root/${bin_name} ]]
+    then
+        printf "/root/${bin_name}\n"
+        return 0
+    fi
+
+    printf "Not Found!\n"
+    return 1
+}
+
+printf "  %-20s %-50s" pm_tools "Determine if key tools are on the system"
+pm_tools ()
+{
+
+    pmt_helper pgm_chk
+    pmt_helper vcpu
+    pmt_helper blog
+    pmt_helper cpub
+}
+echo "Done."
+
+
+# top_vmem_____________________________________________________________________
+# Top vmem
+printf "  %-20s %-50s" top_vmem "List top processes by virtual memory"
+top_vmem ()
+{
+    echo "Unit: KB"
+    echo "rss        RSS      resident set size, the non-swapped physical memory that a task has used (in kiloBytes). (alias rssize, rsz)."
+    echo "vsz        VSZ      virtual memory size of the process in KiB (1024-byte units). Device mappings are currently excluded; this is subject to change. (alias vsize)."
+    echo "-------------------------------------------------------------------------------"
+    echo " "
+    export GREP_COLOR='1'
+    ps -eo pid,rss,vsz,cmd  --sort -rss,-vsz|head -20|grep  --color=auto -e [0-9] -e PID -e RSS -e VSZ 
+    unset GREP_COLOR
+}
+echo "Done."
+
+# mount_perf___________________________________________________________________
+# Mount perf
+printf "  %-20s %-50s" mount_perf "Mount the Linux \"perf\" mount"
+mount_perf ()
+{
+    typeset mp_mntpt=${1:-/bb/pm}
+
+    # STUB: Check for empty
+    # STUB: Check for leading /
+    
+    printf "Using mount point %s\n" ${mp_mntpt}
+    
+    printf "Looking for mount point..."
+    if [[ -d ${mp_mntpt} ]]
+    then
+        printf "Found.\n"
+        printf "Making sure we are not in mount point..."
+        if [[ $(pwd) == ${mp_mntpt}* ]]
+        then
+            printf "Doh!\n"
+            printf "Moving to root of filesystem..."
+            if ! cd / >/dev/null 2>&1
+            then
+                printf "Failed.\n"
+                unset mp_mntpt
+                return 1
+            else
+                printf "Done.\n"
+            fi
+        else
+            printf "Nope.\n"
+        fi
+    else
+        printf "Missing.\n"
+        printf "Creating the mount point..."
+        if ! mkdir ${mp_mntpt}
+        then
+            printf "Failed.\n"
+            printf "ERROR: Failed to mount the linux perf volume.\n"
+            unset mp_mntpt
+            return 1
+        else
+            touch ${mp_mntpt}/UNMOUNTED
+            printf "Done.\n"
+        fi
+    fi
+
+    printf "Checking to see if the mount point is in use..."
+    if mount 2>/dev/null | grep -w ${mp_mntpt} > /dev/null 2>&1
+    then
+        printf "Yes.\n"
+        printf "ERROR: Unable to use this mount point. It is in use.\n"
+        unset mp_mntpt
+        return 1
+    else
+        printf "No.\n"
+    fi
+
+    printf "Checking mount point contents..."
+    mp_diricnt=$(ls ${mp_mntpt} | wc -l)
+    printf "%d items..." ${mp_diricnt}
+    if (( mp_diricnt == 0 ))
+    then
+        touch ${mp_mntpt}/UNMOUNTED
+        printf "Good.\n"
+    fi
+
+    if (( mp_diricnt == 1 ))
+    then
+        if [[ -e ${mp_mntpt}/UNMOUNTED ]]
+        then
+            printf "Good.\n"
+        else
+            printf "Unexpected.\n"
+            printf "ERROR: The mount looks odd. Check it manually.\n"
+            unset mp_mntpt
+            unset mp_diricnt
+            return 1
+        fi
+    fi
+
+    if (( mp_diricnt > 1 ))
+    then
+        printf "Unexpected.\n"
+        printf "ERROR: The mount looks odd. Check it manually.\n"
+        unset mp_mntpt
+        unset mp_diricnt
+        return 1
+    fi
+
+    # Now done with this variable
+    unset mp_diricnt
+
+    printf "Mounting the mount point..."
+    if ! mount -t nfs -o intr njlabperf02:/bb/perfex ${mp_mntpt} >/dev/null 2>&1
+    then
+        printf "Failed.\n"
+        printf "ERROR: Unable to mount the desired mount point.\n"
+        unset mp_mntpt
+        return 1
+    else
+        printf "Success.\n"
+    fi
+
+    # Do we want to touch a mount file (so we know where this was mounted
+    # and can use this as a default for umount_perf)?
+    unset mp_mntpt
+    return 0
+}
+echo "Done."
+
+# umount_perf__________________________________________________________________
+# Umount perf
+printf "  %-20s %-50s" umount_perf "Un-mount the Linux \"perf\" mount"
+umount_perf ()
+{
+    typeset up_mntpt=${1:-/bb/pm}
+
+    # STUB: Check for empty
+    # STUB: Check for leading /
+    
+    printf "Using mount point %s\n" ${up_mntpt}
+    
+    printf "Looking for mount point..."
+    if [[ -d ${up_mntpt} ]]
+    then
+        printf "Found.\n"
+        printf "Making sure we are not in mount point..."
+        if [[ $(pwd) == ${up_mntpt}* ]]
+        then
+            printf "Doh!\n"
+            printf "Moving to root of filesystem..."
+            if ! cd / >/dev/null 2>&1
+            then
+                printf "Failed.\n"
+                unset up_mntpt
+                return 1
+            else
+                printf "Done.\n"
+            fi
+        else
+            printf "Nope.\n"
+        fi
+    else
+        printf "Missing.\n"
+        printf "ERROR: Unable to find that mount point.\n"
+        unset up_mntpt
+        return 1
+    fi
+
+    printf "Checking to see if the mount point is in use..."
+    if mount 2>/dev/null | grep -w ${up_mntpt} > /dev/null 2>&1
+    then
+        printf "Yes.\n"
+    else
+        printf "No.\n"
+        printf "ERROR: Unable to unmount this mount point. It is not mounted.\n"
+        unset up_mntpt
+        return 1
+    fi
+
+    printf "Unmounting the mount point..."
+    if ! umount ${up_mntpt} >/dev/null 2>&1
+    then
+        printf "Failed.\n"
+        return 1
+    else
+        printf "Success.\n"
+    fi
+
+    unset up_mntpt
+    return 0
+}
+echo "Done."
+
+# factor_4kpage________________________________________________________________
+printf "  %-20s %-50s" factor_4kpage "Turn a 4K page into a more meaninful unit"
+factor_4kpage ()
+{
+    l_pages=${1}
+    typeset -i l_bytes=0
+    typeset -i l_factor=0
+    set -A l_factor_modifier K M G T
+
+    # Validate input
+    if [[ -z ${l_pages} ]] ; then return 1 ; fi
+
+    # Convert to bytes
+    l_bytes=$(( l_pages * 4 ))
+
+    # Factor to usable value
+    while (( l_bytes >= 10000 ))
+    do
+      l_factor=$(( l_factor + 1 ))
+      l_bytes=$(( l_bytes / 1024 ))
+    done
+
+    printf "%d %s\n" ${l_bytes} ${l_factor_modifier[$l_factor]}
+    return 0
+}
+echo "Done."
+
+# set_title____________________________________________________________________
+# Set the title of the xterm you are running in
+printf "  %-20s %-50s" set_title "Set the title of the xterm you are in"
+set_title ()
+{
+    typeset title_string=
+
+    if [[ -z ${1} ]]
+    then
+        title_string="$(uname -n)"
+    else
+        title_string="$(uname -n) : ${@}"
+    fi
+
+    # Set the title
+    printf "\033]0;${title_string}\007"
+
+    unset title_string
+
+    return 0
+}
+echo "Done."
+
+# getpriority__________________________________________________________________
+printf "  %-20s %-50s" getpriority "Get priority of a process by PID"
+getpriority ()
+{
+    # This returns the modification, not the actual priority. (This is 
+    # consistent with the getpriority() and setpriority() syscalls.
+
+    if [[ -z $1 ]]
+    then
+        echo "ERROR: No PID input." >&2
+        return 1
+    fi
+
+    if (( $# > 1 ))
+    then
+        echo "ERROR: More than one paramater."
+        return 1
+    fi
+
+    if [[ ${1} == +([0-9]) ]]
+    then
+        NI=$(ps -o nice -p $1 | grep -v NI)
+        # This tells us our deviation from default
+        echo $(( NI - 20 ))
+    else
+        #ps -eo nice,pid,args | grep $1 | awk '{ print $1 - 20, " ", $2, " ", $3, " ", $4, " ", $5, " ", $6 }'
+        ps -eo nice,pid,args | \
+            grep $1 | \
+            awk '{ REST=$3 " " $4 " " $5 " " $6 " " $7 ; \
+                   NI=$1 - 20 ; \
+                   printf "%2d %-9d %-56s\n", NI, $2, substr(REST, 1, 64) }'
+   fi
+
+}
+echo "Done."
+
+# tail_act_log_________________________________________________________________
+printf "  %-20s %-50s" tail_act_log "Watch act.log (with optional pattern)"
+tail_act_log ()
+{
+    al_pattern=":"
+    if [[ -n ${1} ]] ; then al_pattern=${1} ; fi
+       
+    /bb/bin/gtail -l /bb/data/act.log ${al_pattern}
+
+    unset al_pattern
+}
+echo "Done."
+
+# prccom_is____________________________________________________________________
+printf "  %-20s %-50s" prccom_is "Tell if prccom is up or down"
+prccom_is ()
+{
+    ps -Neo comm | nawk '
+       $1~/(prccom|prcthr)/ {PRCCOM=1;exit}
+       END { printf("prccom:   %s\n",PRCCOM>0?"up":"down"); exit 1-PRCCOM; }'
+}
+echo "Done."
+
+# env_is_______________________________________________________________________
+printf "  %-20s %-50s" env_is "Tell if the environment is up or down"
+env_is ()
+{
+    ps -Neo comm | gawk '
+	  $1~/(prccom|prcthr)/ {PRCCOM=1}
+	  $1~/(comdb2|comdbg)/ {COMDB=1}
+	  END {
+	   printf("prccom:   %s\n",PRCCOM>0?"up":"down")
+	   printf("comdb2:   %s\n",COMDB>0?"up":"down")
+	   exit 0;
+	  }'
+}
+echo "Done."
+
+# udp_stats____________________________________________________________________
+printf "  %-20s %-50s" udp_stats "UDP section of netstat -s"
+udp_stats ()
+{
+    # Note: netstat -su will show UDP *related* stats, but also includes
+    #       icmp and IpExt stats that are not as relevant. The greater
+    #       value here may be to include all relevant stats on one page
+    #       associated with the more prevelant issues.
+    typeset -i l_print=0
+
+    netstat -s | while read l_line
+    do
+        if [[ ${l_line} == *: ]] ; then l_print=0 ; fi
+        
+        if (( l_print )) ; then echo "  ${l_line}" ; fi
+
+        # Check for start condition *after* the label to avoid the label itself
+        if [[ ${l_line} == Udp: ]] ; then l_print=1 ; fi
+    done
+    
+    unset l_print
+    unset l_line
+}
+echo "Done."
+
+# localtime____________________________________________________________________
+printf "  %-20s %-50s" localtime "Check relative time on system"
+localtime ()
+{
+    # /usr/lib/nls/lstz -C        <=== Gen country (region) list
+    # /usr/lib/nls/lstz -c US     <=== Gen TZ list (for the US)
+    
+    typeset lloct_where=${1}
+    # This is to save the value, but it is no longer saved.
+    typeset lloct_TZ=${TZ}
+    typeset lloct_reqTZ=
+
+    case ${lloct_where} in
+        ny|NY|nj|NJ|EST5EDT|EST)
+            lloct_reqTZ=America/New_York ;;
+        "")
+            lloct_reqTZ=America/New_York ;;
+        gmt|GMT|london)
+            lloct_reqTZ=Europe/London ;;
+        utc|cut|UTC|CUT)
+            lloct_reqTZ=UTC ;;
+        japan|tokyo|Japan|Tokyo|jp|JP)
+            lloct_reqTZ=Asia/Tokyo ;;
+        singapore|Singapore|sp)
+            lloct_reqTZ=Asia/Singapore ;;
+        hongkong|hk|HongKong|HK)
+            lloct_reqTZ=Asia/Hong_Kong ;;
+    esac
+
+
+    echo "Current time zone is              : "${TZ}
+    echo "Requested time zone is            : "${lloct_reqTZ}
+    echo "Default time for this system/user : "$(date)
+    TZ=${lloct_reqTZ}
+    echo "Requested time                    : "$(date)
+    TZ=UTC
+    echo "UTC time is                       : "$(date)
+
+    # Set TZ to what we want
+    TZ=${lloct_reqTZ}
+    unset lloct_where
+    unset lloct_TZ
+    unset lloct_reqTZ
+}
+echo "Done."
+
+
+# unref________________________________________________________________________
+#printf "  %-20s %-50s" unref "Report on open unlinked files"
+#unref ()
+#{
+#	/usr/local/bin/lsoddfiles -qHRu "${1:-100000}"
+#}
+#echo "Done."
+
+# underneath___________________________________________________________________
+#printf "  %-20s %-50s" underneath "Report open file refs hiding under a mount point"
+#underneath ()
+#{
+#	/usr/local/bin/lsoddfiles -qHU
+#}
+#echo "Done."
+
+# pmp_functions________________________________________________________________
+printf "  %-20s %-50s" pmp_functions "Usage information on all pmp functions"
+pmp_functions ()
+{
+    echo "Name__________ Args__ Description______________________________________________"
+    echo "info_banner    -      (Re)Display the informational banner"
+    echo "top_cpu       *-k     List top processes by CPU (-k = include kernel processes)"
+    echo "top_mem        String List top processes by \"rss\" (default) or \"size\" arg"
+    echo "top_vmem       -      List top processes by virtual memory"
+    echo "factor_4kpage  int    Turn a 4K page into a more meaninful unit"
+    echo "getpriority    int    Get the priority of a process given a PID"
+    echo "puptime        int    Get the uptime of a process"
+    echo "tail_act_log   String Watch act.log (with optional pattern argmument)"
+    echo "prccom_is      -      Tell if prccom is up or down"
+    echo "pm_tools       -      Determine if key tools are on the system"
+    echo "tellmemore     -      Additional info not in info_banner"
+    echo "cpu_speed      -      Print the speed of the CPUs"
+    echo "mkcd           String Make a directory, and change to it"
+    echo "localtime      String Check relative time on system (Modifies TZ)"
+    echo "mark_time     *String ubiquitous log checkpoint - Write a message to all logs"
+    echo "stopped_proc   -      List processes currently in stopped state"
+    echo "udp_stats      -      UDP section of netstat -s"
+    echo "bbcpu         *String Get bbcpu info (String = optional hostname)"
+    echo "env_is         -      Tell if the environment is up or down"
+    echo "memfree        -      Get values for minfree / maxfree in usable units"
+    echo "pmp_functions  -      Usage information on all pmp functions"
+    echo "list_hipri     -      List high priority processes"
+    echo "mount_perf    *-      Mount the Linux \"perf\" mount"
+    echo "umount_perf   *-      Un-mount the Linux \"perf\" mount"
+    echo "set_title     *String Set the title of the xterm you are in"
+#    echo "unref          int    Report on open unlinked files"
+#    echo "underneath     -      Report on open file refs hiding under a mount point"
+    echo "billto        *String HIER bill to code"
+    echo "undocumented   -      List undocumented pmp functions."
+    echo 
+    echo " [Starred arguments are optional]"
+}
+
+pmphelp ()
+{
+    pmp_functions
+}
+
+
+undocumented ()
+{
+    echo "Name__________ Args__ Description______________________________________________"
+    echo "size_screen    -      Print out block of chars (used to resize xterm)"
+}
+echo "Done."
+
+
+###############################################################################
+### Set some aliases
+echo "Defining useful aliases:"
+printf "  %-20s %-50s \n" etime "puptime"
+alias etime=puptime
+printf "  %-20s %-50s \n" eme "set -o emacs"
+alias eme="set -o emacs"
+printf "  %-20s %-50s \n" vme "set -o vi"
+alias vme="set -o vi"
+printf "  %-20s %-50s \n" shout "mark_time"
+alias shout="mark_time"
+printf "  %-20s %-50s \n" hier "billto"
+alias hier="billto"
+printf "  %-20s %-50s \n" ps_nok "ps -ef | grep -v '\[.*\]'"
+alias ps_nok="ps -ef | grep -v '\[.*\]'"
+printf "  %-20s %-50s \n" turbosnap "turbostat true"
+alias turbosnap="turbostat true"
+printf "  %-20s %-50s \n" reboot "bbinit"
+alias reboot="/bb/admin/bbinit"
+printf "  %-20s %-50s \n" mount_pm mount_perf
+alias mount_pm="mount_perf"
+printf "  %-20s %-50s \n" umount_pm umount_perf
+alias umount_pm="umount_perf"
+
+echo "Done."
+
+###############################################################################
+### Kill some aliases
+echo "Removing bad aliases:"
+printf "  %-20s\n" cp
+unalias cp > /dev/null 2>&1
+printf "  %-20s\n" mv
+unalias mv > /dev/null 2>&1
+printf "  %-20s\n" rm
+unalias rm > /dev/null 2>&1
+printf "  %-20s\n" grep
+unalias grep > /dev/null 2>&1
+printf "  %-20s\n" egrep
+unalias egrep > /dev/null 2>&1
+printf "  %-20s\n" fgrep
+unalias fgrep > /dev/null 2>&1
+echo "Done."
+
+###############################################################################
+### Other stuff
+
+echo -n "Making minor changes to environment."
+
+# Change to our working directory & add to path - These are already exported
+typeset -i has_bbpm=0
+if [[ -d /bb/pm ]]
+then
+    cd /bb/pm
+    echo -n "."
+    HOME=/bb/pm
+    echo -n "."
+    PATH=${PATH}:/bb/pm/bin
+    echo -n "."
+    has_bbpm=1
+fi
+unset CDPATH
+echo -n "."
+
+unset GREP_COLOR
+echo -n "."
+
+unset GREP_COLORS
+echo -n "."
+
+# Set a useful command line editing mode.
+set -o ${cl_EDITOR}
+echo -n "."
+
+unset cl_EDITOR
+echo "Done."
+
+if (( ${has_bbpm} == 0 ))
+then
+    echo "NOTE: This system does not have /bb/pm. Using default home."
+fi
+unset has_bbpm
+
+###############################################################################
+### Formatted display of info
+info_banner -v
+
+
+###############################################################################
+### Kill all our locals (because we are sourced)
+#   ---> Give a hoot! Don't Pollute! <---
+# Do this quietly. Do not chat over our clean output.
+unset VERSION_STRING
+

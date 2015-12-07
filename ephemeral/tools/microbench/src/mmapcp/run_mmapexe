@@ -1,0 +1,9 @@
+#!./mmapexe
+
+
+
+
+set FILEIN = file.in
+set FILEOUT = file.out
+
+go

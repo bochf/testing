@@ -1,0 +1,25 @@
+#!./netmirror
+
+# This setting should be one of the following:
+#   sender -----> Send but not sink
+#   receiver ---> Recieve from the sender, potentially send to sink
+#   sink -------> Send and sink (other is receiver)
+set MODE = sink
+
+set MIRROR_ADDRESS = localhost
+set MIRROR_PROTOCOL = tcp
+set MIRROR_PORT = 5454
+
+set OPTIMAL_BLOCK = 1024
+
+set RETURN_MULTIPLIER = 256
+
+set SINK_ADDRESS = linxdev24
+set SINK_PROTOCOL = udp
+set SINK_PORT = 1234
+
+set VERBOSITY = debug
+
+set RUN_FOR = 15s
+
+go

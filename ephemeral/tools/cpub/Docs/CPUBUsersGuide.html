@@ -1,0 +1,823 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!---
+    WritingAProvider.html - Information on writing a CPUB provider
+
+    Authors:
+       Blanche K. Bruce - Top billing
+       William Favorite - Primary contact for errors.
+-->
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <style type="text/css">
+      body
+      {
+      font-size: 12px;
+      background-color: #FAFAFA;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      }
+
+      .arttitle
+      {
+      font-size: 28px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      .artstitle
+      {
+      font-size: 12px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      .artsstitle
+      {
+      font-size: 10px;
+      text-align:center;
+      }
+
+      .defblock /* Definition block - used for word-cap with indented text */
+      {
+      padding-left: 50px;
+      padding-right: 30px;
+      text-indent: -20px;
+      text-align:justify;
+      }
+
+      .subdef
+      {
+      padding-left: 80px;
+      padding-right: 40px;
+      text-indent: -20px;
+      text-align:justify;
+      }
+
+      .debug
+      {
+      color: red;
+      }
+
+      .oscmd
+      {
+      font-family: Monaco, monospace;
+      font-weight:bold;
+      color: #333300;
+      }
+      
+      .bbtermcmd
+      {
+      font-family: Monaco, monospace;
+      font-weight:bold;
+      color: orange;
+      background-color: black;
+      padding:0px 2px 0px 2px;
+      }
+      
+      .subjhead
+      {
+      font-size: 12px;
+      margin-left: 20px;
+      font-weight: bold;
+      margin-bottom: 0px;
+      }
+
+      .subhead     /* A reduced font one-liner designed to sit below a subjhead */
+      { /* STUB - You man need to muck with the spacing (border) to get it to "stick" to the subjhead */
+      font-size: 10px;
+      margin-left: 22px;
+      font-weight: 300;   /* Slightly less bold than normal font */
+      margin-top: 0px;
+      }
+
+      .subjsect
+      {
+      margin-left: 50px;
+      font-weight:bold;
+      }
+
+      .subjcont
+      {
+      margin-left: 50px;
+      margin-right: 20px;
+      }
+      
+      .footnote /* [ Designed to sit in a text box ] - See "reference" */
+      {
+      font-size: 10px;
+      margin-left: 70px;
+      margin-right: 70px;
+      text-align:justify;
+      }
+      
+      .exponent /* Really an exponent, but can be used to point to a footnote */
+      {
+      font-size: 8;
+      position:relative;
+      top:-5px;
+      }
+
+      .reference /* Designed to point to a footnote * or subtext 1 */ 
+      {
+      font-size: 8;
+      position:relative;
+      top:-3px;
+      text-decoration: none;
+      color: #000000;
+      }
+
+      .thintable
+      {
+      margin-left: 55px;
+      margin-right: 40px;
+      border-collapse: collapse;
+      }
+
+      .thintd
+      {
+      padding: 4px;
+      border: 1px solid black;
+      vertical-align:text-top;
+      }
+
+      .codetable
+      {
+      margin-left: 60px;
+      margin-right: 40px;
+      border-collapse: collapse;
+      font-family: Monaco, monospace;
+      font-weight: 600;
+      }
+
+      .codetd
+      {
+      padding: 0px;
+      font-family: Monaco, monospace;
+      font-size: 10px;
+      font-weight: 600;
+      vertical-align:text-top;
+      }
+
+      /* List table is like a thin table without borders */
+      .listtable
+      {
+      margin-left: 55px;
+      margin-right: 40px;
+      border-collapse: collapse;
+      }
+
+      .listtd
+      {
+      padding: 4px;
+      vertical-align:text-top;
+      }
+
+      .tdgowide /* A special, "go wide" td just for one table */
+      {
+      table-layout:fixed;
+      width: 290px;
+      }
+ 
+     .codeblock
+      {
+      padding-top: 2px;
+      padding-bottom: 2px;
+      padding-right: 16px;
+      padding-left: 16px;
+      font-family: "Courier New", "Lucida Console", Monospace;
+      font-size: 9pt;
+      margin-left: 60px;
+      width: 50em;
+      color: #00cc00;
+      background-color: black;
+      border-style: solid;
+      border-color: #777777;
+      border-width: 2px;
+      font-weight: bold;
+      }
+
+      .codenote { color: #aaaadd; }
+ 
+      .textit { font-style:italic; }
+      .texttt { font-family: Monaco, monospace; }
+      .textbf { font-weight:bold; }
+      .underline { text-decoration: underline; }
+
+      a:link { text-decoration: underline; color: #aa00aa; }
+      a:visited { text-decoration: underline; color: #aa00aa; }
+      /* Active is more like "visited" than immediate feedback. */
+      a:active { text-decoration: underline; color: #aa00aa; }
+      a:hover { text-decoration: underline; color: #aa00aa; }
+    </style>
+
+    <title>CPUB User's Guide</title>
+  </head>
+  <body>
+
+    <p class="arttitle">CPUB User's Guide</p>
+
+    <p class="artsstitle">Version: 0.7.0</p>
+
+    <hr width="65%" />
+   
+    <!-- ================================================================== -->
+    <p class="subjhead">Overview</p>
+    <p class="subhead">What CPUB is about</p>
+
+    <p class="subjcont">CPUB is a modular framework of providers (data sources) and writers (output methods). The CPUB framework ties all these together through a descriptive &quot;quad&quot; representation as expressed through a config file. At the heart of CPUB sits the &quot;quad&quot;, that is a descriptor that can potentially define any data point on the system. Directives in the form of a list of quads, and how to interpret and write that data are read from a config file that determines how CPUB will act.</p>
+
+      <p class="subjcont">In short, CPUB is a versatile tool that can collect a wide variety of statistics and then alarm on them, record them, or simply send them to the screen.</p>
+
+    <p class="subjcont">While CPUB is a binary, the primary user interaction is more <span class="textit">shell-like</span> in that the focus is on the config file and not the interpreter. The config file specifies what data to collect and then how to manage that collected data. The config file becomes the <span class="textit">specification</span> for the end-user tool - much like a script becomes the focus and not the shell that actually does the work.</p>
+    
+    <p class="subjcont">CPUB is designed to behave the same on all platforms (Linux, AIX, &amp; Solaris) yet be platform specific. More explicitly, the way in which the tool works is consistent, the data that it can provide ranges from general platform independent data ( such as timestamps) to platform specific stats (such as instrumentation for subsystems unique to each platform).</p>
+
+    <p class="subjcont">The internal design of CPUB is specified in such a way that new provider or writer modules can be coded and inserted into the framework with relative simplicity.</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Modes of Operation</p>
+    <p class="subhead">Fundamental usage scenarios</p>
+
+    <p class="subjcont">The concept of a &quot;mode of operation&quot; refers to differences in methods of <span class="textit">usage</span> and not necessarily to a few <span class="textit">specific</span> settings in CPUB. Instead, the point is to demonstrate how elements of the tool can be combined to change the primary purpose of CPUB.</p>
+
+    <p class="subjsect">Alarm monitor</p>
+
+    <p class="subjcont">By setting the global <span class="texttt">send_to</span> option to &quot;<span class="texttt">alarm</span>&quot; and then setting alarm values for each data item CPUB can be run as a threshold alarm monitor. Any numeric item can be used in a threshold test, either directly, by rate of change, or per-second averages.</p>
+
+    <p class="subjsect">Interactive stat viewer</p>
+
+    <p class="subjcont">With the <span class="texttt">send_to</span> option set to &quot;<span class="texttt">stdout</span>&quot; the output begins to look more like an interactive tool. Adding a timestamp and <span class="texttt">header_every</span> option increases the interactive use even more. When the names of data items are unclear to the end-user, custom headers can be defined to help the user to better understand what they are looking at.</p>
+
+    <p class="subjsect">Daemon</p>
+
+    <p class="subjcont">Some writers will allow the framework to become a daemon and run in the background. In this mode CPUB becomes a long-running method to collect stats or watch for alarm conditions. Daemon mode properly removes itself from the process group that launched it and becomes a child of <span class="texttt">init</span>. There is no need to background and <span class="texttt">nohup</span> the process - the tool manages this for you. Daemon mode is enabled by setting the global <span class="texttt">run_method</span> option to &quot;<span class="texttt">daemon</span>&quot;. </p>
+
+    <p class="subjsect">List</p>
+
+    <p class="subjcont">This is less of a <span class="textit">major mode</span> and more of a simple option to list all data sources &amp; items the framework knows about for the current platform. There are list options for providers, data items given a provider, or a complete listing of all providers &amp; data items that are supported.</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Writers and Providers</p>
+    <p class="subhead">Data sources and data sinks</p>
+    
+    <p class="subjcont">A provider is a source of data items that is implemented as a single code &quot;unit&quot;. In the most simplistic sense, a provider is an interface to an API or system data source. Each provider serves up at <span class="textit">least</span> one, and typically many related statistics.</p>
+
+    <p class="subjcont">In the more complex case, a provider may pull data from more than one source and then do some basic manipulation on that data. While the intent of the provider design is to be as lightweight as possible, a provider developer can incorporate some computational <span class="textit">weight</span> into the code to provide more &quot;cooked&quot; data.</p>
+
+    <p class="subjcont">A writer module receives an ordered list of data items from the providers. Depending on the writer <span class="textit">type</span>, the data will be written, tested against established thresholds (alarmed), or possibly sent to another destination. The writer is how the requested data leaves the framework.</p>
+
+    <p class="subjcont">When a provider is activated (when one or more data items are requested from that provider) a thread is spawned by the framework to run that provider. Because at least one provider is required to run the framework, there is at least one provider thread activated. Likewise, a thread is spawned for the writer module. The framework is limited to one writer module instance at a time. Therefore, there are at least two threads, and potentially multiple threads running to collect and dispense data.<span class="reference">*</span></p>
+
+    <p class="footnote">[* There is a limit of <span class="textit">ten</span> registered quads. This causes a &quot;danger&quot; condition where CPUB will fail to run unless the user recognizes the issue and calls CPUB with the <span class="texttt">-D</span> option to override the warning (danger) condition. ]</p>
+
+    <p class="subjcont">The workflow of the framework is as follows:</p>
+
+    <ol class="subjcont">
+      <li>Read config file options &amp; arguments</li>
+      <li>Activate data items (and therefore the providers that supply them)</li>
+      <li>Activate the writer module requested in the config file</li>
+      <li>Ask all providers to update data items they are responsible for</li>
+      <li>Ask the writer module to &quot;handle&quot; the latest data</li>
+      <li>Wait until next iteration</li>
+      <li>GoTo 4</li>
+    </ol>
+
+    <p class="subjcont">The providers are data <span class="underline">sources</span> in the framework, while writers are the data <span class="underline">sinks</span>.</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">The Quad</p>
+    <p class="subhead">A method to describe a data point</p>
+
+    <p class="subjcont">In order to request data from the framework, one first has to <span class="textit">describe</span> it. A &quot;quad&quot; and its optional writer arguments are a means to this end.</p>
+
+
+    <p class="subjcont">A quad takes the form of:</p>
+
+    <p class="subjcont">&nbsp;&nbsp;&nbsp;<span class="texttt">provider:provider_arg:data_item:data_arg  writer_argument=value</span></p>
+
+    <p class="subjcont">The <span class="texttt">provider</span> is (as previously mentioned) a gateway to an API or some data source. While it serves this function in the quad, here it is what lets us differentiate total memory of a <span class="textit">process</span> from total memory of a <span class="textit">system</span>. The provider (and its arguments) are responsible for putting us <span class="textit">in the ballpark</span> of the desired data. The list of supported providers can be found by calling &quot;<span class="texttt">cpub -p</span>&quot;.</p>
+
+    <p class="subjcont">Arguments to the provider are not needed in most cases. So this part of the quad tends to be empty. (This will be seen in the &quot;Examples&quot; section as two colons with nothing in-between. But when a provider might refer to more than one item on a system (such as the &quot;process&quot; or various &quot;file&quot; providers) it is necessary to tell the provider which item is of interest. So the PID would be an argument to the <span class="texttt">process</span> provider and a filename to the <span class="texttt">file.stat</span> provider.</p>
+
+    <p class="subjcont">The <span class="texttt">data_item</span> describes a specific statistic served by that provider. In the case of the &quot;meminfo&quot; provider, this might be &quot;total_memory&quot; or &quot;memory_free&quot;. It is nearly impossible to document all the data items revealed by a provider. For this reason, provider writers are encouraged to point the users directly to the data source for information on each of the stats. So while the data item may be the most intuitive, it might also be somewhat esoteric to the user.</p>
+
+    <p class="subjcont">The fourth and final member of the &quot;quad proper&quot; is the data item arguments. Like the provider arguments, this is optional. Unlike the provider argument, this part of the quad can simply be omitted if not used. (Note the use of &quot;two colon quads&quot; in the &quot;Examples&quot; section below. All timestamp data items from the core provider have only three parts and two colons; the last colon being omitted by convention.) The two most popular data item arguments are &quot;<span class="texttt">diff</span>&quot; and &quot;<span class="texttt">psavg</span>&quot;. <span class="texttt">diff</span> is the difference between the previous and current values, while <span class="texttt">psavg</span> is a per-second averaging of the data. The two can be combined - typically by including both in the argument list separated by a &quot;.&quot;.</p>
+
+    <p class="subjcont">Following the quad (on the same line) may be a series of whitespace separated writer arguments. Each writer has a list of accepted and required arguments. (See the writer reference later in this document.) An optional (accepted) writer argument might be the &quot;<span class="texttt">header</span>&quot; argument that creates a custom header for the data item. One example of a required writer argument would be the &quot;<span class="texttt">alarm_at</span>&quot; argument for the <span class="texttt">alarm</span> writer module.</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">The config file</p>
+    <p class="subhead">Building a tool description</p>
+
+    <p class="subjcont">The config file is one of the central aspects of the framework. All tool behaviors are encoded into the config file. This allows for a few important usage benefits &amp; behaviors:</p>
+
+    <ul class="subjcont">
+      <li>It makes the behavior between invocations to be identical because the options are saved.</li>
+      <li>It can be used as a script - with arguments - a usage pattern that matches other tools (focus follows script, not the framework).</li>
+    </ul>
+
+    <p class="subjcont">The config file is broken down into three basic sections: the global settings, the provider list, and the writer arguments. The global settings are general specifications on how the framework will behave, such as time between iterations, how long to run, and to what writer module to send the data. The provider list is an ordered list of output columns (or items to alarm on). The writer arguments are much like the global arguments, except they are bracketed in a section just for the writer.</p>
+
+    <p class="subjcont">Global settings take name=value pair form. Whitespace is valid - but it will be considered a terminating character or possibly an error condition if not quoted. (There is really no need for quotes on the global settings - all potential values are simple / no-whitespace strings.) The accepted global settings are:</p>
+
+
+    <table class="listtable">
+      <tr>
+        <td class="listtd"><span class="texttt">run_every</span></td>
+        <td class="listtd">(required)</td>
+        <td class="listtd">This is the time in ms (1000ths of a second) between iterations of a data sampling. A value of 1000 will sample every second. Values less than a second will push the framework into &quot;danger&quot; mode, and require that <span class="texttt">cpub</span> be invoked with the <span class="texttt">-D</span> option for the user to acknowledge the risk.</td>
+      </tr>
+
+      <tr>
+        <td class="listtd"><span class="texttt">run_for</span></td>
+        <td class="listtd">(optional)</td>
+        <td class="listtd">This is the time in seconds to run. The default is &quot;0&quot; - to run forever.</td>
+      </tr>
+
+      <tr>
+        <td class="listtd"><span class="texttt">send_to</span></td>
+        <td class="listtd">(required)</td>
+        <td class="listtd">This is the name of the writer module. (See the &quot;Writer Reference&quot; section that follows for a complete list of supported writers.) The typical writers are &quot;stdout&quot;, &quot;file&quot;, and &quot;alarm&quot;.</td>
+      </tr>
+
+      <tr>
+        <td class="listtd"><span class="texttt">run_method</span></td>
+        <td class="listtd">(optional)</td>
+        <td class="listtd">This is a option to run as a daemon. The default method is &quot;interactive&quot;. (&quot;foreground&quot; is a synonym for &quot;interactive&quot;.) The only option of relevance is &quot;daemon&quot; (&quot;background&quot; is a synonym for &quot;daemon&quot;.)</td>
+      </tr>
+    </table>
+
+    <p class="subjcont">The provider section is bracketed between single lines with the two following tokens: <span class="texttt">PROVIDER_LIST_BEGIN</span> and <span class="texttt">PROVIDER_LIST_END</span>. Each line in this section must contain a valid quad to be considered as a data source. (Blank lines and comments<span class="reference">*</span> are valid in this block.)</p>
+
+    <p class="footnote">[* Comments follow shell convention; anything following a non-quoted &quot;<span class="texttt">#</span>&quot; character is a comment. ]</p>
+
+    <p class="subjcont">Writer arguments are also bracketed by begin and end tokens, specifically: <span class="texttt">WRITER_ARGS_BEGIN</span> and <span class="texttt">WRITER_ARGS_END</span>. Writer arguments, like global arguments, are name=value paris. Each writer supports different arguments - those arguments are documented in the &quot;Writer Reference&quot; section below.</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Examples</p>
+    <p class="subhead">Getting started</p>
+
+    <p class="subjsect">Hello World!</p>
+    
+    <p class="subjcont">While this example does not <span class="textit">actually</span> display the text &quot;Hello World!&quot;, it is about as close as you can get.<span class="reference">*</span> This is an introductory example that simply displays a standardized (<span class="texttt">ctime()</span>) string every second. As this uses the <span class="texttt">core</span> provider and no special output instructions it will work on every platform.</p>
+    
+    <p class="footnote">[* This may qualify as technical hair-splitting, but it is possible to display text either through specifying a header to be displayed with the data, or even using the <span class="texttt">core::echoarg</span> item. Either way, the takeaways are that 1. this is as about simplistic an example as possible, and 2. there is a significant amount of flexibility in the framework either through the existing means or by extending the capabilities yourself. ]</p>
+    
+    <div class="codeblock">
+      <p>
+        #!/usr/local/bin/cpub&nbsp;&nbsp;<span class="codenote">&lt;-- Magic / interpreter line</span><br />
+        <br />
+        run_every = 1000&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- Iterate every 1000 ms (1 second)</span><br />
+        send_to = stdout&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- Send results to command line</span><br />
+        <br />
+        PROVIDER_LIST_BEGIN<br />
+        &nbsp;&nbsp;&nbsp;core::ctime&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- Generate a timestamp using ctime();</span><br />
+        PROVIDER_LIST_END<br />
+        <br />
+        WRITER_ARGS_BEGIN<br />
+        &nbsp;&nbsp;&nbsp;header_every = 0&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- Never show header for the data</span><br />
+        WRITER_ARGS_END
+      </p>
+    </div>
+
+    <p class="subjsect">Memory Monitor</p>
+
+    <p class="subjcont">The following is a more realistic example that introduces several new concepts. First is the inclusion of more than one provider in the same output. Here the <span class="texttt">core</span> and the <span class="texttt">vminfo</span> providers are used together. Ordering of the quad arguments is preserved in the output - so the ordering is important here. Two new global options have been introduced from the previous example, both using the default values. Another key difference is the use of the &quot;<span class="texttt">header</span>&quot; and &quot;<span class="texttt">factor</span>&quot; writer arguments. These are used by the writer to represent the output in more meaningful ways to the user. The actual data item names are difficult to remember, so the headers have been modified from the defaults to show descriptions that the user is more likely to recognize. The data items here are in <span class="textit">pages</span> so the data is &quot;auto&quot; factored from 4K pages into more human readable (B, K, M, G...) values.</p>
+
+
+    <div class="codeblock">
+      <p>
+        #!/usr/local/bin/cpub<br />
+        <br />
+        run_every = 10000<br />
+        run_for = 0&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- Run forever (same as the default)</span><br />
+        send_to = stdout<br />
+        run_method = foreground&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- foreground / interactive is default</span><br />
+        <br />
+        # Begin the list of providers&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- Comments use shell-like syntax</span><br />
+        PROVIDER_LIST_BEGIN<br />
+        &nbsp;&nbsp;&nbsp;core::24hhmmss<br />
+        &nbsp;&nbsp;&nbsp;vminfo::numwseguse header=working factor=4ktoa<br />
+        &nbsp;&nbsp;&nbsp;vminfo::numpseguse header=persistent factor=4ktoa<br />
+        &nbsp;&nbsp;&nbsp;vminfo::numclseguse header=client factor=4ktoa<br />
+        &nbsp;&nbsp;&nbsp;vminfo::numwsegpin header=pworking factor=4ktoa<br />
+        &nbsp;&nbsp;&nbsp;vminfo::numpsegpin header=ppersistent factor=4ktoa<br />
+        &nbsp;&nbsp;&nbsp;vminfo::numclsegpin header=pclient factor=4ktoa<br />
+        PROVIDER_LIST_END<br />
+        <br />
+        WRITER_ARGS_BEGIN<br />
+        &nbsp;&nbsp;&nbsp;separator=fixed=10&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- Comments use shell-like syntax</span><br />
+        &nbsp;&nbsp;&nbsp;header_every=24&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- Display a header every 24 lines</span><br />
+        WRITER_ARGS_END
+      </p>
+    </div>
+
+    <p class="subjsect">A file monitor</p>
+
+    <p class="subjcont">This example introduces the <span class="texttt">alarm</span> module. With the different writer module comes different writer arguments. The quad in this provider list is from a provider that <span class="textit">requires</span> a provider argument. That argument is a filename that will be passed to the <span class="texttt">stat()</span> system call in the <span class="texttt">file.stat</span> provider. In this example we are interested in the size of the file, and more specifically if the size changed.</p>
+
+    <p class="subjcont">The <span class="texttt">$ARG1</span> string will be substituted with the first argument that appears on the command line after the config file. If the config file is called directly (note the use of &quot;interpreter magic&quot; on the first line) then the first argument after the config file name will replace this string. For example this might be called as &quot;<span class="texttt">filemon.cpub /etc/hosts</span>&quot; to look for changes in the size of the <span class="texttt">hosts</span> file.</p>
+
+    <p class="subjcont">It is worth mentioning that this example could easily be converted to log to <span class="texttt">act.log</span> by simply changing the <span class="texttt">alarm_to</span> option from &quot;<span class="texttt">stdout</span>&quot; to &quot;<span class="texttt">actlog</span>&quot;. Changing the <span class="texttt">run_method</span> option to &quot;<span class="texttt">daemon</span>&quot; would have CPUB run in the background while watching for the alarm conditions.</p>
+
+    <div class="codeblock">
+      <p>
+        #!/usr/local/bin/cpub<br />
+        <br />
+        run_every = 1000<br />
+        run_for = 0<br />
+        send_to = alarm&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- Using the alarm writer module</span><br />
+        run_method = interactive&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- Synonym for foreground</span><br />
+        <br />
+        PROVIDER_LIST_BEGIN<br />
+        &nbsp;&nbsp;&nbsp;file.stat:$ARG1:size:diff alarm_at != 0<br />
+        PROVIDER_LIST_END<br />
+        <br />
+        WRITER_ARGS_BEGIN<br />
+        &nbsp;&nbsp;&nbsp;alarm_to=stdout&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- Send alarms to stdout</span><br />
+        &nbsp;&nbsp;&nbsp;include_timestamp=true&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- Timestamp the alarms</span><br />
+        WRITER_ARGS_END
+      </p>
+    </div>
+
+
+    <p class="subjsect">Long running collector</p>
+
+    <p class="subjcont">This is a long running daemon process that will save data to a file that we can later import into something like Excel. For this reason we have disabled header printing in the writer and used a colon (instead of whitespace) to separate the data items. (The timestamp chosen does not include colons in the representation.) Because the writer uses a standard file, another process is used to periodically roll that file. To do this, the option to do &quot;atomic writes&quot; was enabled so that the file descriptor (and position) is renewed on each write.</p>
+
+    <div class="codeblock">
+      <p>
+        #!/usr/local/bin/cpub<br />
+        <br />
+        run_every = 1000<br />
+        run_for = 0<br />
+        send_to = file&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- Use the &quot;file&quot; writer</span><br />
+        run_method = daemon&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- Run in the background</span><br />
+        <br />
+        PROVIDER_LIST_BEGIN<br />
+        &nbsp;&nbsp;&nbsp;core::nctime&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- ISO 8601 formatted timestamp (without colons)</span><br />
+        &nbsp;&nbsp;&nbsp;vminfo::numwseguse<br />
+        &nbsp;&nbsp;&nbsp;vminfo::numpseguse<br />
+        &nbsp;&nbsp;&nbsp;vminfo::numclseguse<br />
+        &nbsp;&nbsp;&nbsp;vminfo::numwsegpin<br />
+        &nbsp;&nbsp;&nbsp;vminfo::numpsegpin<br />
+        &nbsp;&nbsp;&nbsp;vminfo::numclsegpin<br />
+        PROVIDER_LIST_END<br />
+        <br />
+        WRITER_ARGS_BEGIN<br />
+        &nbsp;&nbsp;&nbsp;separator=colon&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- For import into into Excel</span><br />
+        &nbsp;&nbsp;&nbsp;header_every=0<br />
+        &nbsp;&nbsp;&nbsp;atomic_write=true&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- close() after each write() </span><br />
+        &nbsp;&nbsp;&nbsp;filename=/bb/pm/memwatch.out<br />
+        WRITER_ARGS_END
+      </p>
+    </div>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Command line options</p>
+    <p class="subhead">Calling <span class="texttt">cpub</span> with options</p>
+
+    <p class="subjcont">The design of CPUB is that the primary means of input is via the config file. This means that there is an <span class="textit">intentional de-emphasis</span> on the use of command line options. There are some command line options - primarily for information retrieval about the framework itself.</p>
+
+    <table class="listtable">
+      <tr>
+        <td class="listtd texttt">-a</td>
+        <td class="listtd">Show about information and exit</td>
+      </tr>
+      <tr>
+        <td class="listtd texttt">-h</td>
+        <td class="listtd">Show help information and exit</td>
+      </tr>
+      <tr>
+        <td class="listtd texttt">-D</td>
+        <td class="listtd">Run Dangerously (used to override usage warnings)</td>
+      </tr>
+      <tr>
+        <td class="listtd texttt">-p</td>
+        <td class="listtd">List all data providers and exit</td>
+      </tr>
+      <tr>
+        <td class="listtd texttt">-l</td>
+        <td class="listtd">List all data items (from all providers) and exit</td>
+      </tr>
+      <tr>
+        <td class="listtd texttt">-d P</td>
+        <td class="listtd">List all data items (for provider P) and exit</td>
+      </tr>
+      <tr>
+        <td class="listtd texttt">-t</td>
+        <td class="listtd">Display data types in -l and -d option output</td>
+      </tr>
+      <tr>
+        <td class="listtd texttt">-v</td>
+        <td class="listtd">Print some informational stats on load (turn on some verbosity)</td>
+      </tr>
+    </table>
+
+    <p class="subjcont">Arguments <span class="textit">after</span> the config file are treated differently. These arguments are passed to the &quot;substitution engine&quot; and are used (in order) to replace the <span class="texttt">$ARG<span class="textit">x</span></span> arguments in the config file.</p>
+
+
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Writer Reference</p>
+    <p class="subhead">Understanding what the output options are</p>
+
+    <p class="subjcont">Writer options are passed in the &quot;WRITER_ARGS_BEGIN/END&quot; block. The supported arguments are:</p>
+
+    <table class="thintable">
+      <tr>
+        <td class="thintd">Writer</td>
+        <td class="thintd">Argument</td>
+        <td class="thintd">Required</td>
+        <td class="thintd">Default</td>
+        <td class="thintd">Description</td>
+      </tr>
+
+      <tr>
+        <td class="thintd texttt" colspan="5">stdout</td>
+      </tr>
+      <tr>
+        <td class="thintd"></td>
+        <td class="thintd texttt">separator</td>
+        <td class="thintd">No</td>
+        <td class="thintd">colon</td>
+        <td class="thintd">Determines the separator between data items in output. Potential values are <span class="texttt">colon</span>, <span class="texttt">tab</span>, and <span class="texttt">fixed<span class="textit">XXX</span></span> where XXX is the number of spaces allocated for each item.</td>
+      </tr>
+      <tr>
+        <td class="thintd"></td>
+        <td class="thintd texttt">header_every</td>
+        <td class="thintd">No</td>
+        <td class="thintd">0</td>
+        <td class="thintd">Print a data header every X lines of data.</td>
+      </tr>
+
+      <tr>
+        <td class="thintd texttt" colspan="5">file</td>
+      </tr>
+      <tr>
+        <td class="thintd"></td>
+        <td class="thintd texttt">separator</td>
+        <td class="thintd">No</td>
+        <td class="thintd">colon</td>
+        <td class="thintd">Determines the separator between data items in output. Potential values are <span class="texttt">colon</span>, <span class="texttt">tab</span>, and <span class="texttt">fixed<span class="textit">XXX</span></span> where XXX is the number of spaces allocated for each item.</td>
+      </tr>
+      <tr>
+        <td class="thintd"></td>
+        <td class="thintd texttt">header_every</td>
+        <td class="thintd">No</td>
+        <td class="thintd">0</td>
+        <td class="thintd">Print a data header every X lines of data.</td>
+      </tr>
+      <tr>
+        <td class="thintd"></td>
+        <td class="thintd texttt">atomic_write</td>
+        <td class="thintd">No</td>
+        <td class="thintd">false</td>
+        <td class="thintd">Performs an open(), write(), and close() on each and every write. Used to allow for output file rolling.</td>
+      </tr>
+      <tr>
+        <td class="thintd"></td>
+        <td class="thintd texttt">filename</td>
+        <td class="thintd">Yes</td>
+        <td class="thintd">-</td>
+        <td class="thintd">The name of the file to write to.</td>
+      </tr>
+
+      <tr>
+        <td class="thintd texttt" colspan="5">alarm</td>
+      </tr>
+      <tr>
+        <td class="thintd"></td>
+        <td class="thintd texttt">alarm_to</td>
+        <td class="thintd">Yes</td>
+        <td class="thintd">-</td>
+        <td class="thintd">Pick the destination for the alarm message from <span class="texttt">stdout</span>, <span class="texttt">actlog</span>, or <span class="texttt">file</span>.</td>
+      </tr>
+      <tr>
+        <td class="thintd"></td>
+        <td class="thintd texttt">actlog_tag</td>
+        <td class="thintd">No</td>
+        <td class="thintd">Inherited</td>
+        <td class="thintd">This is the FIFO / application name to use.</td>
+      </tr>
+      <tr>
+        <td class="thintd"></td>
+        <td class="thintd texttt">survive_turn</td>
+        <td class="thintd">No</td>
+        <td class="thintd">true</td>
+        <td class="thintd">Failure to write to <span class="texttt">act.log</span> is an error if <span class="texttt">false</span>, and non-error if <span class="texttt">true</span>.</td>
+      </tr>
+      <tr>
+        <td class="thintd"></td>
+        <td class="thintd texttt">include_timestamp</td>
+        <td class="thintd">No</td>
+        <td class="thintd">true</td>
+        <td class="thintd">Option to include timestamp on non-auto-timestamped output (file &amp; stdout).</td>
+      </tr>
+      <tr>
+        <td class="thintd"></td>
+        <td class="thintd texttt">filename</td>
+        <td class="thintd">Yes/No</td>
+        <td class="thintd">-</td>
+        <td class="thintd">Required option if the <span class="texttt">alarm_to=file</span> option is set.</td>
+      </tr>
+    </table>
+
+    <p class="subjcont">Writers also support / require arguments to individual data items (that follow the quad definition). They are as follows:</p>
+
+    <table class="thintable">
+      <tr>
+        <td class="thintd">Quad Argument</td>
+        <td class="thintd texttt">stdout</td>
+        <td class="thintd texttt">file</td>
+        <td class="thintd texttt">alarm</td>
+        <td class="thintd">Description</td>
+      </tr>
+
+      <tr>
+        <td class="thintd texttt">header</td>
+        <td class="thintd">optional</td>
+        <td class="thintd">optional</td>
+        <td class="thintd">optional</td>
+        <td class="thintd">This is an alternate name for the data item. It will be used in header displays or alarm messages.</td>
+      </tr>
+
+      <tr>
+        <td class="thintd texttt">alarm_at</td>
+        <td class="thintd">N/A</td>
+        <td class="thintd">N/A</td>
+        <td class="thintd">required</td>
+        <td class="thintd">This is an equality (<span class="texttt">==</span>, <span class="texttt">!=</span>, <span class="texttt">&lt;</span>, <span class="texttt">&gt;</span>, <span class="texttt">&gt;=</span>, &amp; <span class="texttt">&lt;=</span>) clause for alarm conditions. Alarms can ONLY be set on integer data types.</td>
+      </tr>
+
+      <tr>
+        <td class="thintd"><span class="texttt">factor</span></td>
+        <td class="thintd">optional</td>
+        <td class="thintd">optional</td>
+        <td class="thintd">N/A</td>
+        <td class="thintd">Convert the data to a more &quot;human readable&quot; value for display. Possible arguments are: <span class="texttt">4ktoa</span>, <span class="texttt">8ktoa</span>, <span class="texttt">64ktoa</span> (pages to auto), <span class="texttt">btoa</span> (bytes to auto), <span class="texttt">ktoa</span> (KB to auto), <span class="texttt">dtoa</span> (decimal to auto<span class="reference">*</span>), &amp; <span class="texttt">dtoh</span> (decimal to hex).</td>
+      </tr>
+    </table>
+
+    <p class="footnote">[* &quot;Auto&quot; here means to factor to the largest value less than 10000. That may be in Bytes, KBytes, MBytes, or larger. Each factoring will use the same algorithm, and may consequently arrive at different factored units. For &quot;decimal&quot; data (such as syscalls a second) is factored in a similar manner, but expressed in scientific &quot;E&quot; notation. In both cases, the intent of the algorithm is to maintain enough significant digits to comprehend the data. Also, in both cases, there is not an option to always factor to the same unit or (base-10) exponential value ]</p>
+  
+    <!-- ================================================================== -->
+    <p class="subjhead">Core Provider Reference</p>
+    <p class="subhead">A reference for the core provider (only)</p>
+
+    <p class="subjcont">Documentation for individual providers is not included at this time. The interested reader should reference the source API / file of the provider or provider-specific documentation (if it exists). The expectation is that it is just too difficult to require that each provider writer research and document each data item. This is <span class="textit">very</span> difficult work that would likely introduce more errors than value.</p>
+
+
+    <table class="listtable">
+      <tr>
+        <td class="listtd texttt">icounter</td>
+        <td class="listtd">[integer]<span class="reference">*</span></td>
+        <td class="listtd">A simple counter of the iterations, starting at 0.</td>
+      </tr>
+      <tr>
+        <td class="listtd texttt">ctime</td>
+        <td class="listtd">[string]</td>
+        <td class="listtd">The output from <span class="texttt">ctime()</span>, minus the line feed. (Uses TZ)</td>
+      </tr>
+      <tr>
+        <td class="listtd texttt">utime</td>
+        <td class="listtd">[integer]</td>
+        <td class="listtd">The output from <span class="texttt">time()</span> as a raw number.</td>
+      </tr>
+      <tr>
+        <td class="listtd texttt">echoarg</td>
+        <td class="listtd">[string]</td>
+        <td class="listtd">Simply repeats whatever the data item argument was (as a string).</td>
+      </tr>
+      <tr>
+        <td class="listtd texttt">nctime</td>
+        <td class="listtd">[string]</td>
+        <td class="listtd">Time output in ISO 8601 standard format (without colons)(Uses TZ)</td>
+      </tr>
+      <tr>
+        <td class="listtd texttt">timespec</td>
+        <td class="listtd">[string]</td>
+        <td class="listtd">seconds.microseconds from the <span class="texttt">clock_gettime()</span> function.</td>
+      </tr>
+      <tr>
+        <td class="listtd texttt">timeval</td>
+        <td class="listtd">[string]</td>
+        <td class="listtd">seconds.hires from the <span class="texttt">gettimeofday()</span> function. The hires value is implementation specific for each platform.</td>
+      </tr>
+      <tr>
+        <td class="listtd texttt">24hhmmss</td>
+        <td class="listtd">[string]</td>
+        <td class="listtd">Hours, mins, secs (hhmmss) using a 24 hour clock (Uses TZ)</td>
+      </tr>
+    </table>
+
+    <p class="footnote">[* The data types are included here for reference only. None of the data items in the <span class="texttt">core</span> provider support data item arguments. (This, and alarming, is the primary reason for interest in the data types.) Technically, <span class="texttt">timespec</span> and <span class="texttt">timeval</span> are handled in native data types (of the same name) - but are considered strings in this context (because they cannot be munged or alarmed). ]</p>
+
+
+    <!-- ================================================================== -->
+    <p class="subjhead">Bugs</p>
+    <p class="subhead">Shortcomings &amp; the fix list</p>
+
+    <p class="subjsect">&bull; The thread locking mechanism introduces skew.</p>
+
+    <p class="subjcont">While not as bad as the non-threaded implementation, this is still a problem to be addressed in future versions.</p>
+
+    <p class="subjsect">&bull; A Ctrl-C requires a wait of the remainder of the iteration to terminate.</p>
+
+    <p class="subjcont">This is pending fixes / changes to the thread model.</p>
+
+    <p class="subjsect">&bull; The fact(xtox) syntax does not follow &quot;proper&quot; writer conventions.</p>
+
+    <p class="subjcont">This is a fairly easy fix that will come soon. The documentation here references the new (proposed) method, while at least one example in this document uses the old.</p>
+
+    <!-- ================================================================== -->
+    <p class="subjhead">FAQ</p>
+    <p class="subhead">Items that don't quite fit elsewhere</p>
+
+    <p class="subjsect">Why use a config file?</p>
+
+    <p class="subjcont">The config file has two major implications in usage. First is that it makes results repeatable in that it reduces errors in input and saves the run state for later runs elsewhere. Second, it shifts the focus from the <span class="texttt">cpub</span> binary to the &quot;script&quot; (config) file - where it belongs. Finally, it is just too complex to specify this amount of configuration / run instructions in anything but a file-based input method.</p>
+
+    <p class="subjsect">Why was CPUB written using threads? Now, if I want to write a provider I need to know how to write threaded code.</p>
+
+    <p class="subjcont">The fear is that the collect, write, wait loop will ultimately lead to un-intentional drift in collection times. By breaking the timer off into a thread insures that it is not held up by the collection times. Also, the collections happen at nearly the same times and are not skewed sequentially. The provider and writer modules are called from the thread implementation. They are not responsible for thread synchronization or thread implementation details.</p>
+
+    <p class="subjsect">What does CPUB do when a provider hangs?</p>
+
+    <p class="subjcont">All short-running providers will collect data at the start interval, and presentation (writing to output) will wait for the lagging (slow/hung) provider. This condition is bad enough, it would be inappropriate to allow writing to continue with no data from one of the providers. There is currently no option, nor plan for the ability to change this behavior.</p>
+
+    <p class="subjsect">I want data that you do not supply. This tool does not work for me.</p>
+
+    <p class="subjcont">The secondary intent of CPUB is to make the extension of the framework <span class="textit">exceptionally</span> easy. See the Writing a Provider document for information on how to write a new provider for the framework. Writing a provider can be as simple as copying one of the reference providers and adapting the code to serve up new / different data.</p>
+
+    <p class="subjsect">Fine, but I don't code in C.</p>
+
+    <p class="subjcont">Open a ticket to G325, we will see what we can do to get the data you need.</p>
+
+    <p class="subjsect">Will CPUB let me do dangerous things?</p>
+
+    <p class="subjcont">Potentially, yes. That is why it has a -D(anger) mode. CPUB will attempt to determine when you are about to do something <span class="textit">burdensome</span> on the system and will warn you before finally letting you do it (having re-run the tool in danger mode).</p>
+
+    <p class="subjsect">Are providers gauged for computational <span class="textit">weight</span>?</p>
+
+    <p class="subjcont">No, all providers are considered equal and one provider is not considered more computationally expensive than another. As some providers are created that <span class="textit">are</span> computationally expensive, then some considerations may need to be coded into the framework.</p>
+
+    <p class="subjsect">Is there a method to specify what platform a script can run on?</p>
+
+    <p class="subjcont">No, not explicitly. There is not an &quot;allowed_platforms&quot; global specifier. But, any specification of a provider (or provider item) not available on a platform will cause the invocation to fail. So, If you write a provider for Solaris, either it will work properly on AIX &amp; Linux or it will not run at all.</p>
+
+    <p class="subjsect">Why is this called CPUB?</p>
+
+    <p class="subjcont">CPUB is a (poor) play on CPUA. The idea is that CPUB is the next iteration of statistics gathering on a system. This is kind of unfortunate in that CPUB is <span class="textit">not</span> an in-terminal function, but is the name of a framework that runs through the <span class="texttt">cpub</span> binary. So the name is possibly a bit misleading, but the aim is to meet some of the perceived deficiencies in CPUA.</p>
+
+    <p class="subjsect">What is the point of <span class="texttt">core::echoarg</span>?</p>
+
+    <p class="subjcont">This is a data item that echoes the item argument in the quad. The purpose is to differentiate <span class="textit">sections</span> of columns of data. The alternative is to push this capability into the header - and this may make the header unusually long. Ultimately, the point is to insert additional flexibility into the framework with minimal coding effort.</p>
+
+    <p class="subjsect">Is CPUB event driven?</p>
+
+    <p class="subjcont">No, this is the realm of DTrace, ProbeVue, and SystemTap. CPUB takes much of its design inspiration from these tools, but does not have the same sort of event driven data collection, nor does it have an option to perform &quot;lightweight operations&quot; on the data. This said, CPUB can be used to <span class="textit">generate</span> events through the alarm writer module.</p>
+
+    <p class="subjsect">Why doesn't CPUB drop a PID file when it backgrounds?</p>
+
+    <p class="subjcont">Because it is expected that multiple <span class="texttt">cpub</span> instances may be running at one time. This would result in conflicting PID files, or the requirement for explicit naming for the PID file. The implication of a PID file is that another instance of the process can terminate that daemon - and that would be the <span class="textit">real</span> problem. How would the &quot;kill&quot; instance know <span class="textit">which</span> invocation to signal for termination? This level of complexity exceeded where I wanted to go with the tool. - So find your instance with <span class="texttt">ps</span> and <span class="texttt">kill</span> with the default signal.</p>
+
+    <p class="subjsect">Does CPUB do &quot;heat&quot; representations like <span class="texttt">vcpu</span> or <span class="texttt">vdisk</span>?</p>
+
+    <p class="subjcont">No. CPUB is not intended to be data-aware like those tools. Both of those examples both take the time to determine the layout of the items they are looking at. (For example; <span class="texttt">vcpu</span> derives the core-to-socket layout of the system so it can properly display data.) CPUB does not have that level of awareness of what the data means, nor is it intended to. CPUB is not a replacement for data-aware tools. CPUB <span class="textit">could</span> be modified to represent heat-maps of data, but the feeling is that this is either a job for a more <span class="textit">dedicated</span> tool or a job for post-processing. <span class="textit">If</span> CPUB were to do this, it would likely be implemented as a writer argument to a quad (but there are no plans to code that feature at this at this time).</p>
+
+    <p class="subjsect">What is munged data?</p>
+
+    <p class="subjcont">Munge (mung) has CS foundations (see: <a href="http://en.wikipedia.org/wiki/Mung_(computer_term)">http://en.wikipedia.org/wiki/Mung_(computer_term)</a>), but here refers specifically to data item args that are performed by the provider. These include the &quot;<span class="texttt">diff</span>&quot; and &quot;<span class="texttt">psavg</span>&quot; arguments. Both of these fundamentally change the data results, but describe effectively the same thing.</p>
+
+    <p class="subjsect">It looks like I could munge data that should not be munged. Why don't you protect me from myself?</p>
+
+    <p class="subjcont">This is very correct - CPUB is not data aware enough to know what should or should not be averaged or diffed. This is up to the user (the config file developer) to research and properly apply. CPUB is simply unable to be data aware of each data item. And if it had this capability, it would likely introduce errors into the usage - as many data source's documentation is not very good.</p>
+
+   <p class="subjsect">Who is Blanche K. Bruce?</p>
+
+    <p class="subjcont">Blanche K. Bruce was a leading figure in post U.S. Civil War reconstruction. Bruce was born into slavery in Virginia and rose to be a U.S. Senator and Register of the Treasury in the Garfield &amp; McKinley administrations. His ascent to power represented the high tide of progressive post-war reconstruction efforts. A post-war focus on western &quot;Indian affairs&quot; pulled much-needed military resources out of the southern states away from protection of his republican base. Bruce and his republican peers in the south were able to effect change but were ultimately forced to watch as the organized efforts of groups like the red shirts first eroded the voter base, and then rolled-back the progress Bruce and his peers had fought so hard for.</p>
+
+
+
+
+
+
+    <!--
+    <p class="subjsect"></p>
+
+    <p class="subjcont"></p>
+    -->
+
+
+
+
+  </body>
+</html>
+
+
+<!-- Non breaking hyphen : &#8209; -->

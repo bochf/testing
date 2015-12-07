@@ -1,0 +1,491 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+   "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<!---
+    MicroBench.html - A proposal for writing a microbench suite
+
+    Authors:
+       Johann G. Krause <armed_malagasy@meermin.voc.nl>
+       William Favorite <wfavorite2@bloomberg.net>
+-->
+
+
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <style type="text/css">
+      /* Soften the background colour and move to a nice serifed fornt */
+      body
+      {
+      font-size: 12px;
+      background-color: #FAFAFA;
+      font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+      }
+
+      /* This is a title line. Very bold, very large, used once. */
+      .arttitle
+      {
+      font-size: 28px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      /* Subtitle, used to provide a second, smaller block of text */
+      .artstitle
+      {
+      font-size: 12px;
+      text-align:center;
+      font-weight:bold;
+      }
+      
+      /* Used for the version string */
+      .artsstitle
+      {
+      font-size: 10px;
+      text-align:center;
+      }
+
+      /* def is used for definitions - where the indent is reversed */
+      .defblock
+      {
+      padding-left: 50px;
+      padding-right: 30px;
+      text-indent: -20px;
+      text-align:justify;
+      }
+
+      .subdef
+      {
+      padding-left: 80px;
+      padding-right: 40px;
+      text-indent: -20px;
+      text-align:justify;
+      }
+
+      /* Used as a markup tag - easily identifyable when proofing */
+      .debug
+      {
+      color: red;
+      }
+
+      /* Weighted, colored, and monospace - texttt is an alternate option */
+      .oscmd
+      {
+      font-family: Monaco, monospace;
+      font-weight:bold;
+      color: #333300;
+      }
+      
+      /* Designed to look like the terminal - background is lost when printing */
+      .bbtermcmd
+      {
+      font-family: Monaco, monospace;
+      font-weight:bold;
+      color: orange;
+      background-color: black;
+      padding:0px 2px 0px 2px;
+      }
+      
+      .subjhead
+      {
+      font-size: 12px;
+      margin-left: 20px;
+      font-weight:bold;
+      }
+
+      .subjsect
+      {
+      margin-left: 50px;
+      font-weight:bold;
+      }
+
+      .subjcont
+      {
+      margin-left: 50px;
+      margin-right: 20px;
+      }
+      
+      .footnote
+      {
+      font-size: 10px;
+      margin-left: 70px;
+      margin-right: 70px;
+      text-align:justify;
+      }
+      
+      .reference
+      {
+      font-size: 8px;
+      position:relative;
+      top:-5px;
+      }
+
+      .exponent
+      {
+      font-size: 8px;
+      position:relative;
+      top:-5px;
+      }
+
+      .thintable
+      {
+      margin-left: 55px;
+      margin-right: 40px;
+      border-collapse: collapse;
+      }
+
+      .thintd
+      {
+      padding: 5px;
+      border: 1px solid black;
+      }
+
+      /* List table is like a thin table without borders */
+      .listtable
+      {
+      margin-left: 55px;
+      margin-right: 40px;
+      border-collapse: collapse;
+      }
+
+      .listtd
+      {
+      padding: 4px;
+      vertical-align:text-top;
+      }
+
+      /* Green on black box to put monospace code */
+      .codeblock
+      {
+      padding-top: 2px;
+      padding-bottom: 2px;
+      padding-right: 16px;
+      padding-left: 16px;
+      font-family: "Courier New", "Lucida Console", Monospace;
+      font-size: 9pt;
+      margin-left: 56px;
+      /* margin-right: 15px; */
+      width: 50em;
+      color: #00cc00;
+      background-color: black;
+      border-style: solid;
+      border-color: #777777;
+      border-width: 2px;
+      font-weight: bold;
+      }
+
+      .codenote { color: #aaaadd; }
+
+      /* This sits under a code block (or similar box) with the name of the
+         file or text such as "Figure 1."  */
+      .boxnote
+      {
+      margin-top: 0; /* Pull it in tight with the box above */
+      font-size: 10px;
+      margin-left: 70px;
+      margin-right: 70px;
+      text-align:justify;
+      }
+
+
+      .textit { font-style:italic; }
+      .texttt { font-family: Monaco, monospace; }
+      .textbf { font-weight:bold; }
+      .underline { text-decoration: underline; }
+
+
+      a:link { text-decoration: underline; color: #0000FF }
+      a:visited { text-decoration: underline; color: #0000FF }
+      /* Active is more like "visited" than immediate feedback. */
+      a:active { text-decoration: underline; color: #0000FF }
+      a:hover { text-decoration: underline; color: #0000FF }
+    </style>
+
+    <title>MicroBench</title>
+  </head>
+  <body>
+
+    <p class="arttitle">MicroBench</p>
+    <p class="artstitle">Light Documentation For The MicroBenchmark Suite Framework</p>
+
+    <p class="artsstitle">Version: 0.4.1</p>
+
+    <hr width="65%" />
+
+ 	<!-- ================================================================= -->
+   <p class="subjhead">Introduction &amp; Purpose</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">The Problem</p>
+
+    <p class="subjcont">Frequently we are required to understand a performance failure in a system based on a very transient situation, and then relate that failure to a vendor so they can address the shortcoming. We face similar situations when trying to understand what that problem looks like through our tools, or why our tools do not capture what we are looking for with sufficient clarity.</p>
+
+    <p class="subjcont">We seek a means to quickly develop load generation tools that can capture the performance characteristic of the problem and then use later to benchmark, to communicate the nature of the issue, or determine if the problem still exists after remediation efforts.</p>
+	
+	<!-- ======================== -->
+	<p class="subjsect">The Proposed Solution</p>
+
+    <p class="subjcont">The MicroBench framework is a lightweight <span class="textit">framework</span> for launching simulated load against a system. The primary purposes of this framework are to simulate system stress, assist in tool development, develop test cases, to provide learning opportunities, and to promote reuse through a consistent interface.</p>
+
+    <p class="subjcont">A well-designed framework allows for rapid module creation, without forcing the developer to code to an overly complex set of requirements and APIs. This proposed framework (library of functionality) is designed with this goal in mind.</p>
+	
+    <p class="subjcont">A minimalist framework allows us to quickly code up exportable test cases that can be sent outside the company without the risk of exposing IP. The build of a module can be reduced to just a few source files - or even a library to link against. This limits the exposed source to just the problem at hand and potentially the framework code (if source is passed instead of a pre-built library).</p>
+	
+	<!-- ======================== -->
+	<p class="subjsect">Build vs. Buy</p>
+
+    <p class="subjcont">The value of &quot;buy&quot; appeals to saving group resources from the costs of development efforts. The upside of buy is that there may be minimal acquisition costs, and those may be simply a matter of getting an open source package through BOSS. The view here is that while there may be development costs, that development effort rewards the developer with insight into the system that cannot simply be gained through simply <span class="textit">running</span> a pre-packaged tool.</p>
+
+    <p class="subjcont">Modules are designed to mimic characteristics of Bloomberg production code. This may mean writing <span class="textit">poor</span> code and then devising means to improve the algorithms and APIs used, tuning our tool skills to detect when code is not running optimally, and finally to find optimal OS tuning or fixes to remediate the problem.</p>	
+	
+	<!-- ================================================================= -->
+	<p class="subjhead">Theory of Design</p>
+
+    <p class="subjcont">Design of the framework is limited to two sets of APIs. Instead of providing a massive feature set to cover every situation, the intent is to simplify the coding of a module, and then outsource the majority of the framework to pre-existing Unix tools that can be used to orchestrate module runs. For example; individual modules are launched with a minimalist &quot;config script&quot;, while a series of module launches are orchestrated via a shell script that starts each of the modules.</p>
+	
+	<!--
+    <p class="subjcont">The purpose of the API library is to simplify coding for the module writer without also encumbering him with a bunch of <span class="textit">requirements</span> to code to. Option parsing and output verbosity are the two areas of the framework API.</p>
+	-->
+	
+	<p class="subjcont">Instead of writing a beefy framework to control module startup, the design allows each module config to be called from a shell script much like a program. The shell provides for capabilities such as module grouping, conditional runs, staggered starts of modules, and potentially multiple module instantiations.</p>
+
+	<!-- ================================================================= -->
+	<p class="subjhead">Module &quot;Config Scripts&quot;</p>
+
+	<p class="subjcont">Module configs are designed to be fed to the file as a file name parameter or read via stdin. They rely on two reserved words: &quot;<span class="texttt">set</span>&quot; and &quot; <span class="texttt">go</span>&quot;. <span class="texttt">set</span> is used to establish a key-value pair that the module will use for a configurable parameter. <span class="texttt">go</span> tells the parser to cease parsing, and begin execution of the module. The end of the config script is an implicit  <span class="texttt">go</span>.</p>
+	
+	<p class="subjcont"><span class="texttt">go</span> is the implicit terminating condition. If the <span class="texttt">eval</span> keyword is used instead, then the library will exit after parsing all input with a message indicating success or not in parsing required paramaters. So, by replacing <span class="texttt">go</span> with <span class="texttt">eval</span>, you can cause the params to be <span class="textit">tested</span> but the module will not actually run.</p>
+
+	<p class="subjcont">The primary method<span class="reference">1</span> of passing data is the key value pair. This can capture boolean (flag), integer (numeric), and string data. While this simplifies option parsing, the greater benefit is collecting the large number of module options into a file that can then be used to define a specific load characteristic. These can be joined (via scripting) to simulate even more complex <span class="textit">personalities</span> that approximate entire application loads.</p>
+
+	<p class="footnote">[1. The potential alternative is to pass a filename in a key value pair that would feed in more complex data such as a large data set that the module would utilize to generate a specific load. ]</p>
+
+	<div class="codeblock">
+      <p>#!./sampmod <span class="codenote">&lt;-- Interpreter magic</span><br />
+<br />
+# Set the verbosity to a default value <span class="codenote">&lt;-- Comment</span><br />
+set verbosity = true<br />
+<br />
+Run for 100 iterations  <span class="codenote">&lt;-- A &quot;sloppy&quot; comment</span><br />
+set RUN_CYCLES = 100<br />
+<br />
+set run_pattern = "abcedfghijklmnopqrstuvwxyz"<br />
+<br />
+set run_threads=16<br />
+<br />
+set fork_for_threads = 0 <span class="codenote">&lt;-- Flexible boolean parsing reduces input errors</span><br />
+set fork_for_threads = off<br />
+set fork_for_threads = yes<br />
+set fork_for_threads = true <span class="codenote">&lt;-- Last value entered is used</span><br />
+<br />
+go <span class="codenote">&lt;-- No set options will be parsed after the go</span><br />
+<br />
+set run_threads=8<br />
+&nbsp;&nbsp;&nbsp;<span class="codenote">&lt;-- Moving go here would change the value for run_threads</span><br />
+set run_threads=32 <span class="codenote">&lt;-- removing go makes run_threads = 32</span></p>
+    </div>
+    <p class="boxnote">A sample config script for a module called &quot;sampmod&quot;</p>	
+	
+	<p class="subjcont">A few notes on the above config script:</p>
+
+	<table class="listtable">
+      <tr>
+        <td class="listtd">Magic</td>
+        <td class="listtd">The config script can be set executable and be used to start the module. This allows a <span class="textit">personality</span> to be assigned via a series of settings and then labeled with a script name. For example, this script might be called &quot;<span class="texttt">run_mild</span> because of the middle of the road value for <span class="texttt">run_threads</span>.</td>
+     </tr>
+      <tr>
+        <td class="listtd">Comments</td>
+        <td class="listtd">Anything not file / interpreter magic, <span class="texttt">set</span>, or <span class="texttt">go</span> directives is considered a comment and ignored. In the above example, the first comment begins with a hash. This is because the first word is &quot;Set&quot; which would be interpreted as a directive if not preceded by another character. Ideally, hashes should begin comments so that it is clear to the reader what is happening.</td>
+      </tr>
+      <tr>
+        <td class="listtd"><span class="texttt">set</span></td>
+        <td class="listtd">When a <span class="texttt">set</span> directive begins a line then the parser will expect a key value pair to follow the directive. Quotation marks are optional, but required when the input has leading spaces or unusual text characteristics.</td>
+      </tr>
+      <tr>
+        <td class="listtd"><span class="texttt">go</span></td>
+        <td class="listtd">Parsing of the file stops at the <span class="texttt">go</span> directive. This allows for multiple config scripts to exist in one file, and simply moving the <span class="texttt">go</span> directive will change the parsed <span class="texttt">set</span> values. Data is entered into the option parser on LIFO order, <span class="texttt">go</span> just determines what is last. The end of the file is an <span class="textit">implicit</span> <span class="texttt">go</span> directive. (See <span class="texttt">eval</span>.)</td>
+      </tr>
+      <tr>
+        <td class="listtd"><span class="texttt">eval</span></td>
+        <td class="listtd"><span class="texttt">eval</span> works like the <span class="texttt">go</span> directive except that it stops the module run after the option parsing. This is used to test input settings without kicking off a run of the module. This allows the user to test complex config script/files without starting the main portion of the module.</td>
+      </tr>
+     <tr>
+        <td class="listtd">Data types</td>
+        <td class="listtd">Data types and limits are enforced during parsing. If a paramater is of a specific type, or has limit boundaries to the value, then this should be documented either in the comments, a sample config file, or a module read-me.</td>
+      </tr>
+     <tr>
+        <td class="listtd"><span class="texttt">VERBOSITY</span></td>
+        <td class="listtd">This is a reserved key value label. It is parsed automatically by the framework and effects all the &quot;Message&quot; APIs that send output to the screen. Valid options are &quot;silent&quot;, &quot;normal&quot;, &quot;verbose&quot; (true), and &quot;debug&quot;.</td>
+      </tr>
+	  </table>
+	
+	<!-- ================================================================= -->
+	<p class="subjhead">Writing a Module</p>
+	
+	<!-- ======================== -->
+	<p class="subjsect">Planning</p>
+ 
+ 	<p class="subjcont">There is no hard definition of what a module <span class="textit">should</span> do. The thinking is that most work in this area is rather ad-hoc with compile time options modifying behaviour to suit a <span class="textit">current</span> need. A module that measures ops today, might be used for low-grade background noise tomorrow. The goal of the framework is to simplify some of the more mundane aspects of this normal process.</p>
+	
+ 	<p class="subjcont">When writing your module, you should consider three potential modes that it may run in: ops per period (timed full-bore run with statistics), max capacity (unbounded full-bore run), and background noise (a paced number of operations). While each of these may not be today's problem, they may be part of tomorrow's needs, so coding should allow for future extensions.</p>
+
+	<!-- ======================== -->
+	<p class="subjsect">Library API</p>
+
+	<p class="subjcont">This API is available through including the individual header files and then linking against the library (object) file. Additional information can be found in the function prototype definitions in the header files. There is a sample module (sampmod) in the framework that can serve as an example template to copy from. (Note: The sampmod module utilizes some aspects of the API that should not be required for most modules. See the comments in the code for specifics.)</p>
+	
+	<table class="listtable">
+	  <!-- ------------------------------------------------------------- -->
+      <tr>
+        <td class="listtd" colspan="3"><span class="texttt textbf">&lt;optparser.h&gt;</span></td>
+	  </tr>
+     <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd" colspan="2"><span class="texttt">struct optbase *ReadOptions(int argc, char *argv[]);</span></td>
+	  </tr>
+	  <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">This function is called immediately after starting to convert arguments from <span class="texttt">main()</span> into key value pairs that can be retrieved or used directly with functions like the &quot;Message&quot; API documented here. The alternative is to parse various command line options using <span class="texttt">getopts()</span> or some similar method. This replaces that by parsing all the key value pairs, then passing the resulting data structure to the <span class="texttt">GetOptionValue()</span> function to retrieve individual values.</td>
+     </tr>
+      <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd" colspan="2"><span class="texttt">void EvalOptions(struct optbase *ob);</span></td>
+	  </tr>
+	  <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">Call this after retrieving all value pairs (after you have called <span class="texttt">ReadOptions()</span> and all the calls to <span class="texttt">GetOptionValue()</span>). If the user specified &quot;<span class="textt">eval</span>&quot;, then this function will print an &quot;all ok&quot; message and exit. This function does <span class="textit">not</span> check input. The input is checked by the calls to <span class="texttt">GetOptionValue()</span>. Errors are handled in <span class="texttt">GetOptionValue()</span> by exiting with a specific error message. When this is called last, it is really about stopping execution of the module, because all error messages (and exits) have been passed when this is called.</td>
+     </tr>
+      <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd" colspan="2"><span class="texttt">int GetOptionValue(struct optbase *ob,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;char *pair_name,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int data_type,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void *data,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void *lower_bound,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void *upper_bound,<br />
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;void *default_value);</span></td>
+	  </tr>
+	  <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">This is a general purpose function to retrieve the value from one of the option-value pairs. It should be called without checking return values / handling exceptions because it will handle all exceptions on its own by printing an <span class="texttt">ErrorMessage()</span> and exiting. The data, upper/lower bounds, and default values are passed as void pointers. The function will determine appropriate types based on the <span class="texttt">data_type</span> parameter. (This is one of the <span class="texttt">#defines</span> that are in the header file beginning with <span class="texttt">GOV_</span>.)<br />
+		<br />
+		If the <span class="texttt">default_value</span> parameter is <span class="texttt">NULL</span> then the option-value pair will be a <span class="textit">required</span> option-value pair.<br />
+		<br />
+		Either (or both) of the bounds parameters may also be <span class="texttt">NULL</span>. When these are not set, then the range will default to whatever the data type will hold. In the case of strings (<span class="texttt">GOV_STRING</span> and <span class="texttt">GOV_UCSTRING</span>), the bounds are string lengths and are of type <span class="texttt">int</span>.</td>
+     </tr>
+	  
+	  <!-- ------------------------------------------------------------- -->
+      <tr>
+        <td class="listtd" colspan="3"><span class="texttt textbf">&lt;verbosity.h&gt;</span></td>
+	  </tr>
+	  <tr>
+		<td>&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd" colspan="2"><span class="texttt">int SetVerbosityLevel(int vlevel);</span></td>
+	  </tr>
+	  <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">This is used to get and set the verbosity level. The return value is always the previous verbosity level. So this function can be used with a &quot;query value&quot; for the verbosity that will not actually set a new value but will return the &quot;previous&quot;.<br /><br />While this function <span class="textit">is</span> exposed in the library, it is not one that the module developer should ever need to call. The <span class="texttt">VERBOSITY</span> keyword is reserved by the library framework and is therefore automatically parsed by the <span class="texttt">ReadOptions()</span> function. This in turn hooks into the &quot;Message&quot; APIs that print dependent on the parsed <span class="texttt">VERBOSITY</span> value.</td>
+     </tr>
+	  <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">
+			<table style="border-collapse: collapse">
+				<tr>
+					<td class="thintd">&nbsp;</td><td class="thintd texttt">VL_SILENCE</td><td class="thintd texttt">VL_NORMALV</td><td class="thintd texttt">VL_VERBOSE</td><td class="thintd texttt">VL_DBG_MSG</td><td class="thintd">stream</td>
+				</tr>
+				<tr>
+					<td class="thintd texttt">ErrorMessage()</td><td class="thintd">No-Op</td><td class="thintd">Prints</td><td class="thintd">Prints</td><td class="thintd">Prints</td><td class="thintd">stderr</td>
+				</tr>
+				<tr>
+					<td class="thintd texttt">VerboseMessage()</td><td class="thintd">No-Op</td><td class="thintd">No-Op</td><td class="thintd">Prints</td><td class="thintd">Prints</td><td class="thintd">stdout</td>
+				</tr>
+				<tr>
+					<td class="thintd texttt">DebugMessage()</td><td class="thintd">No-Op</td><td class="thintd">No-Op</td><td class="thintd">No-Op</td><td class="thintd">Prints</td><td class="thintd">stderr</td>
+				</tr>
+			</table>				
+		</td>
+     </tr>	 
+      <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+		<td class="listtd" colspan="2"><span class="texttt">int VerboseMessage(const char *format, ...);</span></td>
+	  </tr>
+	  <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">This works much like <span class="texttt">printf()</span> but only prints when the verbose level is set to &quot;verbose&quot;. Output is sent to <span class="texttt">stdout</span>. An explicit (and conditional) flush is provided with <span class="texttt">VerboseFlush()</span>.</td>
+     </tr>
+      <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd" colspan="2"><span class="texttt">int VerboseFlush(void);</span></td>
+	  </tr>
+	  <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">This provides a verbose conditional <span class="texttt">fflush()</span> for <span class="texttt">VerboseMessage()</span>.</td>
+     </tr>
+      <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd" colspan="2"><span class="texttt">int ErrorMessage(const char *format, ...);</span></td>
+	  </tr>
+	  <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">This is used to print error messages to <span class="texttt">stderr</span>. The messages passed through this API are typically about how the module failed to perform as expected or encountered an exception. Content here is generally prefixed with &quot;ERROR: &quot;. (This is not enforced by the API, but recommended for consistency.)</td>
+     </tr>
+      <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd" colspan="2"><span class="texttt">int DebugMessage(const char *format, ...);</span></td>
+	  </tr>
+	  <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">This only outputs at the <span class="textit">highest</span> verbosity level, and is designed for messages to the module developer.</td>
+     </tr>
+      <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd" colspan="2"><span class="texttt">int ReportStart(char *module_name, char *module_version, char *module_description);</span></td>
+	  </tr>
+	  <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">This is an optional API that provides an easy and consistent means to notify the user that the module has started along with module name, version, and a short description. This will be printed conditionally based on verbosity level. (Version information and the short description are optional.)</td>
+     </tr>
+	  <!-- ------------------------------------------------------------- -->
+      <tr>
+        <td class="listtd" colspan="3"><span class="texttt textbf">&lt;mbenvirons.h&gt;</span></td>
+	  </tr>
+      <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd" colspan="2"><span class="texttt">int ZombieRepellent(void);</span></td>
+	  </tr>
+	  <tr>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+		<td class="listtd">&nbsp;&nbsp;&nbsp;</td>
+        <td class="listtd">When you have a module that <span class="texttt">fork()</span>s children, and you don't want to <span class="texttt">wait()</span> for them, you can call this to stop all <span class="texttt">SIGCHLD</span> events. Specifically; your clildren will <span class="texttt">exit()</span> without the need to clean them up.</td>
+     </tr>
+ 	 </table>
+
+	<!-- ======================== -->
+	<p class="subjsect">Notes on Authoring Modules</p>
+	
+	<p class="subjcont">Key names and value data are both limited in size by the respective <span class="texttt">MAX_LABEL_SIZE</span> and <span class="texttt">MAX_VALUE_SIZE</span> defines. Data structures to hold string values should use these defines to stay in sync with changes to the library.</p>
+	
+	<p class="subjcont">The design of the framework allows for modules written in Perl, Python, Shell, or other languages - although the library is currently only available in C.</p>
+	
+	<p class="subjcont">Key labels are stored in all-caps. When requesting a value from the <span class="texttt">GetOptionValue()</span> functions, the key should be expressed in all-caps. Values are stored in the original case specified in the config script file. Of course case sensitive values only matter for string data.</p>
+	
+	<p class="subjcont">The design of the option parsing logic is such that the module developer does not need to handle input errors and exceptions. One only needs to call the functions and <span class="textit">assume</span> that they work. This is because they will print and error message and exit when encountering an exception. This means that the <span class="texttt">GetOptionValue()</span> calls will never return an invalid / error code - either it passes, or it exits.</p>
+	
+	<!-- ================================================================= -->
+	<p class="subjhead">Modules In The Framework</p>
+
+    <p class="subjcont">As of this writing there are a number of modules in the framework that were used for <span class="textit">recent</span> performance testing with the new Power 8 systems. The intent is to develop a <span class="textit">sufficient</span> parsing and verbosity library to handle most needs. Once we have achieved that we can begin to hang the naturally occurring flow of test cases and load tools on what has been built.</p>
+	
+    <p class="subjcont">Current efforts can be found in the git ephemeral repo under: <span class="texttt">perf/ephemeral/tools/microbench</span>.</p>
+</body>
+</html>

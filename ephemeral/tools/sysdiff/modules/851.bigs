@@ -1,0 +1,35 @@
+#!/bin/ksh93
+
+### PRINTF is exported
+alias dot="${PRINTF} \".\""
+
+### Determine the outfile destination
+outfile=${1}
+
+if [[ -z ${outfile} ]]
+then
+    exit 1
+fi
+
+### This reads in whatever paramaters may have been passed on command line
+shift
+while [[ -n ${1} ]]
+do
+    eval ${1}
+    shift
+done
+
+dot
+
+typeset -i l_cnt=0
+
+ps -eo comm | grep big.tsk | sort | uniq -c | while read line 
+do
+    printf "big_cnt[%02d]  : %s\n" ${l_cnt} "${line}" >> ${outfile}
+    (( l_cnt++ ))
+done
+
+dot
+
+total_bigs=$(ps -eo comm | grep big.tsk | wc -l)
+printf "Total big cnt: %s\n" ${total_bigs} >> ${outfile}

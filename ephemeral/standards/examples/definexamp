@@ -1,0 +1,19 @@
+#!/bin/ksh
+
+typeset -r ACT_LONGLS=1
+typeset -r ACT_REG_LS=2
+typeset -r ACT_ALL_LS=3
+
+function do_ls
+{
+   typeset -i my_action=${1}
+
+   case ${my_action} in
+        ${ACT_LONGLS}) ls -l ;;
+        ${ACT_REG_LS}) ls ;;
+        ${ACT_ALL_LS}) ls -a ;;
+   esac
+}
+
+do_ls ${ACT_ALL_LS}
+

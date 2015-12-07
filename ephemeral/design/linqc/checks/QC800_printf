@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# ABOUT BLOCK BEGIN____________________________________________________________
+# Number: 800
+# Name: printf
+# Description: Just prints a table to make a point that VPrintf() works
+# Severity: OU
+# Quality: Good - It works
+# Notes: This is a test for the VPrintf() function
+# ABOUT BLOCK END______________________________________________________________
+
+# DEBUG: Temp hack for BL pathing issues.
+#cd /opt/linqc
+
+# Source our functions
+# NOTE: The path is obviously wrong. This would be a pre-determined location,
+#       likely one that is fully, not relatively pathed.
+if [[ -e lib/qcfunctions.bash ]]
+then
+    . lib/qcfunctions.bash
+fi
+
+# Validate that the sourcing was successfull
+if [[ ! ${was_successfully_sourced} ]]
+then
+    # Not much we can do here. No telling what is going on. Exit with the
+    # most appropriate error value and message for both BL and CL environment.
+    echo "ERROR: Failed to source functions." >&2
+    exit 1
+fi
+
+# Pull in the global config
+SourceGlobalConfig
+
+# Print the header for the test
+VPrintHeader "printf() table example"
+
+# See if we should run or not
+GroupCheck online daily weekly
+
+# Check for overrides
+OverrideCheck
+
+# We have to check for it, it is in a grep in the following test. That will
+# hang if it does not exist.
+VPrint "Checking file system sizes"
+sleep 1  # Just to simulate a long running test
+VPrintf "  %-10s %10s %10s %6s\n" "MountPt" "Expected" "Actual" "State"
+VPrintf "  %-10s %10d %10d %-6s\n" /home 4096 4096 Ok
+VPrintf "  %-10s %10d %10d %-6s\n" /     1024 1024 Ok
+VPrintf "  %-10s %10d %10d %-6s\n" /opt  2048 2048 Ok
+VPrintf "  %-10s %10d %10d %-6s\n" /var  4096 4096 Ok
+VPrintf "  %-10s %10d %10d %-6s\n" /boot  256  100 FAILED
+VPrintf "  %-10s %10d %10d %-6s\n" /usr  4096 4096 Ok
+VPrint "ERROR: File systems are not sized to specifications."
+
+QCExit ${QCRV_FAIL}

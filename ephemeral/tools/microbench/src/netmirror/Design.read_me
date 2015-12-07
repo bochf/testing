@@ -1,0 +1,35 @@
+This module works this way:
+
+The sender sends a packet to the receiver (typically on another system).
+The receiver decodes the packet and optionally replies back to the sink.
+The sink runs on the same system as the sender and collects packets.
+
+
+SENDER ----------------------------------------> RECEIVER
+         This packet contains instructions
+         for the receiver - specifically:
+          Where to send packets
+          How many packets to send
+          Size of the packets to send
+
+SINK <------------------------------------------ RECEIVER
+     <------------------------------------------
+     <------------------------------------------
+     <------------------------------------------
+         This stream of packets comes back 
+         to the sink (running on the same box
+         as the sender). In this case, the
+         multiplier is 4. So 4 packets are sent
+         back for each sent. This allows the
+         load to be tested inbound or outbound.
+
+This module runs in one of three modes:
+  sender -----> Send but not sink
+  receiver ---> Recieve from the sender, potentially send to sink
+  sink -------> Send and sink (other is receiver)
+                (sink is sink and sender)
+
+The mode the module runs in is controlled via the MODE paramater.
+
+
+
