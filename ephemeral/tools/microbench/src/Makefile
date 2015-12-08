@@ -19,7 +19,7 @@ OSSUP=false
 
 ifeq "$(shell uname -s)" "Linux"
    CC=gcc
-   CC_OPTS=-Wall -Werror -DPORT_$(shell uname -s)
+   CC_OPTS=-Wall -DPORT_$(shell uname -s)
    LD_OPTS=
    OSSUP=true
    LANG=C

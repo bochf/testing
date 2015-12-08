@@ -3,8 +3,8 @@
 THIS_TREE=futexlat module
 
 ifeq "$(shell uname -s)" "Linux"
-   CC_OPTS += -m64
-   LD_OPTS += -m64 -lrt
+   CC_OPTS += -m64 -pthread
+   LD_OPTS += -m64 -lrt -lpthread
    BITNESS=64
 endif
 
@@ -23,7 +23,7 @@ endif
 futexlat: ccstart futexlat.o
 	@printf "Done.\n"
 	@printf "Linking $(THIS_TREE)..."
-	@$(CC) $(LD_OPTS) -o futexlat futexlat.o ../lib/libmb$(BITNESS).a
+	@$(CC) $(LD_OPTS) -o futexlat futexlat.o ../lib/libmb$(BITNESS).a -lpthread
 	@printf "Done.\n"
 
 ccstart:

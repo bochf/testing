@@ -23,7 +23,7 @@ endif
 mallocspeed: ccstart mallocspeed.o
 	@printf "Done.\n"
 	@printf "Linking $(THIS_TREE)..."
-	@$(CC) $(LD_OPTS) -o mallocspeed mallocspeed.o ../lib/libmb$(BITNESS).a
+	@$(CC) $(LD_OPTS) -o mallocspeed mallocspeed.o ../lib/libmb$(BITNESS).a -lpthread
 	@printf "Done.\n"
 
 ccstart:

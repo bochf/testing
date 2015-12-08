@@ -1660,7 +1660,6 @@ int GetTimeValue(struct optbase *ob,
 {
    unsigned long ulvalue;
    char *rawvalue;
-   int i;
 
    assert(NULL != setval);
    assert(NULL != pair_name);
@@ -1672,8 +1671,6 @@ int GetTimeValue(struct optbase *ob,
    /* This returns a pointer to the matching value */
    if ( NULL == (rawvalue = get_str_value(ob, pair_name)) )
       return(1);
-
-   i = 0;
 
    /* Skip through whitespace */
    while ((( *rawvalue == ' ' ) || ( *rawvalue == '\t' )) && ( *rawvalue != 0 ))
