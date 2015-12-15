@@ -6,15 +6,21 @@
 
 using namespace std;
 
+const unsigned int MB = 1024 * 1024;
+
 class Singleton {
 	public:
 		static vector<pthread_t> s_threadPool;
 		static bool s_exit;
+		static size_t s_threadMem;
 
 		static void * run(void * attr) {
+			char * buff = NULL;
+			if (s_threadMem > 0) buff = new char[s_threadMem * MB];
 			while (!s_exit) {
 				usleep(5000);
 			}
+			if (buff) delete []buff;
 		}
 
 		static void start(const size_t n) {
@@ -44,12 +50,12 @@ class Singleton {
 
 vector<pthread_t> Singleton::s_threadPool;
 bool Singleton::s_exit = false;
+size_t Singleton::s_threadMem;
 
 int main(int argc, char * argv[]) {
-	const unsigned int MB = 1024 * 1024;
-
 	size_t bufferSize = 0;
 	size_t numberOfThread = 0;
+	Singleton::s_threadMem = 10;
 
 	if (argc > 1) {
 		bufferSize = atoi(argv[1]);
@@ -57,6 +63,10 @@ int main(int argc, char * argv[]) {
 
 	if (argc > 2) {
 		numberOfThread = atoi(argv[2]);
+	}
+
+	if (argc > 3) {
+		Singleton::s_threadMem = atoi(argv[3]);
 	}
 
 	char * buffer = NULL;
