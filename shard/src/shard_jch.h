@@ -5,10 +5,10 @@
 
 #include <shard.h>
 
-class ShardJumConsistentHash : public IShard
+class ShardJumpConsistentHash : public IShard
 {
   public:
-    virtual ~ShardJumConsistentHash() {};
+    virtual ~ShardJumpConsistentHash() {};
 
     virtual int32_t hash(const uint64_t key, const uint32_t bucket);
 };
