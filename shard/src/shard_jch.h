@@ -1,5 +1,5 @@
-#ifndef __SHARD_MOD_H__
-#define __SHARD_MOD_H__
+#ifndef __SHARD_JCH_H__
+#define __SHARD_JCH_H__
 
 #include <cstdint>
 
