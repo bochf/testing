@@ -17,3 +17,4 @@ target_link_libraries(test_shard
 # compile flags
 set(CMAKE_CXX_FLAGS "-std=c++11")
 include_directories(".")
+include_directories("../src")
