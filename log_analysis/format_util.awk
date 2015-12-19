@@ -1,3 +1,17 @@
+function max(a, b) {
+	if (a > b)
+		return a;
+	else
+		return b;
+}
+
+function min(a, b) {
+	if (a > b)
+		return b;
+	else
+		return a;
+}
+
 function formalize(value, min, def, max) {
 	if (value == "")
 		value = def;
@@ -5,6 +19,7 @@ function formalize(value, min, def, max) {
 		value = min;
 	else if (value > max)
 		value = max;
+	return value;
 }
 
 function urlDecode(url)
