@@ -1,3 +1,43 @@
+function formalize(value, min, def, max) {
+	if (value == "")
+		value = def;
+	else if (min > value)
+		value = min;
+	else if (value > max)
+		value = max;
+}
+
+function urlDecode(url)
+{
+  for (c = 0x20; c < 0x40; ++c)
+  {
+    repl = sprintf("%c", c);
+    if ((repl == "&") || (repl == "\\"))
+    {
+      repl = "\\" repl;
+    }
+    url = gensub(sprintf("%%%02X", c), repl, "g", url);
+    url = gensub(sprintf("%%%02x", c), repl, "g", url);
+  }
+  return url;
+}
+
+function shrink(str, width)
+{
+  if (width == 0)
+    return str;
+
+  if (length(str) > width)
+  {
+    newstr = substr(str, 1, width-3) "...";
+    return newstr;
+  }
+  else
+  {
+    return str;
+  }
+}
+
 function isnumeric(x)
 {
   return ( x == x+0 );
@@ -14,6 +54,10 @@ function colorIndex(name, predefined)
   return name;
 }
 
+# control output format
+# color(foreground) default background color and attribute
+# color(background, foreground) default attribute
+# color(attribute, background, foreground) print in specified format
 function color(v1, v2, v3)
 {
   if (v3 == "" && v2 == "" && v1 == "")
@@ -43,6 +87,7 @@ function initColorPrint()
   fgcolours["Cyan"] = 36;
   fgcolours["White"] = 37;
 
+  bgcolours["None"] = 0;
   bgcolours["Black"] = 40;
   bgcolours["Red"] = 41;
   bgcolours["Green"] = 42;
