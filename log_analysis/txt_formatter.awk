@@ -8,7 +8,9 @@ BEGIN {
 	max_width = formalize(max_width, 10, 200, 200);
 	page_size = formalize(page_size, 5, 50, 1000);
 	header_style = formalize(header_style, 1, 1, 2); # 1 header per page (default)
-	                                  # 2 header on first page
+	                                                 # 2 header on first page
+	pause_per_page = formalize(pause_per_page, 0, 1, 1); # 0 no wait
+	                                                     # 1, pause after print one page
 }
 
 # print one page of data
@@ -75,6 +77,9 @@ function process(line)
 	if (g_currentPageLines == page_size) {
 		printPage(g_currentPageLines, g_buffer, g_columnWidth, header_style);
 		newPage();
+
+		if (pause_per_page == 1)
+			getline pause < "/dev/tty";
 	}
 }
 

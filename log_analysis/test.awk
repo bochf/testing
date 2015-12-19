@@ -35,7 +35,17 @@ function testPrintFomat() {
 	print color("None", "None", "None") "";
 }
 
+function testInteraction() {
+	# wait for user input to proces next line
+	print;
+	line++;
+	if (line >= 10) {
+		line = 0;
+		getline x < "/dev/tty";
+	}
+}
+
 # main
 {
-	testColorPrint();
+	testInteraction();
 }
