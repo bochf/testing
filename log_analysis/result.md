@@ -1,0 +1,16 @@
+|**room_id**|**room_title**|**room_type**|**room_account**|**account_role**|**account_status**|**room_user**|**user_role**|**user_status**|
+|:--|:--|:--|:--|:--|:--|:--|:--|:--|
+|'PCHAT6229379988669857794'|'TestRoom'|1|'urn:core-ib-bloomberg-net:10000001'|0|0|'urn:identity-ib-bloomberg-net:1:0:urn:core-ib-bloomberg-net:20000001:uuid=20000001'|7|0|
+|'PCHAT6229379988669857794'|'TestRoom'|1|'urn:core-ib-bloomberg-net:10000002'|0|0|'urn:identity-ib-bloomberg-net:1:0:urn:core-ib-bloomberg-net:20000002:uuid=20000002'|1|0|
+|'PCHAT6229379988669857796'|'TestRoom'|1|'urn:core-ib-bloomberg-net:10000001'|0|0|'urn:identity-ib-bloomberg-net:1:0:urn:core-ib-bloomberg-net:20000001:uuid=20000001'|7|0|
+|'PCHAT6229379988669857796'|'TestRoom'|1|'urn:core-ib-bloomberg-net:10000002'|0|0|'urn:identity-ib-bloomberg-net:1:0:urn:core-ib-bloomberg-net:20000002:uuid=20000002'|2|0|
+|'PCHAT6229379988669857798'|'TestRoom'|1|'urn:core-ib-bloomberg-net:10000001'|0|0|'urn:identity-ib-bloomberg-net:1:0:urn:core-ib-bloomberg-net:20000001:uuid=20000001'|7|0|
+|'PCHAT6229379988669857798'|'TestRoom'|1|'urn:core-ib-bloomberg-net:10000002'|0|0|'urn:identity-ib-bloomberg-net:1:0:urn:core-ib-bloomberg-net:20000002:uuid=20000002'|3|0|
+|'PCHAT6229379988669857800'|'TestRoom'|1|'urn:core-ib-bloomberg-net:10000001'|0|0|'urn:identity-ib-bloomberg-net:1:0:urn:core-ib-bloomberg-net:20000001:uuid=20000001'|7|0|
+|'PCHAT6229379988669857800'|'TestRoom'|1|'urn:core-ib-bloomberg-net:10000002'|0|0|'urn:identity-ib-bloomberg-net:1:0:urn:core-ib-bloomberg-net:20000002:uuid=20000002'|4|0|
+|'PCHAT6229312815381348353'|'TestRoom'|1|'urn:core-ib-bloomberg-net:6354755'|0|0|'urn:identity-ib-bloomberg-net:1:0:urn:core-ib-bloomberg-net:6354755:uuid=6354755'|3|0|
+|'PCHAT6229312815381348353'|'TestRoom'|1|'urn:core-ib-bloomberg-net:63547551'|0|4|'urn:identity-ib-bloomberg-net:1:0:urn:core-ib-bloomberg-net:63547551:uuid=63547551'|2|4|
+|'PCHAT6229379988669857802'|'TestRoom'|1|'urn:core-ib-bloomberg-net:10000001'|0|0|'urn:identity-ib-bloomberg-net:1:0:urn:core-ib-bloomberg-net:20000001:uuid=20000001'|7|0|
+|'PCHAT6229379988669857802'|'TestRoom'|1|'urn:core-ib-bloomberg-net:10000002'|0|0|'urn:identity-ib-bloomberg-net:1:0:urn:core-ib-bloomberg-net:20000002:uuid=20000002'|5|0|
+|'PCHAT6229379988669857804'|'TestRoom'|1|'urn:core-ib-bloomberg-net:10000001'|0|0|'urn:identity-ib-bloomberg-net:1:0:urn:core-ib-bloomberg-net:20000001:uuid=20000001'|7|0|
+|'PCHAT6229379988669857804'|'TestRoom'|1|'urn:core-ib-bloomberg-net:10000002'|0|0|'urn:identity-ib-bloomberg-net:1:0:urn:core-ib-bloomberg-net:20000002:uuid=20000002'|6|0|
