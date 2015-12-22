@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <shard_resource.h>
+#include <shared_resource.h>
 
 #include <iostream>
 #include <string>
