@@ -32,13 +32,19 @@ TEST_P(MyTestP, Test) {
 	<< " " << s_count << " " << s_pCount << endl;
 }
 
+TEST_P(MyTestP2, Test) {
+	foo.value()++;
+	cout << "localCount=" << foo.value() << ", this=" << this << endl;
+}
+
 int MyEnv::s_count = 0;
 int MyTestF::s_count = 10;
 int MyTestF::s_fCount = 20;
 int MyTestP::s_count = 100;
 int MyTestP::s_pCount = 200;
 
-INSTANTIATE_TEST_CASE_P(MyEnv, MyTestP, Range(1, 10));
+INSTANTIATE_TEST_CASE_P(MyEnv, MyTestP, Range(1, 3));
+INSTANTIATE_TEST_CASE_P(MyEnv, MyTestP2, Range(1, 3));
 
 int main(int argc, char * argv[]) {
 	AddGlobalTestEnvironment(new MyEnv);
