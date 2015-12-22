@@ -30,5 +30,7 @@ AC_TYPE_SIZE_T
 # Checks for library functions.
 
 AC_CONFIG_FILES([Makefile
-                 memcheck/Makefile])
+                 memcheck/Makefile
+                 gtest/Makefile
+								 ])
 AC_OUTPUT
