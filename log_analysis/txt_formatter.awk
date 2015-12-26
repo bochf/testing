@@ -6,7 +6,7 @@ BEGIN {
 	initColorPrint();
 
 	max_width = formalize(max_width, 10, 200, 200);
-	page_size = formalize(page_size, 5, 50, 1000);
+	page_size = formalize(page_size, 5, 50, 1000) - 1;
 	header_style = formalize(header_style, 1, 1, 2); # 1 header per page (default)
 	                                                 # 2 header on first page
 	pause_per_page = formalize(pause_per_page, 0, 1, 1); # 0 no wait
@@ -60,6 +60,12 @@ function newPage() {
 	for (i = 1; i <= NF; i++)
 		g_columnWidth[i] = 1;
 	g_currentPageLines = 0;
+
+	if (g_pageNo == 1 || header_style == 1)
+		g_pageHeader = 1;
+	else 
+		g_pageHeader = 0;
+
 	split("", g_buffer, ":");  # destroy the current page g_buffer
 }
 
@@ -74,7 +80,7 @@ function process(line)
 	g_currentPageLines++;
 	g_buffer[g_currentPageLines] = line;
 
-	if (g_currentPageLines == page_size) {
+	if (g_currentPageLines == page_size - g_pageHeader) {
 		printPage(g_currentPageLines, g_buffer, g_columnWidth, header_style);
 		newPage();
 
