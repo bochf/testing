@@ -85,7 +85,10 @@ function process(line)
 		newPage();
 
 		if (pause_per_page == 1)
-			getline pause < "/dev/tty";
+			getline cmd < "/dev/tty";
+
+		if (cmd ~ /[qQ]/)
+			exit 0;
 	}
 }
 
