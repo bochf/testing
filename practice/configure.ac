@@ -32,5 +32,6 @@ AC_TYPE_SIZE_T
 AC_CONFIG_FILES([Makefile
                  memcheck/Makefile
                  gtest/Makefile
+                 exception/Makefile
 								 ])
 AC_OUTPUT
