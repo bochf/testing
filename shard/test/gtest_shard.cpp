@@ -136,7 +136,7 @@ INSTANTIATE_TEST_CASE_P(Sharding,
                         Combine(
                           Range(10, 20),
                           Values(20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240,
-                              20480),
+                              20480, 40960),
                           Bool()
                         )
                        );
