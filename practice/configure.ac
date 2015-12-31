@@ -33,5 +33,6 @@ AC_CONFIG_FILES([Makefile
                  memcheck/Makefile
                  gtest/Makefile
                  exception/Makefile
+                 mixed/Makefile
 								 ])
 AC_OUTPUT
