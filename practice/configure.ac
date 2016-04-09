@@ -34,5 +34,6 @@ AC_CONFIG_FILES([Makefile
                  gtest/Makefile
                  exception/Makefile
                  mixed/Makefile
+                 vector/Makefile
 								 ])
 AC_OUTPUT

@@ -21,6 +21,7 @@ class Singleton {
 				usleep(5000);
 			}
 			if (buff) delete []buff;
+			return NULL;
 		}
 
 		static void start(const size_t n) {
