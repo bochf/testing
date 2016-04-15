@@ -35,5 +35,6 @@ AC_CONFIG_FILES([Makefile
                  exception/Makefile
                  mixed/Makefile
                  vector/Makefile
+                 smalltest/Makefile
 								 ])
 AC_OUTPUT
