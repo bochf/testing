@@ -36,5 +36,6 @@ AC_CONFIG_FILES([Makefile
                  mixed/Makefile
                  vector/Makefile
                  smalltest/Makefile
+                 coin/Makefile
 								 ])
 AC_OUTPUT
