@@ -39,5 +39,9 @@ AC_CONFIG_FILES([Makefile
                  coin/Makefile
                  codecon/Makefile
                  codecon/base_arithmetic/Makefile
+								 repunit/Makefile
+								 repunit/src/Makefile
+								 repunit/test/Makefile
+								 1010/Makefile
 								 ])
 AC_OUTPUT
