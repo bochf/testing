@@ -37,5 +37,7 @@ AC_CONFIG_FILES([Makefile
                  vector/Makefile
                  smalltest/Makefile
                  coin/Makefile
+                 codecon/Makefile
+                 codecon/base_arithmetic/Makefile
 								 ])
 AC_OUTPUT
