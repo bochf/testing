@@ -1,4 +1,4 @@
-bin_PROGRAMS=test_inherit test_expect_not_call test_delegate_ctor mock11
+bin_PROGRAMS=test_inherit test_expect_not_call test_delegate_ctor mock11 vec_init
 
 AM_CXXFLAGS=-std=c++11
 
@@ -13,3 +13,6 @@ test_delegate_ctor_LDADD=-lgtest_main -lgtest -lpthread
 
 mock11_SOURCES=mock11.cpp
 mock11_LDADD=-lgmock_main -lgtest -lpthread
+
+vec_init_SOURCES=vec_init.cpp
+vec_init_LDADD=-lgtest_main -lgtest -lpthread
