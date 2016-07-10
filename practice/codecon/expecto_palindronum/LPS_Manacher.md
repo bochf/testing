@@ -6,9 +6,9 @@ A **palindrome** is a word, phase, number, or other sequence of characters which
 
 ## Manacher's Algorithm
 To find in linear time a longest palindrome in a string, an algorithm may take advantage of the following characteristics or observations about a palindrome and a sub-palindrome:
-1. The left side of a palindrome is a mirror image of its right side.
-2. Assume there are 3 palindromes in the string, namly left palindrome, center palindrome, and right palindrome based on their center position.
-..1. (Case 1) A third palindrome whose center is within the right side of a first palindrome will have exactly the same length as that of a second palindrome anchored at the mirror center on the left side, if the second palindrome is within the bounds of the first palindrome by at least one character. And, the second and the third palindromes are identical. For example:
++ The left side of a palindrome is a mirror image of its right side.
++ Assume there are 3 palindromes in the string, namly left palindrome, center palindrome, and right palindrome based on their center position.
+  + (Case 1) A third palindrome whose center is within the right side of a first palindrome will have exactly the same length as that of a second palindrome anchored at the mirror center on the left side, if the second palindrome is within the bounds of the first palindrome by at least one character. And, the second and the third palindromes are identical. For example:
 ```
 Given string S = 123abcbxyzyxbcba456
 The 1st palindrome P1 = abcbxyzyxbcba
