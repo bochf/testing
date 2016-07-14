@@ -1,0 +1,2 @@
+bin_PROGRAMS=1010
+1010_SOURCES=main.cpp
