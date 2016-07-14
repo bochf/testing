@@ -7,12 +7,9 @@ A **palindrome** is a word, phase, number, or other sequence of characters which
 ## Manacher's Algorithm
 To find in linear time a longest palindrome in a string, an algorithm may take advantage of the following characteristics or observations about a palindrome and a sub-palindrome:
 + The left side of a palindrome is a mirror image of its right side.
-+ Assume there are 3 palindromes in the string, namly left palindrome, center palindrome, and right palindrome based on their center position.
-  + (Case 1) A third palindrome whose center is within the right side of a first palindrome will have exactly the same length as that of a second palindrome anchored at the mirror center on the left side, if the second palindrome is within the bounds of the first palindrome by at least one character. And, the second and the third palindromes are identical. For example:
-```
-Given string S = 123abcbxyzyxbcba456
-The 1st palindrome P1 = abcbxyzyxbcba
-The 2nd palindrome P2 = bcb
-The 3rd palindrome P3 = bcb
-```
-3. (Case 2)
++ Assume there are 3 palindromes in the string, namly left palindrome (**LP**), center palindrome (**CP**), and right palindrome (**RP**) based on their center position.
+  + (Case 1) **RP**'s center is within the right side of **CP** will have exactly the same length as that of **LP** anchored at the mirror center on the left side, if **LP** is within the bounds of **CP** by at least one character. And, **LP** and **RP** are identical. For example: 123abcbxyzyxbcba456
+  + (Case 2) If **LP** meets or extends beyond the left bound of **CP**, then the **RP**'s length is guaranteed to have at least the length from its own center to the right outermost character of **CP**. This length is the same from the center of **LP** to the left outermost character of **CP**. For example: 123abcbaxyzyxabcbaxy456
+  + To find the length of **RP** under case 2, the next character after the right outermost of **CP** would then to be compared with its mirror character about the center of **RP**, until there is no match or no more characters to compare.
+  + (Case 3) Neither **LP** nor **CP** provides information to help determine the palindromic length of **RP**, if **RP**'s center is outside the right side of **CP**.
+  + 
