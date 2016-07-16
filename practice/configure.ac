@@ -39,6 +39,9 @@ AC_CONFIG_FILES([Makefile
                  coin/Makefile
                  codecon/Makefile
                  codecon/base_arithmetic/Makefile
+                 codecon/expecto_palindronum/Makefile
+                 codecon/wrap/Makefile
+                 codecon/hero/Makefile
 								 repunit/Makefile
 								 repunit/src/Makefile
 								 repunit/test/Makefile

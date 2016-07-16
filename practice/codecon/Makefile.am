@@ -1,1 +1,1 @@
-SUBDIRS=base_arithmetic
+SUBDIRS=base_arithmetic expecto_palindronum wrap hero

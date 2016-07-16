@@ -12,4 +12,75 @@ To find in linear time a longest palindrome in a string, an algorithm may take a
   + (Case 2) If **LP** meets or extends beyond the left bound of **CP**, then the **RP**'s length is guaranteed to have at least the length from its own center to the right outermost character of **CP**. This length is the same from the center of **LP** to the left outermost character of **CP**. For example: 123abcbaxyzyxabcbaxy456
   + To find the length of **RP** under case 2, the next character after the right outermost of **CP** would then to be compared with its mirror character about the center of **RP**, until there is no match or no more characters to compare.
   + (Case 3) Neither **LP** nor **CP** provides information to help determine the palindromic length of **RP**, if **RP**'s center is outside the right side of **CP**.
-  + 
++ It is therefore desirable to have a palindrome as a reference (i.e. the **CP**) that processes characters furtherest to the right in a string when determine from left to right the palindromic length of a substring in the string.
++ For even-length palindromes, the center is at the boundary of two characters in the middle.
+
+## Implementation
++ There are 2 cases of palindrome, odd-length and even-length. To simplify the algorithm, we will transform the given string S to T by adding a special charactor (e.g. '#') at each end and in between letters, so T is always odd-length, and we can consistently deal with all the palindromic substring as odd-length palindrome.
+```
+Example:
+S = 12abcba34 (9 characters)
+T = #1#2#a#b#c#b#a#3#4# (19 characters)
+S = 12abba34 (8 characters)
+T = #1#2#a#b#b#a#3#4# (17 characters)
+```
+``` c++
+Code:
+void transform(std::string& s) {
+  if (s.empty())
+    return;
+    
+	size_t len = s.size();
+	s.append(1, '#');
+	for (size_t i = 0; i < len; ++i) {
+		// move the first character to the last and append a '#'
+		s.append(1, s[0]);
+		s.append(1, '#');
+		s.erase(s.begin());
+	}
+}
+```
++ For each character in T, calculate the radius of palindromic span, from the center to either outermost side and save the radius in array **P**. A single character palindrome radius is 0, 3 character palindrome radius is 1.
+```
+Example:
+T = # a # b # a # a # b # a #
+P = 0 1 0 3 0 1 6 1 0 3 0 1 0
+Now we immediatly see longest palindrome length is 6.
+
+```
+``` c++
+Code:
+size_t radius(const string& s, const size_t i) {
+	size_t step = 1;           // temp variable to record radius of a palindrome
+	size_t begin = 0;          // the left boundary of the string
+	size_t end = s.size() - 1; // the right boundary of the string
+	
+	while ((begin + step <= i) && (i + step <= end)) {
+		if (s[i-step] == s[i+step]) {	
+			step++; // test outter pair characters if match
+		}
+		else {
+			break;  // stop comparison
+		}
+	}
+	
+	return step-1;
+}
+
+size_t lps(const string& s) {
+  vector<size_t> p;
+  size_t max = 0;
+  size_t index_max = 0;
+  
+  for (size_t i = 0; i < s.size(); ++i) {
+    size_t r = radius(s, i);
+    p.push_back(r);
+    if (max < r) {
+      max = r;
+      index_max = i;
+    }
+  }
+  
+  return max;
+}
+```

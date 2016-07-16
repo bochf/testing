@@ -1,2 +1,2 @@
 bin_PROGRAMS=main
-main_SOURCES=main.cpp base_arithmetic.cpp
+main_SOURCES=main.cpp palindrome.cpp
