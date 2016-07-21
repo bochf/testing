@@ -1,1 +1,1 @@
-SUBDIRS=base_arithmetic expecto_palindronum wrap hero
+SUBDIRS=base_arithmetic expecto_palindronum wrap hero mug_color

@@ -40,6 +40,7 @@ AC_CONFIG_FILES([Makefile
                  codecon/Makefile
                  codecon/base_arithmetic/Makefile
                  codecon/expecto_palindronum/Makefile
+                 codecon/mug_color/Makefile
                  codecon/wrap/Makefile
                  codecon/hero/Makefile
 								 repunit/Makefile
