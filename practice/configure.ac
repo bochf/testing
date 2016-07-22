@@ -47,5 +47,7 @@ AC_CONFIG_FILES([Makefile
 								 repunit/src/Makefile
 								 repunit/test/Makefile
 								 1010/Makefile
+								 benchmark/Makefile
+								 benchmark/hello/Makefile
 								 ])
 AC_OUTPUT

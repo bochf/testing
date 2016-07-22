@@ -1,0 +1,5 @@
+AM_LDFLAGS=-lbenchmark
+
+bin_PROGRAMS=main
+
+main_SOURCES=main.cpp
