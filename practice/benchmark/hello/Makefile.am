@@ -1,4 +1,4 @@
-AM_LDFLAGS=-lbenchmark
+AM_LDFLAGS=-lbenchmark -lpthread
 
 bin_PROGRAMS=main
 
