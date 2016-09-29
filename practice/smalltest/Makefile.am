@@ -1,5 +1,5 @@
 bin_PROGRAMS=test_inherit test_expect_not_call test_delegate_ctor mock11 vec_init \
-						 my_memcpy
+						 my_memcpy test_autoptr
 
 AM_CXXFLAGS=-std=c++11
 
@@ -20,3 +20,6 @@ vec_init_LDADD=-lgtest_main -lgtest -lpthread
 
 my_memcpy_SOURCES=my_memcpy.cpp
 my_memcpy_LDADD=-lgtest_main -lgtest -lpthread
+
+test_autoptr_SOURCES=test_autoptr.cpp
+test_autoptr_LDADD=-lgmock_main -lgtest -lpthread
