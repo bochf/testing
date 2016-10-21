@@ -55,5 +55,6 @@ AC_CONFIG_FILES([Makefile
 								 hackerrank/chocolate_game/Makefile
 								 hackerrank/big_int/Makefile
 								 hackerrank/even_tree/Makefile
+								 hackerrank/heap_sort/Makefile
 								 ])
 AC_OUTPUT
