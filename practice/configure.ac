@@ -36,6 +36,7 @@ AC_CONFIG_FILES([Makefile
                  mixed/Makefile
                  vector/Makefile
                  smalltest/Makefile
+                 smalltest/thread/Makefile
                  coin/Makefile
                  codecon/Makefile
                  codecon/base_arithmetic/Makefile
@@ -49,5 +50,10 @@ AC_CONFIG_FILES([Makefile
 								 1010/Makefile
 								 benchmark/Makefile
 								 benchmark/hello/Makefile
+								 hackerrank/Makefile
+								 hackerrank/left_rotation/Makefile
+								 hackerrank/chocolate_game/Makefile
+								 hackerrank/big_int/Makefile
+								 hackerrank/even_tree/Makefile
 								 ])
 AC_OUTPUT

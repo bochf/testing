@@ -27,6 +27,21 @@ class Derived : public Base {
 	int getA() override { return 2; };
 };
 
+template<class T>
+class Getter {
+	public:
+		Getter(T t) {
+			_value = new T(t);
+		}
+
+		Base& value() {
+			return *_value;
+		}
+
+	private:
+		Base * _value;
+};
+
 TEST(TestInherit, BaseCall) {
 	Base base;
 	Derived derive;
@@ -46,4 +61,25 @@ TEST(TestInherit, BaseCall) {
 	EXPECT_EQ(2, pDerive->callAThis());
 	EXPECT_EQ(2, pDerive->callAVirtual());
 	EXPECT_EQ(2, pDerive->callAVirtualThis());
+}
+
+TEST(TestInherit, Reference) {
+	Base base;
+	Derived derive;
+
+	Getter<Base> gb(base);
+	Getter<Derived> gd(derive);
+
+	Base& refBase = gb.value();  // valid reference
+	Base& refDerive = gd.value();  // valid reference
+	EXPECT_EQ(1, refBase.getA());
+	EXPECT_EQ(2, refDerive.getA());
+
+	// Derived& refB = gb.value();  // invalie reference
+	// Derived& refD = gd.value();  // invalie reference
+
+	Base b = gb.value();  // valid statment, but it is not reference, it is assignment
+	Base d = gd.value();  // valid statment, but it is not reference, it is assignment
+	EXPECT_EQ(1, b.getA());
+	EXPECT_EQ(1, d.getA());
 }
