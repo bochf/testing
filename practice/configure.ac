@@ -35,6 +35,7 @@ AC_CONFIG_FILES([Makefile
                  exception/Makefile
                  mixed/Makefile
                  vector/Makefile
+                 trie/Makefile
                  smalltest/Makefile
                  smalltest/thread/Makefile
                  coin/Makefile
@@ -56,5 +57,6 @@ AC_CONFIG_FILES([Makefile
 								 hackerrank/big_int/Makefile
 								 hackerrank/even_tree/Makefile
 								 hackerrank/heap_sort/Makefile
+								 hackerrank/graph/Makefile
 								 ])
 AC_OUTPUT

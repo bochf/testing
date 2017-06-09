@@ -1,1 +1,1 @@
-SUBDIRS=left_rotation chocolate_game big_int even_tree heap_sort
+SUBDIRS=left_rotation chocolate_game big_int even_tree heap_sort graph

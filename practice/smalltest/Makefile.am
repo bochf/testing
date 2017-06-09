@@ -1,6 +1,7 @@
 SUBDIRS=thread
 bin_PROGRAMS=test_inherit test_expect_not_call test_delegate_ctor mock11 vec_init \
-						 my_memcpy test_autoptr test_stack_q test_template
+						 my_memcpy test_autoptr test_stack_q test_template \
+						 test_typedef
 
 AM_CXXFLAGS=-std=c++11
 
@@ -30,3 +31,6 @@ test_stack_q_LDADD=-lgmock_main -lgtest -lpthread
 
 test_template_SOURCES=test_template.cpp
 test_template_LDADD=-lgmock_main -lgtest -lpthread
+
+test_typedef_SOURCES=test_typedef.cpp
+test_typedef_LDADD=-lgmock_main -lgtest -lpthread
